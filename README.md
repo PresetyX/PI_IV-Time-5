@@ -5,7 +5,7 @@ Projeto de desenvolvimento de software com foco em solução de pedidos e pagame
 ## 👥 Equipe
 
 - **Pedro Henrique Bonetto da Costa** - [@PresetyX](https://github.com/PresetyX)
-- *[Adicione aqui os demais integrantes do time]*
+- **Bruno Terra Silverio** - [@brUnoterraA]([https://github.com/PresetyX](https://github.com/brUnoterraA))
 
 ## 🛠️ Stack Tecnológica
 
