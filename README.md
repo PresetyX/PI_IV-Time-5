@@ -6,6 +6,8 @@ Projeto de desenvolvimento de software com foco em solução de pedidos e pagame
 
 - **Pedro Henrique Bonetto da Costa** - [@PresetyX](https://github.com/PresetyX)
 - **Bruno Terra Silverio** - [@brUnoterraA](https://github.com/brUnoterraA)
+- **Pedro Henrique Medeiros dos Reis** - [@phzmedeiros](https://github.com/phzmedeiros)
+- **Vitor Hugo Gilberti** - [@Vitor121205](https://github.com/Vitor121205)
 
 ## 🛠️ Stack Tecnológica
 
