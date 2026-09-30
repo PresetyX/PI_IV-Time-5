@@ -2,18 +2,17 @@
 
 Projeto de desenvolvimento de software com foco em solução de pedidos e pagamentos em ambiente de testes.
 
-## 👥 Equipe
+##  Equipe
 
 - **Pedro Henrique Bonetto da Costa** - [@PresetyX](https://github.com/PresetyX)
 - **Bruno Terra Silverio** - [@brUnoterraA](https://github.com/brUnoterraA)
 - **Pedro Henrique Medeiros dos Reis** - [@phzmedeiros](https://github.com/phzmedeiros)
 - **Vitor Hugo Gilberti** - [@Vitor121205](https://github.com/Vitor121205)
 
-## 🛠️ Stack Tecnológica
+##  Stack Tecnológica
 
 ### Backend
 - **Java** - Linguagem principal do backend
-- **Spring Boot** (sugestão) - Framework para APIs REST
 
 ### Banco de Dados
 - **MongoDB** - Banco de dados NoSQL para armazenamento dos dados
@@ -26,7 +25,7 @@ Projeto de desenvolvimento de software com foco em solução de pedidos e pagame
 - **Ambiente de testes (sandbox)** - Integração com gateway de pagamentos em modo de desenvolvimento
   - Sugestões: Stripe (test mode), Mercado Pago (sandbox), ou similar
 
-## 📁 Estrutura do Projeto
+##  Estrutura do Projeto
 
 ```
 Pede-Ai/
@@ -36,7 +35,7 @@ Pede-Ai/
 └── README.md         # Este arquivo
 ```
 
-## 🚀 Como Rodar
+##  Como Rodar
 
 ### Backend
 ```bash
