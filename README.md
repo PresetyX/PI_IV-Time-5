@@ -51,12 +51,12 @@ npm install
 npm run dev
 ```
 
-## 📋 GitHub Projects
+##  GitHub Projects
 
 Utilizamos o **GitHub Projects** para organização das tarefas:
 - Acesse: https://github.com/PresetyX/Pede-Ai/projects
 
-## 📝 Licença
+##  Licença
 
 Projeto acadêmico desenvolvido para disciplina de Engenharia de Software.
 
