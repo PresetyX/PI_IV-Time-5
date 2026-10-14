@@ -1,0 +1,17 @@
+target/
+*.class
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+*.swp
+.DS_Store
+Thumbs.db
+*.log
