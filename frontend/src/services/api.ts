@@ -1,70 +1,70 @@
-export interface ErroApi {
-  erro: string;
-  mensagem: string;
+export interface ApiErrorBody {
+  error: string;
+  message: string;
 }
 
 export class ApiError extends Error {
   readonly status: number;
-  readonly erro: string;
+  readonly code: string;
 
-  constructor(status: number, erro: string, mensagem: string) {
-    super(mensagem);
+  constructor(status: number, code: string, message: string) {
+    super(message);
     this.name = 'ApiError';
     this.status = status;
-    this.erro = erro;
+    this.code = code;
   }
 }
 
-const URL_BASE = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8080';
-const CHAVE_TOKEN = 'pedeai.token';
+const BASE_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8080';
+const TOKEN_KEY = 'pedeai.token';
 
-export function obterToken(): string | null {
-  return localStorage.getItem(CHAVE_TOKEN);
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
 }
 
-export function salvarToken(token: string | null): void {
+export function saveToken(token: string | null): void {
   if (token) {
-    localStorage.setItem(CHAVE_TOKEN, token);
+    localStorage.setItem(TOKEN_KEY, token);
   } else {
-    localStorage.removeItem(CHAVE_TOKEN);
+    localStorage.removeItem(TOKEN_KEY);
   }
 }
 
-async function requisitar<T>(metodo: string, caminho: string, corpo?: unknown): Promise<T> {
-  const cabecalhos: Record<string, string> = { Accept: 'application/json' };
-  if (corpo !== undefined) {
-    cabecalhos['Content-Type'] = 'application/json';
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
   }
-  const token = obterToken();
+  const token = getToken();
   if (token) {
-    cabecalhos.Authorization = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
 
-  const resposta = await fetch(`${URL_BASE}${caminho}`, {
-    method: metodo,
-    headers: cabecalhos,
-    body: corpo !== undefined ? JSON.stringify(corpo) : undefined,
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-  if (!resposta.ok) {
-    const erro = (await resposta.json().catch(() => null)) as Partial<ErroApi> | null;
+  if (!response.ok) {
+    const errorBody = (await response.json().catch(() => null)) as Partial<ApiErrorBody> | null;
     throw new ApiError(
-      resposta.status,
-      erro?.erro ?? 'desconhecido',
-      erro?.mensagem ?? `Falha na requisição (${resposta.status})`,
+      response.status,
+      errorBody?.error ?? 'unknown',
+      errorBody?.message ?? `Request failed (${response.status})`,
     );
   }
 
-  if (resposta.status === 204) {
+  if (response.status === 204) {
     return undefined as T;
   }
-  return (await resposta.json()) as T;
+  return (await response.json()) as T;
 }
 
 export const api = {
-  get: <T>(caminho: string) => requisitar<T>('GET', caminho),
-  post: <T>(caminho: string, corpo?: unknown) => requisitar<T>('POST', caminho, corpo),
-  put: <T>(caminho: string, corpo?: unknown) => requisitar<T>('PUT', caminho, corpo),
-  patch: <T>(caminho: string, corpo?: unknown) => requisitar<T>('PATCH', caminho, corpo),
-  delete: <T>(caminho: string) => requisitar<T>('DELETE', caminho),
+  get: <T>(path: string) => request<T>('GET', path),
+  post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
+  put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
+  patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
+  delete: <T>(path: string) => request<T>('DELETE', path),
 };

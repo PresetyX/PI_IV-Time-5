@@ -14,19 +14,19 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class CorsConfig {
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource(@Value("${cors.origens}") String origens) {
-        List<String> origensPermitidas = Arrays.stream(origens.split(","))
+    public CorsConfigurationSource corsConfigurationSource(@Value("${cors.origins}") String origins) {
+        List<String> allowedOrigins = Arrays.stream(origins.split(","))
                 .map(String::trim)
-                .filter(origem -> !origem.isEmpty())
+                .filter(origin -> !origin.isEmpty())
                 .toList();
 
-        CorsConfiguration configuracao = new CorsConfiguration();
-        configuracao.setAllowedOrigins(origensPermitidas);
-        configuracao.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuracao.setAllowedHeaders(List.of("*"));
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
 
-        UrlBasedCorsConfigurationSource fonte = new UrlBasedCorsConfigurationSource();
-        fonte.registerCorsConfiguration("/**", configuracao);
-        return fonte;
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

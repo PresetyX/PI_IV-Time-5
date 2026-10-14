@@ -2,14 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
-import ProvedorDeTema from './theme/ProvedorDeTema';
+import AppThemeProvider from './theme/AppThemeProvider';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ProvedorDeTema>
+    <AppThemeProvider>
       <BrowserRouter>
         <App />
       </BrowserRouter>
-    </ProvedorDeTema>
+    </AppThemeProvider>
   </React.StrictMode>,
 );

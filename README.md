@@ -14,7 +14,7 @@ Projeto Integrador IV, Engenharia de Software, PUC-Campinas. Professora Renata A
 - **Vitor Hugo Gilberti** - [@Vitor121205](https://github.com/Vitor121205)
 - **Mateus Souza Marinho** - [@matiazzsouza](https://github.com/matiazzsouza)
 
-Todos trabalham nas duas pontas, backend e frontend. A divisão por card está na aba Cards da planilha de backlog e no GitHub Projects.
+Todos trabalham nos três processos: server, backend e frontend. A divisão por card está na aba Cards da planilha de backlog e no GitHub Projects.
 
 ## Escopo do semestre
 
@@ -33,16 +33,24 @@ Fora do escopo desta versão: confirmação automática de pagamento por gateway
 
 ## Stack
 
-### Backend
+### Backend (`backend/`)
 
-- **Java 17** com **Spring Boot 3** (Spring Web, Spring Data MongoDB, Spring Security e Validation)
+- **Java 17** com **Spring Boot 3** (Spring Web, Spring Security e Validation)
+- Expõe HTTP para o front e conversa com o `server/` por socket. Não acessa o banco.
+- Build com **Maven**
+
+### Server (`server/`)
+
+- **Java 17** puro, socket TCP na porta 5000
+- Única dependência: driver `mongodb-driver-sync`
+- É o único processo que fala com o banco
 - Build com **Maven**
 
 ### Banco de dados
 
 - **MongoDB Atlas** (cluster M0 gratuito em desenvolvimento)
 
-### Frontend
+### Frontend (`frontend/`)
 
 - **React 18** com **TypeScript**
 - Build com **Rsbuild** (Rspack)
@@ -57,15 +65,20 @@ Fora do escopo desta versão: confirmação automática de pagamento por gateway
 
 ```
 PI_IV-Time-5/
-├── backend/          # API em Java com Spring Boot
+├── server/           # Java puro, socket TCP, único que acessa o MongoDB
+│   ├── src/main/java/br/puccampinas/pedeai/server/
+│   └── pom.xml
+├── backend/          # API HTTP em Java com Spring Boot, sem acesso ao banco
 │   ├── src/main/java/br/puccampinas/pedeai/
 │   └── pom.xml
 ├── frontend/         # Aplicação React com Rsbuild
 │   ├── src/
 │   └── package.json
-├── docs/             # Contratos da API, dicionário de dados e arquitetura
+├── docs/             # Contratos, modelo de dados, arquitetura e protocolo do socket
 └── README.md
 ```
+
+Fluxo de uma requisição: `frontend` chama `backend` por HTTP, `backend` chama `server` por socket e `server` consulta o MongoDB.
 
 ## Como rodar
 
@@ -76,17 +89,28 @@ Pré-requisitos: JDK 17 ou superior, Maven 3.9 ou superior, Node 20 ou superior 
 Copie o arquivo de exemplo e preencha com os valores reais. O arquivo `.env` nunca vai para o repositório.
 
 ```bash
+cp server/.env.example server/.env
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
+```
+
+O Java não lê arquivos `.env` sozinho: exporte as variáveis no terminal antes de subir cada processo, ou configure-as na sua IDE.
+
+`server/.env.example`:
+
+```
+MONGODB_URI=mongodb+srv://USUARIO:SENHA@cluster.xxxxx.mongodb.net/pedeai
+SOCKET_PORT=5000
 ```
 
 `backend/.env.example`:
 
 ```
-MONGODB_URI=mongodb+srv://USUARIO:SENHA@cluster.xxxxx.mongodb.net/pedeai
+SOCKET_HOST=localhost
+SOCKET_PORT=5000
 JWT_SECRET=troque-esta-chave
-JWT_EXPIRACAO_MINUTOS=480
-CORS_ORIGENS=http://localhost:3000
+JWT_EXPIRATION_MINUTES=480
+CORS_ORIGINS=http://localhost:3000
 ```
 
 `frontend/.env.example`:
@@ -97,16 +121,29 @@ PUBLIC_API_URL=http://localhost:8080
 
 A string de conexão real fica no grupo, não no repositório.
 
-### 2. Backend
+### 2. Server (primeiro)
 
 ```bash
-cd backend
-mvn spring-boot:run
+mvn -f server/pom.xml compile exec:java
 ```
 
-Confira em `http://localhost:8080/health`. A resposta mostra o estado da aplicação e da conexão com o banco.
+O server escuta na porta de `SOCKET_PORT` (padrão 5000). Para testar sem o backend, use o cliente de terminal em outro terminal:
 
-### 3. Frontend
+```bash
+java -cp server/target/classes br.puccampinas.pedeai.server.TestClient "PING"
+```
+
+O protocolo está em `docs/protocolo.md`.
+
+### 3. Backend (segundo)
+
+```bash
+mvn -f backend/pom.xml spring-boot:run
+```
+
+Confira em `http://localhost:8080/health`. A resposta mostra o estado do server e do banco. Sem o server no ar, a resposta é 503.
+
+### 4. Frontend (terceiro)
 
 ```bash
 cd frontend
@@ -114,26 +151,23 @@ npm install
 npm run dev
 ```
 
-A aplicação sobe em `http://localhost:3000` e consome a API pelo endereço do `.env`.
+A aplicação sobe em `http://localhost:3000` e consome o backend pelo endereço do `.env`.
 
-### 4. Dados de exemplo
+### 5. Dados de exemplo
 
-O script de carga cria um estabelecimento de demonstração com usuário dono, cardápio e mesas, para ninguém começar com o banco vazio.
-
-```bash
-cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=seed
-```
+O script de carga com um estabelecimento de demonstração ainda não existe. Enquanto isso, o `MENU_LIST` só devolve dados se existirem documentos nas coleções `tenant`, `category` e `product`, conforme `docs/modelo.md`.
 
 ## Convenções
 
 Estas regras valem para todo o código e evitam retrabalho:
 
-- **Multiempresa.** Toda coleção tem `estabelecimentoId` e toda consulta filtra por ele. Nenhuma exceção.
+- **Só o `server/` acessa o banco.** O `backend/` pede tudo pelo socket.
+- **Multiempresa.** Toda coleção, exceto `tenant`, tem `tenantId` e toda consulta filtra por ele. Nenhuma exceção.
+- **Código em inglês.** Pastas, pacotes, classes, métodos, variáveis, coleções e campos são em inglês. README e `docs/` ficam em português.
 - **Dinheiro em centavos**, sempre como inteiro. `3200` é R$ 32,00. Nada de ponto flutuante em valor.
 - **Datas em UTC** no banco, convertidas para o fuso da casa na exibição.
 - **Cópia de nome e preço** no item do pedido. Mudança no cardápio não altera pedido já enviado.
-- **Erro da API** sempre no formato `{ "erro": "codigo_do_erro", "mensagem": "texto para a tela" }`.
+- **Erro da API** sempre no formato `{ "error": "error_code", "message": "texto para a tela" }`.
 - **Segredo nenhum no repositório.** Variável nova entra também no `.env.example`.
 
 ## Fluxo de trabalho
@@ -149,7 +183,8 @@ Estas regras valem para todo o código e evitam retrabalho:
 | --- | --- |
 | `docs/contratos.md` | Rotas da API, entrada, saída e códigos de erro |
 | `docs/modelo.md` | Dicionário de dados: coleções, campos, tipos e índices |
-| `docs/arquitetura.md` | Camadas, pastas e decisões técnicas com justificativa |
+| `docs/arquitetura.md` | Os três processos, camadas, pastas e decisões técnicas com justificativa |
+| `docs/protocolo.md` | Protocolo de texto do socket entre `backend/` e `server/`, comandos e exemplos |
 
 ## GitHub Projects
 
@@ -161,7 +196,7 @@ Campos usados em cada card: Status (A fazer, Fazendo, Em revisão, Feito), Etapa
 
 | Etapa | Período | Foco |
 | --- | --- | --- |
-| E0 Fundação | 14/10 a 20/10 | Monorepo, cluster, base do backend e do front, contratos e dicionário |
+| E0 Fundação | 14/10 a 20/10 | Monorepo, cluster, base do server, do backend e do frontend, contratos e dicionário |
 | E1 Multiempresa e acesso | 21/10 a 03/11 | Estabelecimento como tenant, login, perfis e tema da casa |
 | E2 Cardápio e mesas | 04/11 a 17/11 | Categorias, produtos, disponibilidade, mesas e QR code |
 | E3 Conta e pedido | 18/11 a 30/11 | Identificação do cliente, conta, carrinho, envio e acompanhamento |

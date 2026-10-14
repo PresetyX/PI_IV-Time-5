@@ -1,11 +1,11 @@
 import { createTheme } from '@mui/material';
 
-export const COR_PRIMARIA_PADRAO = '#d84315';
+export const DEFAULT_PRIMARY_COLOR = '#d84315';
 
-export function criarTema(corPrimaria: string = COR_PRIMARIA_PADRAO) {
+export function createAppTheme(primaryColor: string = DEFAULT_PRIMARY_COLOR) {
   return createTheme({
     palette: {
-      primary: { main: corPrimaria },
+      primary: { main: primaryColor },
     },
   });
 }
