@@ -205,7 +205,7 @@ Campos usados em cada card: Status (A fazer, Fazendo, Em revisão, Feito), Etapa
 
 ## Licença
 
-Projeto acadêmico desenvolvido para a disciplina de Engenharia de Software.
+Projeto acadêmico desenvolvido para a disciplina de Projeto Integrador IV.
 
 ---
 
