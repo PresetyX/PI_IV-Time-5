@@ -1,5 +1,7 @@
 package br.puccampinas.pedeai.config;
 
+import jakarta.servlet.DispatcherType;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -28,6 +30,8 @@ public class SecurityConfig {
                 .oauth2ResourceServer(resourceServer -> resourceServer
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(new AuthenticatedUserConverter())))
                 .authorizeHttpRequests(access -> access
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/health", "/api/public/**", "/api/auth/login").permitAll()
                         .anyRequest().authenticated());
         return http.build();
