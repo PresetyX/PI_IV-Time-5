@@ -133,6 +133,7 @@ function TableKeypad({ store, next }: { store: Store; next: string | null }) {
                   borderRadius: `${radius.button}px`,
                   border: isAction ? 'none' : `1px solid ${colors.border}`,
                   bgcolor: isAction ? colors.surface : colors.background,
+                  fontFamily: 'inherit',
                   fontSize: fontSize.title,
                   fontWeight: fontWeight.extraBold,
                   color: colors.text,
