@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
 import ActionButton from '../../components/client/ActionButton';
@@ -10,7 +10,7 @@ import { useStore } from '../../hooks/useStore';
 import { useStoreColor } from '../../hooks/useStoreColor';
 import { formatHour } from '../../services/hours';
 import type { Store } from '../../services/store';
-import { formatTableNumber } from '../../services/tables';
+import { fetchTableByToken, formatTableNumber } from '../../services/tables';
 import { readVisit, updateVisit } from '../../services/visit';
 import { tokens } from '../../theme/theme';
 
@@ -47,10 +47,32 @@ export default function StoreCoverPage() {
 
 function StoreCover({ store }: { store: Store }) {
   const navigate = useNavigate();
-  const visit = readVisit(store.slug);
-  const token = visit.scannedToken ?? visit.table?.token;
+  const [searchParams] = useSearchParams();
+  const [tableNumber, setTableNumber] = useState(() => readVisit(store.slug).table?.number);
+
+  const currentToken = useCallback(() => {
+    const visit = readVisit(store.slug);
+    return searchParams.get('mesa') ?? visit.scannedToken ?? visit.table?.token;
+  }, [store.slug, searchParams]);
+
+  useEffect(() => {
+    const token = currentToken();
+    if (!token || readVisit(store.slug).table?.token === token) return undefined;
+    let cancelled = false;
+    fetchTableByToken(store.slug, token)
+      .then((table) => {
+        if (!cancelled) setTableNumber(table.number);
+      })
+      .catch(() => {
+        if (!cancelled) setTableNumber(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [store.slug, currentToken]);
 
   function startOrder() {
+    const token = currentToken();
     navigate(token ? `/t/${store.slug}/${encodeURIComponent(token)}` : `/t/${store.slug}/entrada`);
   }
 
@@ -67,7 +89,7 @@ function StoreCover({ store }: { store: Store }) {
         </>
       }
     >
-      <CoverHero store={store} tableNumber={visit.table?.number} />
+      <CoverHero store={store} tableNumber={tableNumber} />
       <Box sx={{ px: 5, pt: 6 }}>
         <Typography variant="h1">{store.name}</Typography>
         {store.tagline && <Typography sx={{ mt: 2, color: colors.textSecondary }}>{store.tagline}</Typography>}
