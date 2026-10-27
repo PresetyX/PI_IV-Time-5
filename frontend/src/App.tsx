@@ -3,6 +3,7 @@ import PublicPage from './pages/PublicPage';
 import DashboardPage from './pages/DashboardPage';
 import MenuPage from './pages/MenuPage';
 import StoreCoverPage from './pages/client/StoreCoverPage';
+import TableScanPage from './pages/client/TableScanPage';
 import LoginPage from './pages/LoginPage';
 import ProductionPage from './pages/ProductionPage';
 import FloorPage from './pages/FloorPage';
@@ -19,6 +20,7 @@ export default function App() {
       <Route path="/producao" element={<ProductionPage />} />
       <Route path="/salao" element={<FloorPage />} />
       <Route path="/gestao" element={<ManagementPage />} />
+      <Route path="/t/:slug/:tableToken" element={<TableScanPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
