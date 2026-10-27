@@ -24,6 +24,15 @@ export default function App() {
       <Route path="/t/:slug/identificacao" element={<IdentificationPage />} />
       <Route path="/t/:slug/mesa" element={<TableNumberPage />} />
       <Route
+        path="/t/:slug/comandas"
+        element={
+          <ClientPlaceholderPage
+            title="Comandas da mesa"
+            description="Você já está identificado. As comandas da mesa entram na próxima parte do projeto."
+          />
+        }
+      />
+      <Route
         path="/t/:slug/balcao"
         element={
           <ClientPlaceholderPage
