@@ -74,7 +74,7 @@ export default function InvalidQrScreen({ slug, token, onRetry }: InvalidQrScree
         <ActionButton sx={{ mt: 6 }} onClick={onRetry}>
           Tentar de novo
         </ActionButton>
-        <ActionButton tone="secondary" sx={{ mt: 3 }} onClick={() => navigate(`/t/${slug}/mesa`)}>
+        <ActionButton tone="secondary" sx={{ mt: 3 }} onClick={() => navigate(`/t/${slug}/mesa?trocar=1`)}>
           Informar a mesa na mão
         </ActionButton>
       </Box>
