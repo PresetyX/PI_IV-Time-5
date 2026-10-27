@@ -15,6 +15,10 @@ export class ApiError extends Error {
   }
 }
 
+export interface RequestOptions {
+  anonymous?: boolean;
+}
+
 const BASE_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8080';
 const TOKEN_KEY = 'pedeai.token';
 
@@ -30,12 +34,17 @@ export function saveToken(token: string | null): void {
   }
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  options: RequestOptions = {},
+): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }
-  const token = getToken();
+  const token = options.anonymous ? null : getToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -62,9 +71,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>('GET', path),
-  post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
-  put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
-  patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
-  delete: <T>(path: string) => request<T>('DELETE', path),
+  get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, undefined, options),
+  post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+    request<T>('POST', path, body, options),
+  put: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+    request<T>('PUT', path, body, options),
+  patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+    request<T>('PATCH', path, body, options),
+  delete: <T>(path: string, options?: RequestOptions) => request<T>('DELETE', path, undefined, options),
 };
