@@ -95,7 +95,12 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
-O Java não lê arquivos `.env` sozinho: exporte as variáveis no terminal antes de subir cada processo, ou configure-as na sua IDE.
+Como cada processo lê as variáveis:
+
+- **`backend/`** lê o `backend/.env` sozinho, pela dependência `spring-dotenv`. O arquivo é procurado no diretório de trabalho do processo: `mvn -f backend/pom.xml spring-boot:run` já usa a pasta `backend/`; na IDE, configure o diretório de trabalho da execução como `backend/`.
+- **Prioridade no backend:** uma variável de ambiente definida no terminal, na IDE ou no servidor vence o valor do `backend/.env`. Assim dá para sobrescrever um valor só, por exemplo `JWT_SECRET=... mvn -f backend/pom.xml spring-boot:run`, sem editar o arquivo.
+- **`server/`** é Java puro e não lê `.env`: exporte `SOCKET_PORT` no terminal ou deixe o padrão 5000.
+- **`frontend/`** lê o `frontend/.env` pelo Rsbuild.
 
 `server/.env.example`:
 
