@@ -1,6 +1,6 @@
 # Protocolo do socket
 
-O `server/` expõe um protocolo de texto sobre TCP, na porta 5000 por padrão (variável `SOCKET_PORT`). O `backend/` é o único cliente em produção. O `TestClient` serve para testar à mão.
+O `server/` expõe um protocolo de texto sobre TCP, na porta 5000 por padrão (variável `SOCKET_PORT`). O `server/` não acessa banco: ele só valida dados que o `backend/` envia antes de aceitar um pedido ou um pagamento. O `backend/` é o único cliente em produção. O `TestClient` serve para testar à mão.
 
 ## Regras gerais
 
@@ -43,15 +43,28 @@ O JSON é compacto, em uma única linha. Em `ERROR`, o cliente deve separar a li
 
 ## Comandos
 
-Todo dado de negócio é filtrado por `tenantId` dentro do servidor. O cliente nunca envia `tenantId`: ele identifica o estabelecimento pelo `slug`.
-
 | Comando | Parâmetros | Resposta | Erros |
 | --- | --- | --- | --- |
-| `PING` | nenhum | `{"status":"ok","database":"connected"}` ou `{"status":"ok","database":"disconnected"}` | nenhum |
-| `TENANT_GET` | `slug` | Documento do tenant, com `_id` devolvido como `id` | `MISSING_PARAM`, `NOT_FOUND`, `DATABASE_UNAVAILABLE` |
-| `MENU_LIST` | `tenant` (o `slug` do estabelecimento) | `{"tenant":{...},"categories":[{"id","name","products":[...]}]}` apenas com categorias ativas e produtos disponíveis | `MISSING_PARAM`, `NOT_FOUND`, `DATABASE_UNAVAILABLE` |
+| `PING` | nenhum | `{"status":"ok"}` | nenhum |
+| `VALIDATE_ORDER` | `items`, `totalCents`, `computedCents`, `openAt`, `closeAt`, `now` | `{"valid":true,"totalCents":5400}` | `INVALID_PARAMS`, `CLOSED_HOURS`, `TOTAL_MISMATCH` |
 
-Comandos declarados e ainda não implementados respondem `ERROR|NOT_IMPLEMENTED|...`: `PRODUCT_UPSERT`, `TABLE_LIST`, `BILL_OPEN`, `BILL_GET`, `BILL_LIST`, `BILL_CLOSE`, `ORDER_CREATE`, `ORDER_QUEUE`, `ORDER_STATUS`, `TICKET_NEXT`, `REPORT_SUMMARY` e `USER_BY_EMAIL`.
+### VALIDATE_ORDER
+
+Parâmetros:
+
+| Parâmetro | Formato |
+| --- | --- |
+| `items` | Array JSON. Cada item tem `unitPriceCents` (inteiro), `quantity` (inteiro), `note` (texto, opcional) e `options` (lista de objetos com `deltaCents`, opcional). Os nomes seguem os itens do pedido em `banco/init-mongo.js` |
+| `totalCents` | Total informado no pedido, em centavos |
+| `computedCents` | Total que o backend calculou com os preços do banco, em centavos |
+| `openAt`, `closeAt` | Horário de abertura e de fechamento da loja, `HH:mm` |
+| `now` | Hora atual no fuso da loja, `HH:mm` |
+
+Regras, nesta ordem:
+
+1. Todos os parâmetros presentes e no formato certo; `items` com ao menos um item; `quantity` entre 1 e 20; `note` com até 140 caracteres; valores em centavos inteiros e não negativos. Se falhar: `INVALID_PARAMS`.
+2. `now` dentro do horário da loja. Se `closeAt` é menor que `openAt`, o expediente atravessa a meia-noite. Se falhar: `CLOSED_HOURS`.
+3. A soma dos itens (`quantity` vezes `unitPriceCents` mais os `deltaCents` das opções) é igual a `computedCents`, e `totalCents` é igual a `computedCents`. Se falhar: `TOTAL_MISMATCH`.
 
 ## Códigos de erro
 
@@ -60,10 +73,9 @@ Comandos declarados e ainda não implementados respondem `ERROR|NOT_IMPLEMENTED|
 | `EMPTY_REQUEST` | Linha vazia |
 | `UNKNOWN_COMMAND` | Comando que não existe |
 | `INVALID_PARAM` | Parâmetro fora do formato `chave=valor` |
-| `MISSING_PARAM` | Parâmetro obrigatório ausente |
-| `NOT_FOUND` | Registro não encontrado |
-| `NOT_IMPLEMENTED` | Comando declarado, ainda sem implementação |
-| `DATABASE_UNAVAILABLE` | O servidor não alcançou o MongoDB |
+| `INVALID_PARAMS` | Parâmetro de `VALIDATE_ORDER` ausente ou inválido |
+| `CLOSED_HOURS` | Pedido fora do horário da loja |
+| `TOTAL_MISMATCH` | Total informado não confere com a soma |
 | `INTERNAL` | Falha inesperada |
 
 ## Exemplos
@@ -72,21 +84,21 @@ Verificar o servidor:
 
 ```
 > PING
-OK|{"status":"ok","database":"connected"}
+OK|{"status":"ok"}
 ```
 
-Buscar um estabelecimento que não existe:
+Pedido válido:
 
 ```
-> TENANT_GET|slug=naoexiste
-ERROR|NOT_FOUND|Tenant not found: naoexiste
+> VALIDATE_ORDER|items=[{"unitPriceCents":3200,"quantity":1,"options":[{"deltaCents":600}]},{"unitPriceCents":800,"quantity":2}]|totalCents=5400|computedCents=5400|openAt=17:00|closeAt=23:00|now=20:30
+OK|{"valid":true,"totalCents":5400}
 ```
 
-Listar o cardápio:
+Total que não confere:
 
 ```
-> MENU_LIST|tenant=demo
-OK|{"tenant":{"id":"6650...","slug":"demo","name":"Bar do Demo"},"categories":[{"id":"6651...","name":"Bebidas","products":[{"id":"6652...","name":"Suco","description":"Laranja","priceCents":800}]}]}
+> VALIDATE_ORDER|items=[{"unitPriceCents":3200,"quantity":1,"options":[{"deltaCents":600}]},{"unitPriceCents":800,"quantity":2}]|totalCents=5000|computedCents=5400|openAt=17:00|closeAt=23:00|now=20:30
+ERROR|TOTAL_MISMATCH|Total 5000 does not match computed 5400 (items sum 5400)
 ```
 
 ## Testando pela linha de comando

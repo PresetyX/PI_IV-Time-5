@@ -35,15 +35,15 @@ Fora do escopo desta versão: confirmação automática de pagamento por gateway
 
 ### Backend (`backend/`)
 
-- **Java 17** com **Spring Boot 3** (Spring Web, Spring Security e Validation)
-- Expõe HTTP para o front e conversa com o `server/` por socket. Não acessa o banco.
+- **Java 17** com **Spring Boot 3** (Spring Web, Spring Data MongoDB, Spring Security e Validation)
+- Expõe HTTP para o front e acessa o MongoDB com Spring Data
+- Consulta o `server/` por socket para validar pedido e pagamento antes de aceitá-los
 - Build com **Maven**
 
 ### Server (`server/`)
 
-- **Java 17** puro, socket TCP na porta 5000
-- Única dependência: driver `mongodb-driver-sync`
-- É o único processo que fala com o banco
+- **Java 17** puro, socket TCP na porta 5000, sem nenhuma dependência
+- Não acessa o banco: só valida, por socket, o que o `backend/` pede (comandos `PING` e `VALIDATE_ORDER`)
 - Build com **Maven**
 
 ### Banco de dados
@@ -65,20 +65,21 @@ Fora do escopo desta versão: confirmação automática de pagamento por gateway
 
 ```
 PI_IV-Time-5/
-├── server/           # Java puro, socket TCP, único que acessa o MongoDB
+├── server/           # Java puro, socket TCP de validação, sem acesso ao banco
 │   ├── src/main/java/br/puccampinas/pedeai/server/
 │   └── pom.xml
-├── backend/          # API HTTP em Java com Spring Boot, sem acesso ao banco
+├── backend/          # API HTTP em Java com Spring Boot e Spring Data MongoDB
 │   ├── src/main/java/br/puccampinas/pedeai/
 │   └── pom.xml
 ├── frontend/         # Aplicação React com Rsbuild
 │   ├── src/
 │   └── package.json
+├── banco/            # Scripts do MongoDB: init-mongo.js (coleções e índices) e seed.js (dados de exemplo)
 ├── docs/             # Contratos, modelo de dados, arquitetura e protocolo do socket
 └── README.md
 ```
 
-Fluxo de uma requisição: `frontend` chama `backend` por HTTP, `backend` chama `server` por socket e `server` consulta o MongoDB.
+Fluxo de uma requisição: `frontend` chama `backend` por HTTP, `backend` lê e grava no MongoDB e, antes de aceitar pedido e pagamento, pede a validação ao `server` por socket.
 
 ## Como rodar
 
@@ -99,16 +100,16 @@ O Java não lê arquivos `.env` sozinho: exporte as variáveis no terminal antes
 `server/.env.example`:
 
 ```
-MONGODB_URI=mongodb+srv://USUARIO:SENHA@cluster.xxxxx.mongodb.net/pedeai
 SOCKET_PORT=5000
 ```
 
 `backend/.env.example`:
 
 ```
+MONGODB_URI=mongodb+srv://USUARIO:SENHA@cluster.xxxxx.mongodb.net/pedeai
 SOCKET_HOST=localhost
 SOCKET_PORT=5000
-JWT_SECRET=troque-esta-chave
+JWT_SECRET=troque-por-uma-chave-com-pelo-menos-32-caracteres
 JWT_EXPIRATION_MINUTES=480
 CORS_ORIGINS=http://localhost:3000
 ```
@@ -141,7 +142,7 @@ O protocolo está em `docs/protocolo.md`.
 mvn -f backend/pom.xml spring-boot:run
 ```
 
-Confira em `http://localhost:8080/health`. A resposta mostra o estado do server e do banco. Sem o server no ar, a resposta é 503.
+Confira em `http://localhost:8080/health`. A resposta mostra o estado do server (pelo socket) e do banco (pelo Spring Data). Se qualquer um dos dois estiver fora, a resposta é 503.
 
 ### 4. Frontend (terceiro)
 
@@ -155,14 +156,21 @@ A aplicação sobe em `http://localhost:3000` e consome o backend pelo endereço
 
 ### 5. Dados de exemplo
 
-O script de carga com um estabelecimento de demonstração ainda não existe. Enquanto isso, o `MENU_LIST` só devolve dados se existirem documentos nas coleções `tenant`, `category` e `product`, conforme `docs/modelo.md`.
+Com o `mongosh` instalado, crie as coleções e os índices e depois carregue a casa de demonstração `triunfo-lanches`:
+
+```bash
+mongosh "<string de conexao>" banco/init-mongo.js
+mongosh "<string de conexao>" banco/seed.js
+```
+
+O menu da casa fica em `GET /api/public/stores/triunfo-lanches/menu`.
 
 ## Convenções
 
 Estas regras valem para todo o código e evitam retrabalho:
 
-- **Só o `server/` acessa o banco.** O `backend/` pede tudo pelo socket.
-- **Multiempresa.** Toda coleção, exceto `tenant`, tem `tenantId` e toda consulta filtra por ele. Nenhuma exceção.
+- **Só o `backend/` acessa o banco.** O `server/` não tem driver nem conexão: ele só valida o que o backend envia pelo socket.
+- **Multiempresa.** Toda coleção, exceto `store`, tem `storeId` e toda consulta filtra por ele. Nenhuma exceção.
 - **Código em inglês.** Pastas, pacotes, classes, métodos, variáveis, coleções e campos são em inglês. README e `docs/` ficam em português.
 - **Dinheiro em centavos**, sempre como inteiro. `3200` é R$ 32,00. Nada de ponto flutuante em valor.
 - **Datas em UTC** no banco, convertidas para o fuso da casa na exibição.

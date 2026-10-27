@@ -4,28 +4,40 @@
 
 ## Visão geral
 
-O sistema tem três processos:
+O sistema tem três processos e um banco:
 
 ```text
-frontend ──HTTP──▶ backend ──socket TCP──▶ server ──▶ MongoDB
-:3000              :8080                   :5000
+frontend ──HTTP──▶ backend ──Spring Data──▶ MongoDB
+:3000              :8080 │
+                         └──socket TCP──▶ server
+                                          :5000
 ```
 
 | Processo | Pasta | Tecnologia | Papel |
 | --- | --- | --- | --- |
 | Frontend | `frontend/` | React 18, TypeScript, Rsbuild | Interface do cliente e do painel |
-| Backend | `backend/` | Java 17, Spring Boot 3 | Expõe HTTP para o front, valida e autentica. Não acessa o banco |
-| Server | `server/` | Java 17 puro | Escuta um socket TCP e é o único que fala com o MongoDB |
+| Backend | `backend/` | Java 17, Spring Boot 3, Spring Data MongoDB | Expõe HTTP, autentica e é o único que acessa o banco |
+| Server | `server/` | Java 17 puro | Escuta um socket TCP e valida pedido e pagamento antes de o backend aceitá-los |
 
 ## Regra de acesso ao banco
 
-**Só o `server/` acessa o banco.** O `backend/` não tem o driver do MongoDB nem repositórios: toda leitura e escrita passa por um comando do protocolo descrito em `docs/protocolo.md`. A dependência `mongodb-driver-sync` é a única do `server/`.
+**Só o `backend/` acessa o banco.** O `server/` não tem driver do MongoDB, conexão nem repositórios: ele recebe os dados pelo socket, valida e responde. Não há dependências no `server/`.
 
-Toda consulta do `server/` filtra por `tenantId`. Os repositórios herdam de `BaseRepository`, cujos métodos de busca exigem o `tenantId`.
+Os nomes das coleções são os de `banco/init-mongo.js`. Toda coleção, exceto `store`, tem `storeId`, e toda consulta do `backend/` filtra por ele. Dinheiro é inteiro em centavos e datas ficam em UTC.
 
 ## Backend
 
-Pacote raiz `br.puccampinas.pedeai`. Os subpacotes de negócio são `menu`, `bill`, `tenant`, `table`, `payment`, `order`, `report` e `user`. `common` guarda o tratamento de erros e o `/health`, `config` guarda segurança e CORS, e `socket` guarda o cliente do protocolo (`SocketClient` e `SocketResponse`, timeout de 3 segundos).
+Pacote raiz `br.puccampinas.pedeai`.
+
+| Pacote | Conteúdo |
+| --- | --- |
+| `store` | Documento `Store` e seu repositório |
+| `menu` | Documentos `Category` e `Product`, repositórios, `MenuService` e o endpoint público do cardápio |
+| `user` | Documento `User` e seu repositório |
+| `bill`, `order`, `payment`, `report`, `table` | Ainda vazios |
+| `common` | Tratamento de erros e o `/health` |
+| `config` | Segurança, CORS e timeout do cliente do MongoDB |
+| `socket` | Cliente do protocolo (`SocketClient` e `SocketResponse`, timeout de 3 segundos) |
 
 ## Server
 
@@ -34,11 +46,10 @@ Pacote raiz `br.puccampinas.pedeai.server`:
 | Pacote | Conteúdo |
 | --- | --- |
 | `protocol` | Comandos, leitura da linha, JSON e o `ConnectionHandler` |
-| `repository` | Acesso às coleções, sempre com `tenantId` |
-| `service` | Regra de cada comando |
-| `infra` | Conexão com o MongoDB, configuração e o `SocketServer` |
+| `service` | `OrderValidator`, a regra do `VALIDATE_ORDER` |
+| `infra` | Configuração e o `SocketServer` |
 
-O `SocketServer` aceita conexões em laço e entrega cada uma a uma thread de um pool fixo. Não há bibliotecas além do driver do MongoDB: o JSON é montado e lido por uma classe própria.
+O `SocketServer` aceita conexões em laço e entrega cada uma a uma thread de um pool fixo. O JSON é montado e lido por uma classe própria. O protocolo está em `docs/protocolo.md`.
 
 ## Frontend
 

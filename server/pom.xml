@@ -9,21 +9,13 @@
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>pedeai-server</name>
-    <description>Pede Aí - servidor de socket com acesso ao MongoDB</description>
+    <description>Pede Aí - servidor de socket de validação de pedidos</description>
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <exec.mainClass>br.puccampinas.pedeai.server.ServerApplication</exec.mainClass>
     </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongodb-driver-sync</artifactId>
-            <version>4.11.2</version>
-        </dependency>
-    </dependencies>
 
     <build>
         <plugins>

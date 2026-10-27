@@ -12,11 +12,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.mongodb.MongoException;
-
-import br.puccampinas.pedeai.server.infra.MongoConnection;
-import br.puccampinas.pedeai.server.service.MenuService;
-import br.puccampinas.pedeai.server.service.TenantService;
+import br.puccampinas.pedeai.server.service.OrderValidator;
 
 public class ConnectionHandler implements Runnable {
 
@@ -25,16 +21,11 @@ public class ConnectionHandler implements Runnable {
     private static final int MAX_LINE_LENGTH = 8192;
 
     private final Socket socket;
-    private final MongoConnection mongo;
-    private final TenantService tenantService;
-    private final MenuService menuService;
+    private final OrderValidator orderValidator;
 
-    public ConnectionHandler(Socket socket, MongoConnection mongo, TenantService tenantService,
-            MenuService menuService) {
+    public ConnectionHandler(Socket socket, OrderValidator orderValidator) {
         this.socket = socket;
-        this.mongo = mongo;
-        this.tenantService = tenantService;
-        this.menuService = menuService;
+        this.orderValidator = orderValidator;
     }
 
     @Override
@@ -62,9 +53,6 @@ public class ConnectionHandler implements Runnable {
             return Protocol.ok(SimpleJson.write(dispatch(request)));
         } catch (CommandException e) {
             return Protocol.error(e.getCode(), e.getMessage());
-        } catch (MongoException e) {
-            LOGGER.log(Level.WARNING, "Database failure", e);
-            return Protocol.error("DATABASE_UNAVAILABLE", "Database is not available");
         } catch (RuntimeException e) {
             LOGGER.log(Level.SEVERE, "Unexpected failure", e);
             return Protocol.error("INTERNAL", "Internal server error");
@@ -72,22 +60,15 @@ public class ConnectionHandler implements Runnable {
     }
 
     private Object dispatch(Request request) {
-        Command command = request.command();
-        if (!command.isImplemented()) {
-            throw new CommandException("NOT_IMPLEMENTED", "Command not implemented: " + command);
-        }
-        return switch (command) {
+        return switch (request.command()) {
             case PING -> ping();
-            case TENANT_GET -> tenantService.getBySlug(request.require("slug"));
-            case MENU_LIST -> menuService.list(request.require("tenant"));
-            default -> throw new CommandException("NOT_IMPLEMENTED", "Command not implemented: " + command);
+            case VALIDATE_ORDER -> orderValidator.validate(request.params());
         };
     }
 
     private Map<String, Object> ping() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "ok");
-        result.put("database", mongo.isConnected() ? "connected" : "disconnected");
         return result;
     }
 
