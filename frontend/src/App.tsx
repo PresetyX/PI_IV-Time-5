@@ -6,6 +6,7 @@ import StoreCoverPage from './pages/client/StoreCoverPage';
 import TableScanPage from './pages/client/TableScanPage';
 import ServiceModePage from './pages/client/ServiceModePage';
 import ClientPlaceholderPage from './pages/client/ClientPlaceholderPage';
+import IdentificationPage from './pages/client/IdentificationPage';
 import LoginPage from './pages/LoginPage';
 import ProductionPage from './pages/ProductionPage';
 import FloorPage from './pages/FloorPage';
@@ -19,6 +20,7 @@ export default function App() {
       <Route path="/t/:slug" element={<StoreCoverPage />} />
       <Route path="/t/:slug/cardapio" element={<MenuPage />} />
       <Route path="/t/:slug/entrada" element={<ServiceModePage />} />
+      <Route path="/t/:slug/identificacao" element={<IdentificationPage />} />
       <Route
         path="/t/:slug/balcao"
         element={
