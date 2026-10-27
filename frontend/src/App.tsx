@@ -4,6 +4,8 @@ import DashboardPage from './pages/DashboardPage';
 import MenuPage from './pages/MenuPage';
 import StoreCoverPage from './pages/client/StoreCoverPage';
 import TableScanPage from './pages/client/TableScanPage';
+import ServiceModePage from './pages/client/ServiceModePage';
+import ClientPlaceholderPage from './pages/client/ClientPlaceholderPage';
 import LoginPage from './pages/LoginPage';
 import ProductionPage from './pages/ProductionPage';
 import FloorPage from './pages/FloorPage';
@@ -16,6 +18,25 @@ export default function App() {
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/t/:slug" element={<StoreCoverPage />} />
       <Route path="/t/:slug/cardapio" element={<MenuPage />} />
+      <Route path="/t/:slug/entrada" element={<ServiceModePage />} />
+      <Route
+        path="/t/:slug/balcao"
+        element={
+          <ClientPlaceholderPage
+            title="Retirar no balcão"
+            description="O pedido para retirada com senha entra na próxima parte do projeto."
+          />
+        }
+      />
+      <Route
+        path="/t/:slug/entrega"
+        element={
+          <ClientPlaceholderPage
+            title="Receber em casa"
+            description="O pedido para entrega entra numa próxima parte do projeto."
+          />
+        }
+      />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/producao" element={<ProductionPage />} />
       <Route path="/salao" element={<FloorPage />} />
