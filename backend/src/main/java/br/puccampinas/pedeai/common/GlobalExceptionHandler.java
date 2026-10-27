@@ -30,6 +30,11 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.BAD_REQUEST, "validation", "Request body is invalid or missing");
     }
 
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRequest(InvalidRequestException e) {
+        return response(HttpStatus.BAD_REQUEST, "validation", e.getMessage());
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException e) {
         return response(HttpStatus.NOT_FOUND, "not_found", e.getMessage());
