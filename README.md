@@ -109,7 +109,7 @@ SOCKET_PORT=5000
 MONGODB_URI=mongodb+srv://USUARIO:SENHA@cluster.xxxxx.mongodb.net/pedeai
 SOCKET_HOST=localhost
 SOCKET_PORT=5000
-JWT_SECRET=troque-esta-chave
+JWT_SECRET=troque-por-uma-chave-com-pelo-menos-32-caracteres
 JWT_EXPIRATION_MINUTES=480
 CORS_ORIGINS=http://localhost:3000
 ```

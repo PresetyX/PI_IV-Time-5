@@ -35,6 +35,16 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.CONFLICT, "conflict", e.getMessage());
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException e) {
+        return response(HttpStatus.UNAUTHORIZED, "invalid_credentials", e.getMessage());
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<ErrorResponse> handleAccountLocked(AccountLockedException e) {
+        return response(HttpStatus.LOCKED, "account_locked", e.getMessage());
+    }
+
     @ExceptionHandler(ServerUnavailableException.class)
     public ResponseEntity<ErrorResponse> handleServerUnavailable(ServerUnavailableException e) {
         return response(HttpStatus.SERVICE_UNAVAILABLE, "server_unavailable", e.getMessage());
