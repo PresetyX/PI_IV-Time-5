@@ -6,7 +6,7 @@
 // Gere o seu com: new BCryptPasswordEncoder().encode("pedeai123")
 
 const DB = db.getSiblingDB(db.getName());
-const SENHA = "$2a$10$N9qo8uLOickgx2ZMRZoMye1VdLCTgJ.HBu0PHGSh7ZvL8sWJQ6Zx2";
+const SENHA = "$2b$10$SaVSrPjpC/rl2Tuh4yp26u5HD895.sdgNtAxVjTpjvJ7gjgNiDL7e";
 const SLUG = "triunfo-lanches";
 const agora = new Date();
 
