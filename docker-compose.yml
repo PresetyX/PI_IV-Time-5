@@ -1,0 +1,60 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Cria coleções, índices e o estabelecimento de demonstração (idempotente) e encerra
+  db-init:
+    image: mongo:7
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - ./server/scripts/init-db.js:/init-db.js:ro
+    command: ["mongosh", "mongodb://mongo:27017", "/init-db.js"]
+    restart: "no"
+
+  server:
+    build: ./server
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
+      SOCKET_PORT: 5000
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      SOCKET_HOST: server
+      SOCKET_PORT: 5000
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-em-producao-0123456789}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-60}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - server
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo-data:
