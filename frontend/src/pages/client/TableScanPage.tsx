@@ -157,7 +157,7 @@ function ScanConfirmation({ store, table, token }: ScanConfirmationProps) {
             </Typography>
           </Box>
           <Button
-            onClick={() => navigate(`/t/${store.slug}/mesa`)}
+            onClick={() => navigate(`/t/${store.slug}/mesa?trocar=1`)}
             sx={{
               minHeight: touchTarget,
               px: 4,
