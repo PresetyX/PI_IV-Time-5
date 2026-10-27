@@ -2,11 +2,11 @@
 // Uso: mongosh "<string de conexao>" banco/seed.js
 // Apaga e recria os dados da casa de exemplo. Não rode em produção.
 //
-// A senha de todos os usuários é "pedeai123". O hash abaixo é BCrypt com custo 10.
-// Gere o seu com: new BCryptPasswordEncoder().encode("pedeai123")
+// A senha de todos os usuários é "pedeai123". O hash abaixo é BCrypt com custo 12.
+// Somente desenvolvimento: nunca reutilize essa senha em produção.
 
 const DB = db.getSiblingDB(db.getName());
-const SENHA = "$2a$10$N9qo8uLOickgx2ZMRZoMye1VdLCTgJ.HBu0PHGSh7ZvL8sWJQ6Zx2";
+const SENHA = "$2b$12$r1/NdlRpM57O/A5BIma0ievEHseD27XMJIdRMSAmSS1Pg5/A.M1zS";
 const SLUG = "triunfo-lanches";
 const agora = new Date();
 
