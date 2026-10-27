@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import PublicPage from './pages/PublicPage';
 import DashboardPage from './pages/DashboardPage';
 import MenuPage from './pages/MenuPage';
+import StoreCoverPage from './pages/client/StoreCoverPage';
 import LoginPage from './pages/LoginPage';
 import ProductionPage from './pages/ProductionPage';
 import FloorPage from './pages/FloorPage';
@@ -12,6 +13,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<PublicPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/t/:slug" element={<StoreCoverPage />} />
       <Route path="/t/:slug/cardapio" element={<MenuPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/producao" element={<ProductionPage />} />
