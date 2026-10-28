@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Alert, Box, ButtonBase, Typography } from '@mui/material';
 import ActionButton from '../../components/client/ActionButton';
 import ClientScreen from '../../components/client/ClientScreen';
+import ConnectionLostScreen from '../../components/client/ConnectionLostScreen';
 import { ClientError, ClientLoading } from '../../components/client/ClientStates';
 import { LockIcon } from '../../components/client/icons';
 import { Avatar, InfoNote, ScreenHeader, SectionLabel } from '../../components/client/TabParts';
@@ -72,7 +73,7 @@ export default function MyTabPage() {
   if (missing) return <Navigate to={`/t/${slug}/comandas`} replace />;
   if (state.status === 'loading' || (tab === null && !loadFailed)) return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
-  if (tab === null) return <ClientError onRetry={load} />;
+  if (tab === null) return <ConnectionLostScreen slug={slug} onRetry={load} />;
 
   const current = tab;
 
