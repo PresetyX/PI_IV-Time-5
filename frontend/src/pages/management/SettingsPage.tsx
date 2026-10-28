@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Box, Button, ButtonBase, FormControlLabel, Switch, TextField, Typography } from '@mui/material';
 import ManagementLayout, { Card, LoadState } from '../../components/management/ManagementLayout';
+import BrandMark from '../../components/BrandMark';
 import { useLoader } from '../../hooks/useLoader';
 import { ApiError } from '../../services/api';
 import { fetchStoreSettings, saveStoreSettings } from '../../services/management';
@@ -135,7 +136,9 @@ export default function SettingsPage() {
             <Typography sx={{ fontWeight: fontWeight.extraBold, mb: 4 }}>Prévia no celular</Typography>
             <Box sx={{ border: `1px solid ${colors.border}`, borderRadius: `${radius.card}px`, overflow: 'hidden' }}>
               <Box sx={{ bgcolor: form.primaryColor, color: colors.background, p: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
-                <Box sx={{ width: 36, height: 36, borderRadius: '10px', bgcolor: colors.background }} />
+                <Box sx={{ width: 36, height: 36, borderRadius: '10px', bgcolor: colors.background, color: colors.text, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <BrandMark aria-hidden sx={{ fontSize: 26 }} />
+                </Box>
                 <Typography sx={{ fontWeight: fontWeight.extraBold, flex: 1 }}>{form.name || 'Sua casa'}</Typography>
                 <Box sx={{ px: 2, py: 1, borderRadius: 999, bgcolor: 'rgba(255,255,255,0.25)', fontSize: fontSize.small, fontWeight: fontWeight.extraBold }}>
                   Mesa 05

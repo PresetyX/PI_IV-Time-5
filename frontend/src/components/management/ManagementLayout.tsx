@@ -4,7 +4,7 @@ import { Alert, Box, Button, ButtonBase, CircularProgress, Typography } from '@m
 import { ApiError, getToken, saveToken } from '../../services/api';
 import { currentRole } from '../../services/auth';
 import type { Role } from '../../services/auth';
-import { ReceiptIcon } from '../client/icons';
+import BrandMark from '../BrandMark';
 import { tokens } from '../../theme/theme';
 
 const { colors, fontSize, fontWeight, radius } = tokens;
@@ -82,20 +82,7 @@ export default function ManagementLayout({ title, subtitle, actions, back, sideb
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: '12px',
-              bgcolor: colors.background,
-              color: colors.text,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <ReceiptIcon sx={{ fontSize: 22 }} />
-          </Box>
+          <BrandMark aria-hidden sx={{ fontSize: 44, color: colors.background }} />
           <Box>
             <Typography sx={{ fontWeight: fontWeight.extraBold }}>Pede Aí</Typography>
             <Typography sx={{ fontSize: fontSize.small, color: 'rgba(255,255,255,0.6)' }}>
