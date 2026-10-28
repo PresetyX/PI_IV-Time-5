@@ -57,6 +57,11 @@ public class TabService {
                 .toList();
     }
 
+    /** A comanda aberta de que o convidado faz parte, para quem precisa ler a conta dela. */
+    public Tab requireMyTab(AuthenticatedUser guest) {
+        return findMine(tableSession(guest)).orElseThrow(() -> new ResourceNotFoundException("You have no open tab"));
+    }
+
     public TabResponse open(AuthenticatedUser guest) {
         GuestSession session = tableSession(guest);
         if (findMine(session).isPresent()) {

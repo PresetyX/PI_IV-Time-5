@@ -21,9 +21,11 @@ import jakarta.validation.Valid;
 public class TabController {
 
     private final TabService tabService;
+    private final BillService billService;
 
-    public TabController(TabService tabService) {
+    public TabController(TabService tabService, BillService billService) {
         this.tabService = tabService;
+        this.billService = billService;
     }
 
     @GetMapping
@@ -40,6 +42,11 @@ public class TabController {
     @GetMapping("/mine")
     public TabResponse mine(@AuthenticationPrincipal AuthenticatedUser guest) {
         return tabService.mine(guest);
+    }
+
+    @GetMapping("/mine/bill")
+    public BillResponse bill(@AuthenticationPrincipal AuthenticatedUser guest) {
+        return billService.billOfMyTab(guest);
     }
 
     @PostMapping("/{tabId}/join")
