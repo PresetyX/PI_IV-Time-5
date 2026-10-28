@@ -15,6 +15,8 @@ import BillPage from './pages/client/BillPage';
 import LoginPage from './pages/LoginPage';
 import OperationsWorkspace from './pages/OperationsWorkspace';
 import ManagementPage from './pages/ManagementPage';
+import AbcPage from './pages/management/AbcPage';
+import TeamPage from './pages/management/TeamPage';
 
 export default function App() {
   return (
@@ -73,6 +75,8 @@ export default function App() {
       <Route path="/contas/*" element={<OperationsWorkspace />} />
       <Route path="/fila-espera" element={<OperationsWorkspace />} />
       <Route path="/gestao" element={<ManagementPage />} />
+      <Route path="/gestao/curva-abc" element={<AbcPage />} />
+      <Route path="/gestao/equipe" element={<TeamPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
