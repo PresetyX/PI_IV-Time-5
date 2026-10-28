@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Alert, Box, ButtonBase, CircularProgress, Typography } from '@mui/material';
 import ClientScreen from '../../components/client/ClientScreen';
+import ConnectionLostScreen from '../../components/client/ConnectionLostScreen';
 import { ClientError, ClientLoading } from '../../components/client/ClientStates';
 import { ChevronRightIcon, PlusIcon } from '../../components/client/icons';
 import { Avatar, InfoNote, ScreenHeader, SectionLabel } from '../../components/client/TabParts';
@@ -50,7 +51,7 @@ export default function TabsPage() {
   if (gate) return <Navigate to={gate} replace />;
   if (state.status === 'loading' || (tabs === null && !loadFailed)) return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
-  if (tabs === null) return <ClientError onRetry={load} />;
+  if (tabs === null) return <ConnectionLostScreen slug={slug} onRetry={load} />;
 
   const table = readVisit(slug).table;
   const hasMine = tabs.some((tab) => tab.mine);
