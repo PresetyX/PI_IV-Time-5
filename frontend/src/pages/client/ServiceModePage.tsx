@@ -30,13 +30,15 @@ export default function ServiceModePage() {
 
 function ServiceModeChoice({ store }: { store: Store }) {
   const navigate = useNavigate();
-  const table = readVisit(store.slug).table;
+  const visit = readVisit(store.slug);
+  const table = visit.table;
   const street = formatStreet(store.address);
   const offers = (mode: ServiceMode) => store.serviceModes.includes(mode);
   const serviceFee = store.serviceFeeBasisPoints / 100;
 
   function chooseTable() {
-    navigate(table ? `/t/${store.slug}/identificacao` : `/t/${store.slug}/mesa?next=identificacao`);
+    if (visit.sessionId && visit.guestToken && table) navigate(`/t/${store.slug}/comandas`);
+    else navigate(table ? `/t/${store.slug}/identificacao` : `/t/${store.slug}/mesa?next=identificacao`);
   }
 
   return (
