@@ -62,3 +62,20 @@ export function formatClock(iso: string): string {
   const date = new Date(iso);
   return `${date.getHours()}h${String(date.getMinutes()).padStart(2, '0')}`;
 }
+
+export interface OrderItemInput {
+  productId: string;
+  quantity: number;
+  note?: string;
+}
+
+export interface PlacedOrder {
+  id: string;
+  number: number;
+  status: string;
+  totalCents: number;
+}
+
+export function placeOrder(slug: string, items: OrderItemInput[]): Promise<PlacedOrder> {
+  return api.post<PlacedOrder>('/api/tabs/mine/orders', { items }, guest(slug));
+}
