@@ -17,6 +17,8 @@ export class ApiError extends Error {
 
 export interface RequestOptions {
   anonymous?: boolean;
+  /** Token de convidado; quando informado, vale no lugar do token da equipe. */
+  token?: string;
 }
 
 const BASE_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8080';
@@ -44,7 +46,7 @@ async function request<T>(
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }
-  const token = options.anonymous ? null : getToken();
+  const token = options.token ?? (options.anonymous ? null : getToken());
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }

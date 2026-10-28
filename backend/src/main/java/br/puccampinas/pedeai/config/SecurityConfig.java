@@ -33,6 +33,7 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/health", "/api/public/**", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/tabs", "/api/tabs/**").hasRole("GUEST")
                         .anyRequest().hasAnyRole("OWNER", "MANAGER", "WAITER", "KITCHEN"));
         return http.build();
     }

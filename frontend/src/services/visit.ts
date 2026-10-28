@@ -4,6 +4,7 @@ export interface Visit {
   table?: TableInfo;
   scannedToken?: string;
   sessionId?: string;
+  guestToken?: string;
   customerName?: string;
 }
 
