@@ -22,10 +22,20 @@ public class TabController {
 
     private final TabService tabService;
     private final BillService billService;
+    private final OrderPlacementService orderPlacementService;
 
-    public TabController(TabService tabService, BillService billService) {
+    public TabController(TabService tabService, BillService billService,
+            OrderPlacementService orderPlacementService) {
         this.tabService = tabService;
         this.billService = billService;
+        this.orderPlacementService = orderPlacementService;
+    }
+
+    @PostMapping("/mine/orders")
+    @ResponseStatus(HttpStatus.CREATED)
+    public OrderPlacementService.PlacedOrder placeOrder(@AuthenticationPrincipal AuthenticatedUser guest,
+            @Valid @RequestBody PlaceOrderRequest request) {
+        return orderPlacementService.place(guest, request);
     }
 
     @GetMapping
