@@ -40,6 +40,11 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.NOT_FOUND, "not_found", e.getMessage());
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException e) {
+        return response(HttpStatus.FORBIDDEN, "forbidden", e.getMessage());
+    }
+
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException e) {
         return response(HttpStatus.CONFLICT, "conflict", e.getMessage());

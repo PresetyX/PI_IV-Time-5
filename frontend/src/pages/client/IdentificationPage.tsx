@@ -71,7 +71,12 @@ function IdentificationForm({ store, table }: { store: Store; table: TableInfo }
         name: name.trim(),
         phone: phoneDigits(phone) || undefined,
       });
-      updateVisit(store.slug, { sessionId: session.id, customerName: session.name, table: session.table ?? table });
+      updateVisit(store.slug, {
+        sessionId: session.id,
+        guestToken: session.token,
+        customerName: session.name,
+        table: session.table ?? table,
+      });
       navigate(`/t/${store.slug}/mesa`);
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 404) updateVisit(store.slug, { table: undefined });

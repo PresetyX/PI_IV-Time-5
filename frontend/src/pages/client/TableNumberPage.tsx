@@ -26,7 +26,7 @@ export default function TableNumberPage() {
   const visit = readVisit(slug);
   const changing = searchParams.get('trocar') === '1';
 
-  if (visit.sessionId && visit.table && !changing) return <Navigate to={`/t/${slug}/comandas`} replace />;
+  if (visit.sessionId && visit.guestToken && visit.table && !changing) return <Navigate to={`/t/${slug}/comandas`} replace />;
   if (state.status === 'loading') return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
   if (!state.store.status.acceptingOrders) return <ClosedStoreScreen store={state.store} />;

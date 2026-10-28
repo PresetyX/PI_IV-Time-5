@@ -8,6 +8,9 @@ import ServiceModePage from './pages/client/ServiceModePage';
 import ClientPlaceholderPage from './pages/client/ClientPlaceholderPage';
 import IdentificationPage from './pages/client/IdentificationPage';
 import TableNumberPage from './pages/client/TableNumberPage';
+import TabsPage from './pages/client/TabsPage';
+import JoinTabPage from './pages/client/JoinTabPage';
+import MyTabPage from './pages/client/MyTabPage';
 import LoginPage from './pages/LoginPage';
 import OperationsWorkspace from './pages/OperationsWorkspace';
 import ManagementPage from './pages/ManagementPage';
@@ -22,12 +25,15 @@ export default function App() {
       <Route path="/t/:slug/entrada" element={<ServiceModePage />} />
       <Route path="/t/:slug/identificacao" element={<IdentificationPage />} />
       <Route path="/t/:slug/mesa" element={<TableNumberPage />} />
+      <Route path="/t/:slug/comandas" element={<TabsPage />} />
+      <Route path="/t/:slug/comandas/minha" element={<MyTabPage />} />
+      <Route path="/t/:slug/comandas/:tabId/entrar" element={<JoinTabPage />} />
       <Route
-        path="/t/:slug/comandas"
+        path="/t/:slug/conta"
         element={
           <ClientPlaceholderPage
-            title="Comandas da mesa"
-            description="Você já está identificado. As comandas da mesa entram na próxima parte do projeto."
+            title="Resumo da conta"
+            description="O resumo com o total da comanda entra na próxima parte do projeto."
           />
         }
       />
