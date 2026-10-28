@@ -14,7 +14,7 @@ function storageKey(slug: string): string {
 
 export function readVisit(slug: string): Visit {
   try {
-    const raw = sessionStorage.getItem(storageKey(slug));
+    const raw = localStorage.getItem(storageKey(slug));
     return raw ? (JSON.parse(raw) as Visit) : {};
   } catch {
     return {};
@@ -24,7 +24,7 @@ export function readVisit(slug: string): Visit {
 export function updateVisit(slug: string, changes: Partial<Visit>): Visit {
   const next = { ...readVisit(slug), ...changes };
   try {
-    sessionStorage.setItem(storageKey(slug), JSON.stringify(next));
+    localStorage.setItem(storageKey(slug), JSON.stringify(next));
   } catch {
     return next;
   }
