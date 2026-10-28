@@ -35,14 +35,16 @@ public class OrderPlacementService {
     private final StoreService storeService;
     private final MongoTemplate mongo;
     private final Clock clock;
+    private final TabTotals tabTotals;
 
     public OrderPlacementService(TabService tabService, ProductRepository productRepository,
-            StoreService storeService, MongoTemplate mongo, Clock clock) {
+            StoreService storeService, MongoTemplate mongo, Clock clock, TabTotals tabTotals) {
         this.tabService = tabService;
         this.productRepository = productRepository;
         this.storeService = storeService;
         this.mongo = mongo;
         this.clock = clock;
+        this.tabTotals = tabTotals;
     }
 
     public PlacedOrder place(AuthenticatedUser guest, PlaceOrderRequest request) {
@@ -94,6 +96,7 @@ public class OrderPlacementService {
                 .append("createdAt", Date.from(now)), "order");
         mongo.insert(new Document("storeId", tab.storeId()).append("orderId", orderId)
                 .append("type", "CREATED").append("at", Date.from(now)), "orderEvent");
+        tabTotals.recalculate(tab.storeId(), tab.id());
         return new PlacedOrder(orderId.toHexString(), number, "RECEIVED", total);
     }
 
