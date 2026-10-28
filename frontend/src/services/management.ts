@@ -221,6 +221,17 @@ export function inviteMember(name: string, email: string, role: StaffRole): Prom
   return api.post<Invitation>('/api/management/team', { name, email, role });
 }
 
+export interface MemberChanges {
+  name: string;
+  email: string;
+  role: StaffRole;
+  active: boolean;
+}
+
+export function updateMember(id: string, changes: MemberChanges): Promise<TeamMember> {
+  return api.put<TeamMember>(`/api/management/team/${id}`, changes);
+}
+
 export function deactivateMember(id: string): Promise<unknown> {
   return api.post(`/api/management/team/${id}/deactivate`);
 }

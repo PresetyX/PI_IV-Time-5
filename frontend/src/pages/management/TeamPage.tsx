@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -8,7 +8,11 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Drawer,
+  FormControlLabel,
+  IconButton,
   Radio,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -21,8 +25,16 @@ import {
 import ManagementLayout, { LoadState } from '../../components/management/ManagementLayout';
 import { useLoader } from '../../hooks/useLoader';
 import { ApiError } from '../../services/api';
-import { ROLE_COLORS, ROLE_LABELS, deactivateMember, fetchTeam, initials, inviteMember } from '../../services/management';
-import type { Invitation, StaffRole, TeamMember } from '../../services/management';
+import {
+  ROLE_COLORS,
+  ROLE_LABELS,
+  deactivateMember,
+  fetchTeam,
+  initials,
+  inviteMember,
+  updateMember,
+} from '../../services/management';
+import type { Invitation, MemberChanges, StaffRole, TeamMember } from '../../services/management';
 import { tokens } from '../../theme/theme';
 
 const { colors, fontSize, fontWeight, radius } = tokens;
@@ -46,6 +58,7 @@ export default function TeamPage() {
   const [inviting, setInviting] = useState(false);
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [leaving, setLeaving] = useState<TeamMember | null>(null);
+  const [editing, setEditing] = useState<TeamMember | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const active = team?.filter((member) => member.active) ?? [];
@@ -157,11 +170,16 @@ export default function TeamPage() {
                       {!member.active ? 'desligado' : describeLastAccess(member.lastLoginAt)}
                     </TableCell>
                     <TableCell align="right">
-                      {member.active && (
-                        <Button variant="outlined" onClick={() => setLeaving(member)} sx={{ minHeight: 44 }}>
-                          Desligar
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                        <Button variant="outlined" onClick={() => setEditing(member)} sx={{ minHeight: 44 }}>
+                          Editar
                         </Button>
-                      )}
+                        {member.active && (
+                          <Button variant="outlined" onClick={() => setLeaving(member)} sx={{ minHeight: 44 }}>
+                            Desligar
+                          </Button>
+                        )}
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -180,6 +198,15 @@ export default function TeamPage() {
         onInvited={(created) => {
           setInviting(false);
           setInvitation(created);
+          reload();
+        }}
+      />
+
+      <EditMemberPanel
+        member={editing}
+        onClose={() => setEditing(null)}
+        onSaved={() => {
+          setEditing(null);
           reload();
         }}
       />
@@ -244,51 +271,9 @@ function InviteDialog({ open, onClose, onInvited }: { open: boolean; onClose: ()
               onChange={(event) => setEmail(event.target.value)}
               helperText="A pessoa entra com esse e-mail e a senha provisória que aparece depois do convite."
             />
-            <Typography sx={{ fontWeight: fontWeight.bold }}>Perfil</Typography>
-            {ROLE_OPTIONS.map((option) => (
-              <ButtonBase
-                key={option.value}
-                onClick={() => setRole(option.value)}
-                sx={{
-                  justifyContent: 'space-between',
-                  textAlign: 'left',
-                  p: 4,
-                  borderRadius: `${radius.button}px`,
-                  border: `1px solid ${role === option.value ? colors.text : colors.border}`,
-                  fontFamily: 'inherit',
-                }}
-              >
-                <Box>
-                  <Typography sx={{ fontWeight: fontWeight.extraBold }}>{ROLE_LABELS[option.value]}</Typography>
-                  <Typography sx={{ fontSize: fontSize.body, color: colors.textSecondary }}>{option.hint}</Typography>
-                </Box>
-                <Radio checked={role === option.value} tabIndex={-1} />
-              </ButtonBase>
-            ))}
+            <RolePicker value={role} onChange={setRole} />
           </Box>
-          <Box sx={{ p: 5, border: `1px solid ${colors.border}`, borderRadius: `${radius.card}px`, alignSelf: 'start' }}>
-            <Typography sx={{ fontWeight: fontWeight.extraBold, mb: 3 }}>O que esse perfil abre</Typography>
-            {ACCESS.map((item) => {
-              const allowed = item.roles.includes(role);
-              return (
-                <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', gap: 3, py: 1.5 }}>
-                  <Box
-                    sx={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: '50%',
-                      bgcolor: allowed ? colors.text : 'transparent',
-                      border: `2px solid ${allowed ? colors.text : colors.border}`,
-                    }}
-                  />
-                  <Typography sx={{ color: allowed ? colors.text : colors.textMuted }}>{item.label}</Typography>
-                </Box>
-              );
-            })}
-            <Typography sx={{ mt: 3, fontSize: fontSize.small, color: colors.textSecondary }}>
-              O perfil pode ser trocado depois, sem perder o histórico da pessoa.
-            </Typography>
-          </Box>
+          <AccessPanel role={role} />
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 6, gap: 3 }}>
@@ -300,6 +285,162 @@ function InviteDialog({ open, onClose, onInvited }: { open: boolean; onClose: ()
         </Button>
       </DialogActions>
     </Dialog>
+  );
+}
+
+function RolePicker({ value, onChange }: { value: StaffRole; onChange: (role: StaffRole) => void }) {
+  return (
+    <>
+      <Typography sx={{ fontWeight: fontWeight.bold }}>Perfil</Typography>
+      {ROLE_OPTIONS.map((option) => (
+        <ButtonBase
+          key={option.value}
+          onClick={() => onChange(option.value)}
+          sx={{
+            justifyContent: 'space-between',
+            textAlign: 'left',
+            p: 4,
+            borderRadius: `${radius.button}px`,
+            border: `1px solid ${value === option.value ? colors.text : colors.border}`,
+            fontFamily: 'inherit',
+          }}
+        >
+          <Box>
+            <Typography sx={{ fontWeight: fontWeight.extraBold }}>{ROLE_LABELS[option.value]}</Typography>
+            <Typography sx={{ fontSize: fontSize.body, color: colors.textSecondary }}>{option.hint}</Typography>
+          </Box>
+          <Radio checked={value === option.value} tabIndex={-1} />
+        </ButtonBase>
+      ))}
+    </>
+  );
+}
+
+function AccessPanel({ role }: { role: StaffRole }) {
+  return (
+    <Box sx={{ p: 5, border: `1px solid ${colors.border}`, borderRadius: `${radius.card}px`, alignSelf: 'start' }}>
+      <Typography sx={{ fontWeight: fontWeight.extraBold, mb: 3 }}>O que esse perfil abre</Typography>
+      {ACCESS.map((item) => {
+        const allowed = item.roles.includes(role);
+        return (
+          <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', gap: 3, py: 1.5 }}>
+            <Box
+              sx={{
+                width: 20,
+                height: 20,
+                borderRadius: '50%',
+                bgcolor: allowed ? colors.text : 'transparent',
+                border: `2px solid ${allowed ? colors.text : colors.border}`,
+              }}
+            />
+            <Typography sx={{ color: allowed ? colors.text : colors.textMuted }}>{item.label}</Typography>
+          </Box>
+        );
+      })}
+      <Typography sx={{ mt: 3, fontSize: fontSize.small, color: colors.textSecondary }}>
+        O perfil pode ser trocado depois, sem perder o histórico da pessoa.
+      </Typography>
+    </Box>
+  );
+}
+
+function EditMemberPanel({ member, onClose, onSaved }: { member: TeamMember | null; onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState<MemberChanges | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  useEffect(() => {
+    setFailure(null);
+    setForm(member && { name: member.name, email: member.email, role: member.role, active: member.active });
+  }, [member]);
+
+  async function save() {
+    if (!member || !form) return;
+    setBusy(true);
+    setFailure(null);
+    try {
+      await updateMember(member.id, { ...form, name: form.name.trim(), email: form.email.trim() });
+      onSaved();
+    } catch (caught) {
+      setFailure(
+        caught instanceof ApiError && caught.status === 409
+          ? 'Esse e-mail já é de outra pessoa, ou você tentou tirar o seu próprio acesso de dono.'
+          : caught instanceof ApiError && caught.status === 403
+            ? 'Só o dono pode mudar a equipe.'
+            : 'Confira o nome e o e-mail.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Drawer anchor="right" open={!!member} onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', sm: 480 } } }}>
+      {member && form && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, p: 6, borderBottom: `1px solid ${colors.border}` }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                bgcolor: colors.surface,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: fontWeight.extraBold,
+              }}
+            >
+              {initials(form.name || member.name)}
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography sx={{ fontSize: fontSize.title, fontWeight: fontWeight.extraBold }}>Editar pessoa</Typography>
+              <Typography noWrap sx={{ fontSize: fontSize.small, color: colors.textMuted }}>
+                {describeLastAccess(member.lastLoginAt)}
+              </Typography>
+            </Box>
+            <IconButton aria-label="Fechar" onClick={onClose} sx={{ width: 44, height: 44 }}>
+              ×
+            </IconButton>
+          </Box>
+
+          <Box sx={{ flex: 1, overflowY: 'auto', p: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {failure && <Alert severity="error">{failure}</Alert>}
+            <TextField label="Nome" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+            <TextField label="E-mail" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+            <RolePicker value={form.role} onChange={(role) => setForm({ ...form, role })} />
+            <FormControlLabel
+              labelPlacement="start"
+              control={<Switch checked={form.active} onChange={() => setForm({ ...form, active: !form.active })} />}
+              label={
+                <Box>
+                  <Typography sx={{ fontWeight: fontWeight.bold }}>Acesso ativo</Typography>
+                  <Typography sx={{ fontSize: fontSize.small, color: colors.textMuted }}>
+                    Desligado, a pessoa não entra mais, mas o histórico fica.
+                  </Typography>
+                </Box>
+              }
+              sx={{ m: 0, justifyContent: 'space-between' }}
+            />
+            <AccessPanel role={form.role} />
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 3, p: 6, borderTop: `1px solid ${colors.border}` }}>
+            <Button variant="outlined" onClick={onClose} sx={{ flex: 1, minHeight: 48 }}>
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              disabled={busy || !form.name.trim() || !form.email.trim()}
+              onClick={save}
+              sx={{ flex: 2, minHeight: 48 }}
+            >
+              Salvar alterações
+            </Button>
+          </Box>
+        </Box>
+      )}
+    </Drawer>
   );
 }
 
