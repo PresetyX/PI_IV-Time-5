@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ActionButton from '../components/client/ActionButton';
+import { placeOrder } from '../services/tabs';
 import { readVisit } from '../services/visit';
-import { Box, Button, Skeleton, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Skeleton, Tab, Tabs, Typography } from '@mui/material';
 import StatusMessage from '../components/StatusMessage';
 import { ApiError } from '../services/api';
 import { formatCents } from '../services/format';
@@ -26,6 +27,8 @@ export default function MenuPage() {
   const [state, setState] = useState<MenuState>({ status: 'loading' });
   const [selectedCategory, setSelectedCategory] = useState(0);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -51,7 +54,36 @@ export default function MenuPage() {
   useStoreColor(storeColor);
 
   function addProduct(product: MenuProduct) {
+    setSendError(null);
     setQuantities((current) => ({ ...current, [product.id]: (current[product.id] ?? 0) + 1 }));
+  }
+
+  const products =
+    state.status === 'ready' ? state.menu.categories.flatMap((category) => category.products) : [];
+  const cartItems = products.filter((product) => (quantities[product.id] ?? 0) > 0);
+  const cartCount = cartItems.reduce((sum, product) => sum + quantities[product.id], 0);
+  const cartTotal = cartItems.reduce((sum, product) => sum + product.priceCents * quantities[product.id], 0);
+
+  async function sendOrder() {
+    if (sending || cartItems.length === 0) return;
+    setSending(true);
+    setSendError(null);
+    try {
+      await placeOrder(
+        slug,
+        cartItems.map((product) => ({ productId: product.id, quantity: quantities[product.id] })),
+      );
+      setQuantities({});
+      navigate(`/t/${slug}/conta`);
+    } catch (caught) {
+      setSendError(
+        caught instanceof ApiError && caught.status === 409
+          ? 'Algum item acabou ou a casa parou de aceitar pedidos. Confira e tente de novo.'
+          : 'Não foi possível enviar o pedido agora. Tente de novo.',
+      );
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -101,7 +133,25 @@ export default function MenuPage() {
             borderTop: `1px solid ${colors.border}`,
           }}
         >
-          {hasTab ? (
+          {sendError && (
+            <Typography role="alert" sx={{ mb: 2, fontSize: 13, color: colors.error }}>
+              {sendError}
+            </Typography>
+          )}
+          {hasTab && cartCount > 0 ? (
+            <>
+              <ActionButton onClick={sendOrder} disabled={sending}>
+                {sending ? (
+                  <CircularProgress size={22} sx={{ color: 'inherit' }} />
+                ) : (
+                  `Enviar para a cozinha · ${cartCount} ${cartCount === 1 ? 'item' : 'itens'} · ${formatCents(cartTotal)}`
+                )}
+              </ActionButton>
+              <ActionButton tone="quiet" sx={{ mt: 2 }} disabled={sending} onClick={() => setQuantities({})}>
+                Limpar carrinho
+              </ActionButton>
+            </>
+          ) : hasTab ? (
             <ActionButton onClick={() => navigate(`/t/${slug}/comandas/minha`)}>Voltar para minha comanda</ActionButton>
           ) : (
             <ActionButton onClick={() => navigate(`/t/${slug}/entrada`)}>Pedir pelo celular</ActionButton>
