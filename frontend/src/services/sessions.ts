@@ -11,6 +11,8 @@ export interface CreateSessionRequest {
 }
 
 export interface SessionInfo {
+  token: string;
+  tokenType: string;
   id: string;
   mode: ServiceMode;
   name: string;

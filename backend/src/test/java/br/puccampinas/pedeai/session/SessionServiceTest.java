@@ -20,6 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import br.puccampinas.pedeai.auth.IssuedToken;
+import br.puccampinas.pedeai.auth.JwtService;
 import br.puccampinas.pedeai.common.ConflictException;
 import br.puccampinas.pedeai.common.InvalidRequestException;
 import br.puccampinas.pedeai.common.ResourceNotFoundException;
@@ -38,6 +40,7 @@ class SessionServiceTest {
     private final StoreService storeService = mock(StoreService.class);
     private final TableService tableService = mock(TableService.class);
     private final GuestSessionRepository sessionRepository = mock(GuestSessionRepository.class);
+    private final JwtService jwtService = mock(JwtService.class);
     private final ObjectId storeId = new ObjectId();
     private final Table table = new Table(new ObjectId(), storeId, 5, "Varanda", 4, "t05-1d3e", true, NOW);
     private SessionService sessionService;
@@ -45,7 +48,9 @@ class SessionServiceTest {
     @BeforeEach
     void setUp() {
         sessionService = new SessionService(storeService, tableService, sessionRepository,
-                Clock.fixed(NOW, ZoneOffset.UTC));
+                jwtService, Clock.fixed(NOW, ZoneOffset.UTC));
+        when(jwtService.issueGuest(any()))
+                .thenReturn(new IssuedToken("guest-token", NOW.plus(SessionService.SESSION_DURATION)));
         when(sessionRepository.save(any())).thenAnswer(invocation -> {
             GuestSession session = invocation.getArgument(0);
             return new GuestSession(new ObjectId(), session.storeId(), session.tableId(), session.mode(),
@@ -69,6 +74,8 @@ class SessionServiceTest {
         assertTrue(saved.getValue().consent().notifyCustomer());
         assertEquals(NOW.plus(SessionService.SESSION_DURATION), saved.getValue().expiresAt());
         assertEquals(5, response.table().number());
+        assertEquals("guest-token", response.token());
+        assertEquals("Bearer", response.tokenType());
         assertEquals("TABLE", response.mode());
     }
 

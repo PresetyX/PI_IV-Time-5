@@ -6,6 +6,8 @@ import java.time.Instant;
 
 import org.springframework.stereotype.Service;
 
+import br.puccampinas.pedeai.auth.IssuedToken;
+import br.puccampinas.pedeai.auth.JwtService;
 import br.puccampinas.pedeai.common.ConflictException;
 import br.puccampinas.pedeai.common.InvalidRequestException;
 import br.puccampinas.pedeai.store.Store;
@@ -23,13 +25,15 @@ public class SessionService {
     private final StoreService storeService;
     private final TableService tableService;
     private final GuestSessionRepository sessionRepository;
+    private final JwtService jwtService;
     private final Clock clock;
 
     public SessionService(StoreService storeService, TableService tableService,
-            GuestSessionRepository sessionRepository, Clock clock) {
+            GuestSessionRepository sessionRepository, JwtService jwtService, Clock clock) {
         this.storeService = storeService;
         this.tableService = tableService;
         this.sessionRepository = sessionRepository;
+        this.jwtService = jwtService;
         this.clock = clock;
     }
 
@@ -64,7 +68,10 @@ public class SessionService {
                 now,
                 now.plus(SESSION_DURATION)));
 
+        IssuedToken token = jwtService.issueGuest(session);
         return new SessionResponse(
+                token.value(),
+                "Bearer",
                 session.id().toHexString(),
                 session.mode(),
                 session.name(),
