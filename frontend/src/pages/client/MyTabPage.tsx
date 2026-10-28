@@ -103,6 +103,10 @@ export default function MyTabPage() {
     <ClientScreen
       footerDivider
       footer={
+        <>
+        <ActionButton sx={{ mb: 3 }} onClick={() => navigate(`/t/${slug}/cardapio`)}>
+          Fazer pedido
+        </ActionButton>
         <Box sx={{ display: 'flex', gap: 3 }}>
           {current.owner && (
             <ActionButton
@@ -113,8 +117,11 @@ export default function MyTabPage() {
               Gerar outro código
             </ActionButton>
           )}
-          <ActionButton onClick={() => navigate(`/t/${slug}/conta`)}>Ver a conta</ActionButton>
+          <ActionButton tone="secondary" onClick={() => navigate(`/t/${slug}/conta`)}>
+            Ver a conta
+          </ActionButton>
         </Box>
+        </>
       }
     >
       <ScreenHeader title="Minha comanda" subtitle={subtitle} onBack={() => navigate(`/t/${slug}/comandas`)} />
