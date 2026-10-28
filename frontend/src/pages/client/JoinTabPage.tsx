@@ -25,6 +25,7 @@ function describeError(error: unknown): string {
     if (error.status === 400) return 'Código inválido ou vencido. Peça o código que está na tela de quem abriu.';
     if (error.status === 403) return 'Você foi removido desta comanda.';
     if (error.status === 404) return 'Essa comanda não está mais aberta.';
+    if (error.status === 409) return 'Você já tem uma comanda nesta mesa. Peça para sair dela antes de entrar em outra.';
   }
   return 'Não foi possível entrar agora. Tente de novo.';
 }
@@ -83,10 +84,6 @@ export default function JoinTabPage() {
       navigate(`/t/${slug}/comandas/minha`, { replace: true });
     } catch (caught) {
       if (handleExpired(caught)) return;
-      if (caught instanceof ApiError && caught.status === 409) {
-        navigate(`/t/${slug}/comandas/minha`, { replace: true });
-        return;
-      }
       setError(describeError(caught));
       setDigits('');
     } finally {
