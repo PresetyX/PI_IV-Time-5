@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import ManagementLayout, { Card, LoadState, Segmented } from '../components/management/ManagementLayout';
+import { PERIOD_DAYS, PERIOD_OPTIONS, usePeriod } from '../hooks/usePeriod';
+import type { Period } from '../hooks/usePeriod';
 import { formatCents } from '../services/format';
 import { fetchSummary } from '../services/management';
 import type { ReportPeriod, ReportSummary } from '../services/management';
@@ -8,20 +10,16 @@ import { tokens } from '../theme/theme';
 
 const { colors, fontSize, fontWeight } = tokens;
 
-const PERIODS: { value: ReportPeriod; label: string }[] = [
-  { value: 'TODAY', label: 'Hoje' },
-  { value: 'WEEK', label: '7 dias' },
-  { value: 'MONTH', label: '30 dias' },
-];
+const REPORT_PERIOD: Record<Period, ReportPeriod> = { DAY: 'TODAY', WEEK: 'WEEK', MONTH: 'MONTH' };
 
-const COMPARED_TO: Record<ReportPeriod, string> = {
-  TODAY: 'que ontem',
-  WEEK: 'que os 7 dias anteriores',
-  MONTH: 'que os 30 dias anteriores',
+const COMPARED_TO: Record<Period, string> = {
+  DAY: 'que ontem',
+  WEEK: 'que a semana anterior',
+  MONTH: 'que o mês anterior',
 };
 
 export default function ManagementPage() {
-  const [period, setPeriod] = useState<ReportPeriod>('TODAY');
+  const [period, setPeriod] = usePeriod();
   const [summary, setSummary] = useState<ReportSummary | null>(null);
   const [error, setError] = useState<unknown>(null);
 
@@ -29,7 +27,7 @@ export default function ManagementPage() {
     let cancelled = false;
     setSummary(null);
     setError(null);
-    fetchSummary(period)
+    fetchSummary(REPORT_PERIOD[period])
       .then((data) => !cancelled && setSummary(data))
       .catch((caught) => !cancelled && setError(caught));
     return () => {
@@ -44,8 +42,8 @@ export default function ManagementPage() {
   return (
     <ManagementLayout
       title="Gestão"
-      subtitle={`${today.charAt(0).toUpperCase()}${today.slice(1)} · pedidos não cancelados`}
-      actions={<Segmented value={period} options={PERIODS} onChange={setPeriod} />}
+      subtitle={`${period === 'DAY' ? `${today.charAt(0).toUpperCase()}${today.slice(1)}` : `Últimos ${PERIOD_DAYS[period]} dias`} · pedidos não cancelados`}
+      actions={<Segmented value={period} options={PERIOD_OPTIONS} onChange={setPeriod} />}
     >
       {!summary ? (
         <LoadState error={error} onRetry={load} />

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Alert,
   Box,
@@ -11,8 +11,9 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import ManagementLayout, { Card, LoadState } from '../../components/management/ManagementLayout';
+import ManagementLayout, { Card, LoadState, Segmented } from '../../components/management/ManagementLayout';
 import { useLoader } from '../../hooks/useLoader';
+import { PERIOD_DAYS, PERIOD_OPTIONS, usePeriod } from '../../hooks/usePeriod';
 import { formatCents } from '../../services/format';
 import { fetchCommissions, initials, payCommissions } from '../../services/management';
 import type { CommissionReport } from '../../services/management';
@@ -22,7 +23,9 @@ const { colors, fontSize, fontWeight, radius } = tokens;
 const AVATAR_COLORS = ['#111111', '#7B3FC4', '#1F6FD6', '#157A4A', '#C2410C'];
 
 export default function CommissionsPage() {
-  const { data, setData, error, reload } = useLoader(fetchCommissions);
+  const [period, setPeriod] = usePeriod();
+  const load = useCallback(() => fetchCommissions(PERIOD_DAYS[period]), [period]);
+  const { data, setData, error, reload } = useLoader(load);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState(false);
 
@@ -30,7 +33,7 @@ export default function CommissionsPage() {
     setBusy(true);
     setFailure(false);
     try {
-      setData(await payCommissions());
+      setData(await payCommissions(PERIOD_DAYS[period]));
     } catch {
       setFailure(true);
     } finally {
@@ -43,16 +46,19 @@ export default function CommissionsPage() {
       title="Comissões por garçom"
       subtitle={data ? `Período de ${day(data.from)} a ${day(data.to)} · ${data.rateBasisPoints / 100}% sobre o que cada um lançou` : undefined}
       actions={
-        data && (
-          <Box sx={{ display: 'flex', gap: 3 }}>
-            <Button variant="outlined" onClick={() => exportCsv(data)} sx={{ minHeight: 48 }}>
-              Exportar CSV
-            </Button>
-            <Button variant="contained" disabled={busy || data.toPayCents === 0} onClick={markPaid} sx={{ minHeight: 48 }}>
-              Marcar como pago
-            </Button>
-          </Box>
-        )
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+          <Segmented value={period} options={PERIOD_OPTIONS} onChange={setPeriod} />
+          {data && (
+            <>
+              <Button variant="outlined" onClick={() => exportCsv(data)} sx={{ minHeight: 48 }}>
+                Exportar CSV
+              </Button>
+              <Button variant="contained" disabled={busy || data.toPayCents === 0} onClick={markPaid} sx={{ minHeight: 48 }}>
+                Marcar como pago
+              </Button>
+            </>
+          )}
+        </Box>
       }
     >
       {failure && (

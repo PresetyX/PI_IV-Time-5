@@ -17,6 +17,8 @@ import {
 } from '@mui/material';
 import ManagementLayout, { Card, LoadState, Segmented } from '../../components/management/ManagementLayout';
 import { useLoader } from '../../hooks/useLoader';
+import { PERIOD_OPTIONS, PERIOD_TEXT, usePeriod } from '../../hooks/usePeriod';
+import type { Period } from '../../hooks/usePeriod';
 import { formatCents } from '../../services/format';
 import { METHOD_LABELS, fetchHistory } from '../../services/management';
 import type { ClosedTab, HistoryPeriod } from '../../services/management';
@@ -24,13 +26,13 @@ import { tokens } from '../../theme/theme';
 
 const { colors, fontSize, fontWeight, radius } = tokens;
 
-const PERIOD_TEXT: Record<HistoryPeriod, string> = { TODAY: 'hoje', YESTERDAY: 'ontem', WEEK: 'nos últimos 7 dias' };
+const HISTORY_PERIOD: Record<Period, HistoryPeriod> = { DAY: 'TODAY', WEEK: 'WEEK', MONTH: 'MONTH' };
 
 export default function HistoryPage() {
-  const [period, setPeriod] = useState<HistoryPeriod>('TODAY');
+  const [period, setPeriod] = usePeriod();
   const [search, setSearch] = useState('');
   const [receipt, setReceipt] = useState<ClosedTab | null>(null);
-  const load = useCallback(() => fetchHistory(period, search), [period, search]);
+  const load = useCallback(() => fetchHistory(HISTORY_PERIOD[period], search), [period, search]);
   const { data, error, reload } = useLoader(load);
 
   return (
@@ -46,15 +48,7 @@ export default function HistoryPage() {
             onChange={(event) => setSearch(event.target.value)}
             sx={{ minWidth: 240, bgcolor: colors.background }}
           />
-          <Segmented<HistoryPeriod>
-            value={period}
-            onChange={setPeriod}
-            options={[
-              { value: 'TODAY', label: 'Hoje' },
-              { value: 'YESTERDAY', label: 'Ontem' },
-              { value: 'WEEK', label: '7 dias' },
-            ]}
-          />
+          <Segmented value={period} options={PERIOD_OPTIONS} onChange={setPeriod} />
         </Box>
       }
     >

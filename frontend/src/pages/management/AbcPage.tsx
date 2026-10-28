@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import ManagementLayout, { Card, LoadState, Segmented } from '../../components/management/ManagementLayout';
+import { PERIOD_DAYS, PERIOD_OPTIONS, usePeriod } from '../../hooks/usePeriod';
 import { formatCents } from '../../services/format';
 import { fetchAbc } from '../../services/management';
 import type { AbcClass, AbcReport } from '../../services/management';
@@ -21,38 +22,43 @@ export default function AbcPage() {
   const [report, setReport] = useState<AbcReport | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [filter, setFilter] = useState<Filter>('ALL');
+  const [period, setPeriod] = usePeriod();
 
   const load = useCallback(() => {
     let cancelled = false;
     setReport(null);
     setError(null);
-    fetchAbc(30)
+    fetchAbc(PERIOD_DAYS[period])
       .then((data) => !cancelled && setReport(data))
       .catch((caught) => !cancelled && setError(caught));
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [period]);
 
   useEffect(load, [load]);
 
   const rows = report ? report.rows.filter((row) => filter === 'ALL' || row.abcClass === filter) : [];
+  const range = period === 'DAY' ? 'Hoje' : `Últimos ${PERIOD_DAYS[period]} dias`;
 
   return (
     <ManagementLayout
       title="Curva ABC de produtos"
-      subtitle={report ? `Últimos ${report.days} dias · ${report.productsInMenu} produtos no cardápio` : 'Últimos 30 dias'}
+      subtitle={report ? `${range} · ${report.productsInMenu} produtos no cardápio` : range}
       actions={
-        <Segmented<Filter>
-          value={filter}
-          onChange={setFilter}
-          options={[
-            { value: 'ALL', label: 'Todas' },
-            { value: 'A', label: 'Classe A' },
-            { value: 'B', label: 'Classe B' },
-            { value: 'C', label: 'Classe C' },
-          ]}
-        />
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+          <Segmented value={period} options={PERIOD_OPTIONS} onChange={setPeriod} />
+          <Segmented<Filter>
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: 'ALL', label: 'Todas' },
+              { value: 'A', label: 'Classe A' },
+              { value: 'B', label: 'Classe B' },
+              { value: 'C', label: 'Classe C' },
+            ]}
+          />
+        </Box>
       }
     >
       {!report ? (

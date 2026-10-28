@@ -100,7 +100,7 @@ export const METHOD_LABELS: Record<PaymentMethod, string> = {
   CARD_CREDIT: 'Cartão de crédito',
 };
 
-export type HistoryPeriod = 'TODAY' | 'YESTERDAY' | 'WEEK';
+export type HistoryPeriod = 'TODAY' | 'YESTERDAY' | 'WEEK' | 'MONTH';
 
 export interface ClosedTab {
   id: string;
@@ -201,12 +201,12 @@ export function closeCash(counted: Partial<Record<PaymentMethod, number>>, note:
   return api.post('/api/management/cash/close', { counted, note });
 }
 
-export function fetchCommissions(): Promise<CommissionReport> {
-  return api.get<CommissionReport>('/api/management/commissions');
+export function fetchCommissions(days = 7): Promise<CommissionReport> {
+  return api.get<CommissionReport>(`/api/management/commissions?days=${days}`);
 }
 
-export function payCommissions(): Promise<CommissionReport> {
-  return api.post<CommissionReport>('/api/management/commissions/pay');
+export function payCommissions(days = 7): Promise<CommissionReport> {
+  return api.post<CommissionReport>(`/api/management/commissions/pay?days=${days}`);
 }
 
 export function fetchStoreSettings(): Promise<StoreSettings> {
