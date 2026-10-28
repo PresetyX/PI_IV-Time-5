@@ -4,64 +4,89 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 
-import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import br.puccampinas.pedeai.auth.IssuedToken;
 import br.puccampinas.pedeai.auth.JwtService;
 import br.puccampinas.pedeai.common.ConflictException;
 import br.puccampinas.pedeai.common.InvalidRequestException;
-import br.puccampinas.pedeai.common.ResourceNotFoundException;
 import br.puccampinas.pedeai.store.Store;
-import br.puccampinas.pedeai.store.StoreRepository;
+import br.puccampinas.pedeai.store.StoreService;
 import br.puccampinas.pedeai.table.Table;
-import br.puccampinas.pedeai.table.TableRepository;
+import br.puccampinas.pedeai.table.TableResponse;
+import br.puccampinas.pedeai.table.TableService;
 
 @Service
 public class SessionService {
 
-    static final Duration SESSION_DURATION = Duration.ofHours(4);
-    private static final String MODE_TABLE = "TABLE";
+    public static final Duration SESSION_DURATION = Duration.ofHours(4);
+    private static final String TABLE_MODE = "TABLE";
 
-    private final StoreRepository storeRepository;
-    private final TableRepository tableRepository;
+    private final StoreService storeService;
+    private final TableService tableService;
     private final GuestSessionRepository sessionRepository;
     private final JwtService jwtService;
     private final Clock clock;
 
-    public SessionService(StoreRepository storeRepository, TableRepository tableRepository,
+    public SessionService(StoreService storeService, TableService tableService,
             GuestSessionRepository sessionRepository, JwtService jwtService, Clock clock) {
-        this.storeRepository = storeRepository;
-        this.tableRepository = tableRepository;
+        this.storeService = storeService;
+        this.tableService = tableService;
         this.sessionRepository = sessionRepository;
         this.jwtService = jwtService;
         this.clock = clock;
     }
 
-    public SessionResponse open(String slug, OpenSessionRequest request) {
-        Store store = storeRepository.findBySlug(slug)
-                .filter(Store::active)
-                .orElseThrow(() -> new ResourceNotFoundException("Store not found: " + slug));
-        Table table = tableRepository.findByToken(request.tableToken())
-                .filter(found -> found.storeId().equals(store.id()) && found.active())
-                .orElseThrow(() -> new ResourceNotFoundException("Table not found"));
-
-        if (store.serviceModes() != null && !store.serviceModes().contains(MODE_TABLE)) {
-            throw new ConflictException("Store does not accept table service");
+    public SessionResponse create(CreateSessionRequest request) {
+        Store store = storeService.getActiveStore(request.storeSlug());
+        if (!storeService.getStatus(store).acceptingOrders()) {
+            throw new ConflictException("Store is not accepting orders now");
         }
-        String phone = request.phone() == null ? "" : request.phone().trim();
-        if (Boolean.TRUE.equals(store.requireCustomerPhone()) && phone.isEmpty()) {
-            throw new InvalidRequestException("phone: is required by this store");
+
+        Table table = null;
+        if (TABLE_MODE.equals(request.mode())) {
+            if (request.tableToken() == null || request.tableToken().isBlank()) {
+                throw new InvalidRequestException("tableToken is required for TABLE mode");
+            }
+            table = tableService.getActiveByToken(store.id(), request.tableToken());
+        }
+
+        String phone = normalizePhone(request.phone());
+        if (phone == null && Boolean.TRUE.equals(store.requireCustomerPhone())) {
+            throw new InvalidRequestException("phone is required by this store");
         }
 
         Instant now = clock.instant();
-        GuestSession session = sessionRepository.insert(new GuestSession(
-                new ObjectId(), store.id(), table.id(), MODE_TABLE, request.name().trim(),
-                phone.isEmpty() ? null : phone, now, now.plus(SESSION_DURATION)));
+        GuestSession session = sessionRepository.save(new GuestSession(
+                null,
+                store.id(),
+                table == null ? null : table.id(),
+                request.mode(),
+                request.name().trim(),
+                phone,
+                new GuestSession.Consent(phone != null, false, now),
+                now,
+                now.plus(SESSION_DURATION)));
 
         IssuedToken token = jwtService.issueGuest(session);
-        return new SessionResponse(token.value(), "Bearer", token.expiresAt(),
-                new SessionResponse.SessionInfo(session.id().toHexString(), store.id().toHexString(),
-                        table.id().toHexString(), table.number(), session.name()));
+        return new SessionResponse(
+                token.value(),
+                "Bearer",
+                session.id().toHexString(),
+                session.mode(),
+                session.name(),
+                table == null ? null : TableResponse.of(table),
+                session.expiresAt());
+    }
+
+    private static String normalizePhone(String phone) {
+        if (phone == null || phone.isBlank()) {
+            return null;
+        }
+        String digits = phone.replaceAll("\\D", "");
+        if (digits.length() < 10 || digits.length() > 11) {
+            throw new InvalidRequestException("phone must have 10 or 11 digits with area code");
+        }
+        return digits;
     }
 }

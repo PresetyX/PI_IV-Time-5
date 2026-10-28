@@ -3,6 +3,7 @@ package br.puccampinas.pedeai.session;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -13,7 +14,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Optional;
 
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,116 +25,122 @@ import br.puccampinas.pedeai.auth.JwtService;
 import br.puccampinas.pedeai.common.ConflictException;
 import br.puccampinas.pedeai.common.InvalidRequestException;
 import br.puccampinas.pedeai.common.ResourceNotFoundException;
+import br.puccampinas.pedeai.store.OpeningStatus;
 import br.puccampinas.pedeai.store.Store;
-import br.puccampinas.pedeai.store.StoreRepository;
+import br.puccampinas.pedeai.store.StoreService;
 import br.puccampinas.pedeai.table.Table;
-import br.puccampinas.pedeai.table.TableRepository;
+import br.puccampinas.pedeai.table.TableService;
 
 class SessionServiceTest {
 
-    private static final Instant NOW = Instant.parse("2026-10-27T12:00:00Z");
+    private static final Instant NOW = Instant.parse("2026-10-27T23:00:00Z");
+    private static final OpeningStatus OPEN = new OpeningStatus(true, true, false, "23:30", "23:00", null);
+    private static final OpeningStatus CLOSED = new OpeningStatus(false, false, false, null, null, null);
 
-    private final StoreRepository storeRepository = mock(StoreRepository.class);
-    private final TableRepository tableRepository = mock(TableRepository.class);
+    private final StoreService storeService = mock(StoreService.class);
+    private final TableService tableService = mock(TableService.class);
     private final GuestSessionRepository sessionRepository = mock(GuestSessionRepository.class);
     private final JwtService jwtService = mock(JwtService.class);
     private final ObjectId storeId = new ObjectId();
-    private final ObjectId tableId = new ObjectId();
+    private final Table table = new Table(new ObjectId(), storeId, 5, "Varanda", 4, "t05-1d3e", true, NOW);
     private SessionService sessionService;
 
     @BeforeEach
     void setUp() {
-        Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
-        sessionService = new SessionService(storeRepository, tableRepository, sessionRepository, jwtService, clock);
-        when(sessionRepository.insert(any(GuestSession.class))).thenAnswer(call -> call.getArgument(0));
-        when(jwtService.issueGuest(any())).thenReturn(new IssuedToken("guest-jwt", NOW.plusSeconds(14400)));
+        sessionService = new SessionService(storeService, tableService, sessionRepository,
+                jwtService, Clock.fixed(NOW, ZoneOffset.UTC));
+        when(jwtService.issueGuest(any()))
+                .thenReturn(new IssuedToken("guest-token", NOW.plus(SessionService.SESSION_DURATION)));
+        when(sessionRepository.save(any())).thenAnswer(invocation -> {
+            GuestSession session = invocation.getArgument(0);
+            return new GuestSession(new ObjectId(), session.storeId(), session.tableId(), session.mode(),
+                    session.name(), session.phone(), session.consent(), session.createdAt(), session.expiresAt());
+        });
     }
 
     @Test
-    void opensSessionForTheTableAndIssuesGuestToken() {
-        givenStore(true, List.of("TABLE"), false);
-        givenTable(storeId, true);
+    void createsTableSessionWithNormalizedPhoneAndConsent() {
+        givenStore(true, OPEN);
+        when(tableService.getActiveByToken(storeId, "t05-1d3e")).thenReturn(table);
 
-        SessionResponse response = sessionService.open("demo", new OpenSessionRequest("qr-5", "  Ana ", "  "));
+        SessionResponse response = sessionService.create(
+                new CreateSessionRequest("demo", "TABLE", "t05-1d3e", "  Ana ", "(19) 99999-0000"));
 
         ArgumentCaptor<GuestSession> saved = ArgumentCaptor.forClass(GuestSession.class);
-        verify(sessionRepository).insert(saved.capture());
-        assertEquals(storeId, saved.getValue().storeId());
-        assertEquals(tableId, saved.getValue().tableId());
-        assertEquals("TABLE", saved.getValue().mode());
+        verify(sessionRepository).save(saved.capture());
         assertEquals("Ana", saved.getValue().name());
-        assertNull(saved.getValue().phone());
-        assertEquals(NOW, saved.getValue().createdAt());
+        assertEquals("19999990000", saved.getValue().phone());
+        assertEquals(table.id(), saved.getValue().tableId());
+        assertTrue(saved.getValue().consent().notifyCustomer());
         assertEquals(NOW.plus(SessionService.SESSION_DURATION), saved.getValue().expiresAt());
-
-        assertEquals("guest-jwt", response.token());
+        assertEquals(5, response.table().number());
+        assertEquals("guest-token", response.token());
         assertEquals("Bearer", response.tokenType());
-        assertEquals(5, response.session().tableNumber());
-        assertEquals(tableId.toHexString(), response.session().tableId());
+        assertEquals("TABLE", response.mode());
     }
 
     @Test
-    void unknownStoreIsNotFound() {
-        when(storeRepository.findBySlug("demo")).thenReturn(Optional.empty());
+    void phoneIsOptionalWhenStoreDoesNotRequireIt() {
+        givenStore(false, OPEN);
+        when(tableService.getActiveByToken(storeId, "t05-1d3e")).thenReturn(table);
 
-        assertThrows(ResourceNotFoundException.class,
-                () -> sessionService.open("demo", new OpenSessionRequest("qr-5", "Ana", null)));
+        sessionService.create(new CreateSessionRequest("demo", "TABLE", "t05-1d3e", "Ana", ""));
+
+        ArgumentCaptor<GuestSession> saved = ArgumentCaptor.forClass(GuestSession.class);
+        verify(sessionRepository).save(saved.capture());
+        assertNull(saved.getValue().phone());
     }
 
     @Test
-    void inactiveStoreIsNotFound() {
-        givenStore(false, List.of("TABLE"), false);
+    void phoneIsRequiredWhenStoreAsksForIt() {
+        givenStore(true, OPEN);
+        when(tableService.getActiveByToken(storeId, "t05-1d3e")).thenReturn(table);
 
-        assertThrows(ResourceNotFoundException.class,
-                () -> sessionService.open("demo", new OpenSessionRequest("qr-5", "Ana", null)));
+        assertThrows(InvalidRequestException.class, () -> sessionService.create(
+                new CreateSessionRequest("demo", "TABLE", "t05-1d3e", "Ana", null)));
+        verify(sessionRepository, never()).save(any());
     }
 
     @Test
-    void tableFromAnotherStoreIsNotFound() {
-        givenStore(true, List.of("TABLE"), false);
-        givenTable(new ObjectId(), true);
+    void invalidPhoneIsRejected() {
+        givenStore(false, OPEN);
+        when(tableService.getActiveByToken(storeId, "t05-1d3e")).thenReturn(table);
 
-        assertThrows(ResourceNotFoundException.class,
-                () -> sessionService.open("demo", new OpenSessionRequest("qr-5", "Ana", null)));
-        verify(sessionRepository, never()).insert(any(GuestSession.class));
+        assertThrows(InvalidRequestException.class, () -> sessionService.create(
+                new CreateSessionRequest("demo", "TABLE", "t05-1d3e", "Ana", "1234")));
     }
 
     @Test
-    void inactiveTableIsNotFound() {
-        givenStore(true, List.of("TABLE"), false);
-        givenTable(storeId, false);
+    void tableModeNeedsAToken() {
+        givenStore(false, OPEN);
 
-        assertThrows(ResourceNotFoundException.class,
-                () -> sessionService.open("demo", new OpenSessionRequest("qr-5", "Ana", null)));
+        assertThrows(InvalidRequestException.class, () -> sessionService.create(
+                new CreateSessionRequest("demo", "TABLE", null, "Ana", null)));
     }
 
     @Test
-    void storeWithoutTableServiceConflicts() {
-        givenStore(true, List.of("COUNTER"), false);
-        givenTable(storeId, true);
+    void unknownOrInactiveTableIsNotFound() {
+        givenStore(false, OPEN);
+        when(tableService.getActiveByToken(storeId, "old")).thenThrow(new ResourceNotFoundException("x"));
 
-        assertThrows(ConflictException.class,
-                () -> sessionService.open("demo", new OpenSessionRequest("qr-5", "Ana", null)));
+        assertThrows(ResourceNotFoundException.class, () -> sessionService.create(
+                new CreateSessionRequest("demo", "TABLE", "old", "Ana", null)));
+        verify(sessionRepository, never()).save(any());
     }
 
     @Test
-    void phoneIsRequiredWhenTheStoreAsksForIt() {
-        givenStore(true, List.of("TABLE"), true);
-        givenTable(storeId, true);
+    void closedStoreRejectsNewSessions() {
+        givenStore(false, CLOSED);
 
-        assertThrows(InvalidRequestException.class,
-                () -> sessionService.open("demo", new OpenSessionRequest("qr-5", "Ana", " ")));
-        verify(sessionRepository, never()).insert(any(GuestSession.class));
+        assertThrows(ConflictException.class, () -> sessionService.create(
+                new CreateSessionRequest("demo", "TABLE", "t05-1d3e", "Ana", null)));
+        verify(sessionRepository, never()).save(any());
     }
 
-    private void givenStore(boolean active, List<String> serviceModes, boolean requirePhone) {
-        Store store = new Store(storeId, "demo", "Demo", null, null, null, null, null, "#D62F1F", null, null,
-                serviceModes, 1000, 500, requirePhone, null, null, false, active, NOW, NOW);
-        when(storeRepository.findBySlug("demo")).thenReturn(Optional.of(store));
-    }
-
-    private void givenTable(ObjectId owner, boolean active) {
-        when(tableRepository.findByToken("qr-5"))
-                .thenReturn(Optional.of(new Table(tableId, owner, 5, null, 4, "qr-5", active, NOW)));
+    private void givenStore(boolean requirePhone, OpeningStatus status) {
+        Store store = new Store(storeId, "demo", "Demo", null, null, null, null, null, "#D62F1F", null, List.of(),
+                List.of("TABLE"), 1000, 500, requirePhone, null, null, false, true, null, null);
+        when(storeService.getActiveStore("demo")).thenReturn(store);
+        when(storeService.getStatus(store)).thenReturn(status);
     }
 }

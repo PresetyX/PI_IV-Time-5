@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface TableRepository extends MongoRepository<Table, ObjectId> {
 
-    Optional<Table> findByToken(String token);
+    Optional<Table> findByStoreIdAndToken(ObjectId storeId, String token);
 
-    Optional<Table> findByStoreIdAndId(ObjectId storeId, ObjectId id);
+    Optional<Table> findByStoreIdAndNumber(ObjectId storeId, int number);
 }

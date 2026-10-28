@@ -6,8 +6,8 @@ import { ApiError } from '../services/api';
 import { formatCents } from '../services/format';
 import { fetchMenu } from '../services/menu';
 import type { Menu, MenuProduct } from '../services/menu';
-import { useTenantTheme } from '../theme/AppThemeProvider';
-import { DEFAULT_PRIMARY_COLOR, tokens } from '../theme/theme';
+import { useStoreColor } from '../hooks/useStoreColor';
+import { tokens } from '../theme/theme';
 
 type MenuState =
   | { status: 'loading' }
@@ -18,7 +18,6 @@ const { colors, touchTarget } = tokens;
 
 export default function MenuPage() {
   const { slug = '' } = useParams();
-  const { changePrimaryColor } = useTenantTheme();
   const [state, setState] = useState<MenuState>({ status: 'loading' });
   const [selectedCategory, setSelectedCategory] = useState(0);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -44,11 +43,7 @@ export default function MenuPage() {
   useEffect(() => load(), [load]);
 
   const storeColor = state.status === 'ready' ? state.menu.store.primaryColor : null;
-  useEffect(() => {
-    if (!storeColor) return undefined;
-    changePrimaryColor(storeColor);
-    return () => changePrimaryColor(DEFAULT_PRIMARY_COLOR);
-  }, [storeColor, changePrimaryColor]);
+  useStoreColor(storeColor);
 
   function addProduct(product: MenuProduct) {
     setQuantities((current) => ({ ...current, [product.id]: (current[product.id] ?? 0) + 1 }));

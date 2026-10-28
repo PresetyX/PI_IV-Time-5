@@ -2,8 +2,7 @@ package br.puccampinas.pedeai.session;
 
 import java.time.Instant;
 
-public record SessionResponse(String token, String tokenType, Instant expiresAt, SessionInfo session) {
+import br.puccampinas.pedeai.table.TableResponse;
 
-    public record SessionInfo(String id, String storeId, String tableId, int tableNumber, String name) {
-    }
+public record SessionResponse(String token, String tokenType, String id, String mode, String name, TableResponse table, Instant expiresAt) {
 }
