@@ -23,13 +23,6 @@ function strokeIcon(children: ReactNode) {
   };
 }
 
-export const ReceiptIcon = strokeIcon(
-  <>
-    <path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5z" />
-    <path d="M9 8h6M9 12h6M9 16h3" />
-  </>,
-);
-
 export const ClockIcon = strokeIcon(
   <>
     <circle cx="12" cy="12" r="9" />

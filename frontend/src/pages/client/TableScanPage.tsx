@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import BrandMark from '../../components/BrandMark';
 import { Box, Button, Typography } from '@mui/material';
 import ActionButton from '../../components/client/ActionButton';
 import ClientScreen from '../../components/client/ClientScreen';
@@ -8,7 +9,7 @@ import ClosedStoreScreen from '../../components/client/ClosedStoreScreen';
 import { ClientError, ClientLoading } from '../../components/client/ClientStates';
 import FootNote from '../../components/client/FootNote';
 import InvalidQrScreen from '../../components/client/InvalidQrScreen';
-import { CheckIcon, ReceiptIcon } from '../../components/client/icons';
+import { CheckIcon } from '../../components/client/icons';
 import { useStore } from '../../hooks/useStore';
 import { useStoreColor } from '../../hooks/useStoreColor';
 import { ApiError } from '../../services/api';
@@ -95,10 +96,10 @@ function ScanConfirmation({ store, table, token }: ScanConfirmationProps) {
             justifyContent: 'center',
             borderRadius: `${radius.card}px`,
             bgcolor: colors.background,
-            color: 'primary.main',
+            color: colors.text,
           }}
         >
-          <ReceiptIcon sx={{ fontSize: 36 }} />
+          <BrandMark aria-hidden sx={{ fontSize: 36 }} />
         </Box>
       </Box>
 
