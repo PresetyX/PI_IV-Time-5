@@ -60,3 +60,49 @@ Estado do server (pelo socket) e do banco. 200 quando os dois estão no ar, 503 
 Cardápio da loja: categorias visíveis, em ordem de `position`, cada uma com os produtos disponíveis. 404 se a loja não existe ou está inativa.
 
 ## Endpoints autenticados
+
+### Produtos (administração)
+
+Rotas do painel para o cardápio. Tudo é filtrado pelo `storeId` do token: produto ou categoria de outra loja responde 404 ou 400, nunca aparece.
+
+| Rota | Perfis | O que faz |
+| --- | --- | --- |
+| `GET /api/management/products` | OWNER, MANAGER, KITCHEN | Todas as categorias em ordem de `position`, inclusive as ocultas, cada uma com todos os produtos, inclusive os esgotados |
+| `GET /api/management/products/{id}` | OWNER, MANAGER, KITCHEN | Um produto |
+| `PUT /api/management/products/{id}` | OWNER, MANAGER | Edita o produto |
+| `PATCH /api/management/products/{id}/availability` | OWNER, MANAGER, KITCHEN | Liga ou desliga a disponibilidade (item esgotado) |
+
+Perfil sem permissão recebe `403 forbidden`.
+
+Corpo do `PUT`:
+
+```json
+{
+  "categoryId": "...",
+  "name": "Porção de fritas",
+  "description": "500 g, sal e orégano",
+  "priceCents": 3200,
+  "imageUrl": null,
+  "prepMinutes": 12,
+  "isAlcoholic": false,
+  "available": true,
+  "optionGroups": null
+}
+```
+
+- `priceCents` é inteiro e no mínimo 1: `3200` = R$ 32,00. O front converte o valor digitado antes de enviar.
+- `isAlcoholic`, `available` e `optionGroups` são opcionais; ausentes, o valor atual é mantido.
+- Trocar `categoryId` põe o produto no fim da nova categoria.
+- Mudar o preço não mexe em pedidos já enviados, que guardam a cópia do preço.
+
+Corpo do `PATCH`: `{ "available": false }`. Desligar grava `unavailableSince` com a hora atual; ligar apaga a data. Mandar o mesmo valor que já está gravado não muda nada. O cardápio público já esconde produto com `available: false`.
+
+Resposta do produto (as três rotas de um produto devolvem o mesmo formato):
+
+```json
+{
+  "id": "...", "categoryId": "...", "name": "Porção de fritas", "description": "500 g, sal e orégano",
+  "priceCents": 3200, "imageUrl": null, "prepMinutes": 12, "available": false,
+  "unavailableSince": "2026-10-27T23:00:00Z", "isAlcoholic": false, "position": 1, "optionGroups": []
+}
+```
