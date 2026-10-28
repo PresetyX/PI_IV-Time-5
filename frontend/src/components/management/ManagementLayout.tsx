@@ -10,7 +10,11 @@ const { colors, fontSize, fontWeight, radius } = tokens;
 const NAV = [
   { to: '/gestao', label: 'Gestão' },
   { to: '/gestao/curva-abc', label: 'Curva ABC' },
+  { to: '/gestao/contas', label: 'Histórico de contas' },
+  { to: '/gestao/caixa', label: 'Caixa' },
+  { to: '/gestao/comissoes', label: 'Comissões' },
   { to: '/gestao/equipe', label: 'Equipe' },
+  { to: '/gestao/configuracao', label: 'Configuração' },
   { to: '/producao', label: 'Produção' },
   { to: '/salao', label: 'Salão' },
 ];
