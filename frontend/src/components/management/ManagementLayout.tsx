@@ -2,35 +2,64 @@ import type { ReactNode } from 'react';
 import { Link as RouterLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Alert, Box, Button, ButtonBase, CircularProgress, Typography } from '@mui/material';
 import { ApiError, getToken, saveToken } from '../../services/api';
+import { currentRole } from '../../services/auth';
+import type { Role } from '../../services/auth';
 import { ReceiptIcon } from '../client/icons';
 import { tokens } from '../../theme/theme';
 
 const { colors, fontSize, fontWeight, radius } = tokens;
 
-const NAV = [
-  { to: '/gestao', label: 'Gestão' },
-  { to: '/gestao/curva-abc', label: 'Curva ABC' },
-  { to: '/gestao/contas', label: 'Histórico de contas' },
-  { to: '/gestao/caixa', label: 'Caixa' },
-  { to: '/gestao/comissoes', label: 'Comissões' },
-  { to: '/gestao/equipe', label: 'Equipe' },
-  { to: '/gestao/configuracao', label: 'Configuração' },
-  { to: '/producao', label: 'Produção' },
-  { to: '/salao', label: 'Salão' },
+interface NavItem {
+  to: string;
+  label: string;
+  roles: Role[];
+  exact?: boolean;
+}
+
+const MANAGERS: Role[] = ['OWNER', 'MANAGER'];
+const FLOOR: Role[] = ['OWNER', 'MANAGER', 'WAITER'];
+const EVERYONE: Role[] = ['OWNER', 'MANAGER', 'WAITER', 'KITCHEN'];
+
+const NAV: NavItem[] = [
+  { to: '/gestao', label: 'Gestão', roles: MANAGERS, exact: true },
+  { to: '/gestao/curva-abc', label: 'Curva ABC', roles: MANAGERS },
+  { to: '/gestao/contas', label: 'Histórico de contas', roles: MANAGERS },
+  { to: '/gestao/caixa', label: 'Caixa', roles: MANAGERS },
+  { to: '/gestao/comissoes', label: 'Comissões', roles: MANAGERS },
+  { to: '/gestao/equipe', label: 'Equipe', roles: MANAGERS },
+  { to: '/gestao/configuracao', label: 'Configuração', roles: MANAGERS },
+  { to: '/producao', label: 'Produção', roles: EVERYONE },
+  { to: '/salao', label: 'Salão', roles: FLOOR },
+  { to: '/contas', label: 'Contas abertas', roles: FLOOR },
+  { to: '/fila-espera', label: 'Fila de espera', roles: FLOOR },
 ];
+
+const ROLE_SUBTITLE: Record<Role, string> = {
+  OWNER: 'Perfil dono',
+  MANAGER: 'Perfil gerente',
+  WAITER: 'Perfil salão',
+  KITCHEN: 'Perfil cozinha',
+};
 
 interface ManagementLayoutProps {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
+  back?: { to: string; label: string };
+  sidebarFooter?: ReactNode;
   children: ReactNode;
 }
 
-export default function ManagementLayout({ title, subtitle, actions, children }: ManagementLayoutProps) {
+export default function ManagementLayout({ title, subtitle, actions, back, sidebarFooter, children }: ManagementLayoutProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const role = currentRole();
 
   if (!getToken()) return <Navigate to="/login" replace />;
+  const items = NAV.filter((item) => !role || item.roles.includes(role));
+  const activeItem = items
+    .filter((item) => (item.exact ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`)))
+    .sort((a, b) => b.to.length - a.to.length)[0];
 
   function logout() {
     saveToken(null);
@@ -69,12 +98,14 @@ export default function ManagementLayout({ title, subtitle, actions, children }:
           </Box>
           <Box>
             <Typography sx={{ fontWeight: fontWeight.extraBold }}>Pede Aí</Typography>
-            <Typography sx={{ fontSize: fontSize.small, color: 'rgba(255,255,255,0.6)' }}>Painel da casa</Typography>
+            <Typography sx={{ fontSize: fontSize.small, color: 'rgba(255,255,255,0.6)' }}>
+              {role ? ROLE_SUBTITLE[role] : 'Painel da casa'}
+            </Typography>
           </Box>
         </Box>
         <Box component="nav" sx={{ display: 'flex', flexDirection: { xs: 'row', md: 'column' }, flexWrap: 'wrap', gap: 1 }}>
-          {NAV.map((item) => {
-            const active = pathname === item.to;
+          {items.map((item) => {
+            const active = item === activeItem;
             return (
               <ButtonBase
                 key={item.to}
@@ -97,7 +128,8 @@ export default function ManagementLayout({ title, subtitle, actions, children }:
             );
           })}
         </Box>
-        <Box sx={{ mt: { md: 'auto' } }}>
+        <Box sx={{ mt: { md: 'auto' }, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {sidebarFooter}
           <Button onClick={logout} sx={{ color: 'rgba(255,255,255,0.7)', minHeight: 44 }}>
             Sair
           </Button>
@@ -107,6 +139,15 @@ export default function ManagementLayout({ title, subtitle, actions, children }:
       <Box component="main" sx={{ flex: 1, minWidth: 0, p: { xs: 5, md: 10 } }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 4, mb: 8 }}>
           <Box>
+            {back && (
+              <ButtonBase
+                component={RouterLink}
+                to={back.to}
+                sx={{ mb: 2, minHeight: 32, fontFamily: 'inherit', fontWeight: fontWeight.bold, color: colors.textSecondary }}
+              >
+                ← {back.label}
+              </ButtonBase>
+            )}
             <Typography variant="h1" sx={{ fontSize: fontSize.display }}>
               {title}
             </Typography>
