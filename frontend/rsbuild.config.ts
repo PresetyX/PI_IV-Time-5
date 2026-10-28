@@ -8,6 +8,7 @@ export default defineConfig({
   },
   html: {
     title: 'Pede Aí',
+    favicon: './public/favicon.svg',
     tags: [
       { tag: 'link', attrs: { rel: 'preconnect', href: 'https://fonts.googleapis.com' } },
       { tag: 'link', attrs: { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: true } },
