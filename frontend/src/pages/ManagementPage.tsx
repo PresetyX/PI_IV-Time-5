@@ -137,9 +137,9 @@ function HourChart({ summary }: { summary: ReportSummary }) {
   }
   const max = Math.max(...summary.byHour.map((hour) => hour.revenueCents));
   return (
-    <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 260, mt: 6, overflowX: 'auto' }}>
+    <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 2, height: 260, mt: 6, overflowX: 'auto' }}>
       {summary.byHour.map((hour) => (
-        <Box key={hour.hour} sx={{ flex: '1 0 48px', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+        <Box key={hour.hour} sx={{ flex: '1 0 48px', maxWidth: 96, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
           <Typography sx={{ fontSize: fontSize.caption, fontWeight: fontWeight.bold, color: colors.textSecondary, mb: 1, whiteSpace: 'nowrap' }}>
             {formatCents(hour.revenueCents).replace(/,\d{2}$/, '')}
           </Typography>
