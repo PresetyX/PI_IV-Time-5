@@ -86,3 +86,7 @@ export const LockIcon = strokeIcon(
     <path d="M8 11V8a4 4 0 0 1 8 0v3" />
   </>,
 );
+
+export const WifiOffIcon = strokeIcon(
+  <path d="M12 20h.01M8.5 16.4a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 4.2-2.6M5 12.9a10 10 0 0 1 5.2-2.7M19 12.9a10 10 0 0 0-2.4-1.9M22 8.8a15 15 0 0 0-10.2-3.7M2 2l20 20" />,
+);
