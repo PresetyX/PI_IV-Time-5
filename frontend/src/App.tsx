@@ -11,6 +11,7 @@ import TableNumberPage from './pages/client/TableNumberPage';
 import TabsPage from './pages/client/TabsPage';
 import JoinTabPage from './pages/client/JoinTabPage';
 import MyTabPage from './pages/client/MyTabPage';
+import BillPage from './pages/client/BillPage';
 import LoginPage from './pages/LoginPage';
 import OperationsWorkspace from './pages/OperationsWorkspace';
 import ManagementPage from './pages/ManagementPage';
@@ -28,12 +29,22 @@ export default function App() {
       <Route path="/t/:slug/comandas" element={<TabsPage />} />
       <Route path="/t/:slug/comandas/minha" element={<MyTabPage />} />
       <Route path="/t/:slug/comandas/:tabId/entrar" element={<JoinTabPage />} />
+      <Route path="/t/:slug/conta" element={<BillPage />} />
       <Route
-        path="/t/:slug/conta"
+        path="/t/:slug/pix"
         element={
           <ClientPlaceholderPage
-            title="Resumo da conta"
-            description="O resumo com o total da comanda entra na próxima parte do projeto."
+            title="Pagar por Pix"
+            description="O pagamento por Pix entra na próxima parte do projeto."
+          />
+        }
+      />
+      <Route
+        path="/t/:slug/garcom"
+        element={
+          <ClientPlaceholderPage
+            title="Chamar o garçom"
+            description="O chamado de garçom entra na próxima parte do projeto."
           />
         }
       />
