@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import ActionButton from '../components/client/ActionButton';
+import { readVisit } from '../services/visit';
 import { Box, Button, Skeleton, Tab, Tabs, Typography } from '@mui/material';
 import StatusMessage from '../components/StatusMessage';
 import { ApiError } from '../services/api';
@@ -18,6 +20,9 @@ const { colors, touchTarget } = tokens;
 
 export default function MenuPage() {
   const { slug = '' } = useParams();
+  const navigate = useNavigate();
+  const visit = readVisit(slug);
+  const hasTab = Boolean(visit.sessionId && visit.guestToken);
   const [state, setState] = useState<MenuState>({ status: 'loading' });
   const [selectedCategory, setSelectedCategory] = useState(0);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -85,6 +90,23 @@ export default function MenuPage() {
             onAdd={addProduct}
           />
         )}
+
+        <Box
+          sx={{
+            position: 'sticky',
+            bottom: 0,
+            px: 5,
+            py: 4,
+            bgcolor: colors.background,
+            borderTop: `1px solid ${colors.border}`,
+          }}
+        >
+          {hasTab ? (
+            <ActionButton onClick={() => navigate(`/t/${slug}/comandas/minha`)}>Voltar para minha comanda</ActionButton>
+          ) : (
+            <ActionButton onClick={() => navigate(`/t/${slug}/entrada`)}>Pedir pelo celular</ActionButton>
+          )}
+        </Box>
       </Box>
     </Box>
   );
