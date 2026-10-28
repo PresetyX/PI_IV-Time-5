@@ -109,6 +109,12 @@ public class BackOfficeController {
         return teamService.invite(user, request);
     }
 
+    @PutMapping("/team/{userId}")
+    public TeamService.Member updateMember(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String userId,
+            @Valid @RequestBody TeamService.UpdateMemberRequest request) {
+        return teamService.update(user, userId, request);
+    }
+
     @PostMapping("/team/{userId}/deactivate")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deactivate(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String userId) {

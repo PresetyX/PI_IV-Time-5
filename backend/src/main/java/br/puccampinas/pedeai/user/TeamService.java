@@ -50,14 +50,39 @@ public class TeamService {
         return new Invitation(user.id().toHexString(), user.name(), user.email(), user.role(), password);
     }
 
-    public void deactivate(AuthenticatedUser owner, String userId) {
+    public Member update(AuthenticatedUser owner, String userId, UpdateMemberRequest request) {
         requireOwner(owner);
+        User user = findInStore(owner, userId);
+        String email = request.email().trim().toLowerCase(Locale.ROOT);
+        userRepository.findByStoreIdAndEmail(owner.storeId(), email)
+                .filter(other -> !other.id().equals(user.id()))
+                .ifPresent(other -> {
+                    throw new ConflictException("There is already someone with this e-mail");
+                });
+        boolean self = user.id().equals(owner.userId());
+        if (self && (!"OWNER".equals(request.role()) || !request.active())) {
+            throw new ConflictException("You cannot remove your own owner access");
+        }
+        User saved = userRepository.save(new User(user.id(), user.storeId(), request.name().trim(), email,
+                user.passwordHash(), request.role(), request.active(), user.mustChangePassword(),
+                request.active() ? 0 : user.failedAttempts(), request.active() ? null : user.lockedUntil(),
+                user.lastLoginAt(), user.createdAt(), clock.instant()));
+        return new Member(saved.id().toHexString(), saved.name(), saved.email(), saved.role(), saved.active(),
+                saved.lastLoginAt());
+    }
+
+    private User findInStore(AuthenticatedUser owner, String userId) {
         if (!ObjectId.isValid(userId)) {
             throw new InvalidRequestException("Invalid user id");
         }
-        User user = userRepository.findById(new ObjectId(userId))
+        return userRepository.findById(new ObjectId(userId))
                 .filter(found -> found.storeId().equals(owner.storeId()))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    public void deactivate(AuthenticatedUser owner, String userId) {
+        requireOwner(owner);
+        User user = findInStore(owner, userId);
         if (user.id().equals(owner.userId())) {
             throw new ConflictException("You cannot deactivate yourself");
         }
@@ -82,6 +107,13 @@ public class TeamService {
 
     public record InviteRequest(@NotBlank @Size(max = 60) String name, @NotBlank @Email String email,
             @NotBlank @Pattern(regexp = "OWNER|MANAGER|WAITER|KITCHEN") String role) {
+    }
+
+    public record UpdateMemberRequest(@NotBlank @Size(max = 60) String name, @NotBlank @Email String email,
+            @NotBlank @Pattern(regexp = "OWNER|MANAGER|WAITER|KITCHEN") String role, boolean active) {
+    }
+
+    public record Member(String id, String name, String email, String role, boolean active, Instant lastLoginAt) {
     }
 
     public record Invitation(String id, String name, String email, String role, String temporaryPassword) {
