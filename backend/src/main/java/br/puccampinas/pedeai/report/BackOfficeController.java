@@ -82,13 +82,15 @@ public class BackOfficeController {
     }
 
     @GetMapping("/commissions")
-    public CommissionService.Report commissions(@AuthenticationPrincipal AuthenticatedUser user) {
-        return commissionService.report(user);
+    public CommissionService.Report commissions(@AuthenticationPrincipal AuthenticatedUser user,
+            @RequestParam(defaultValue = "7") int days) {
+        return commissionService.report(user, days);
     }
 
     @PostMapping("/commissions/pay")
-    public CommissionService.Report payCommissions(@AuthenticationPrincipal AuthenticatedUser user) {
-        return commissionService.markPaid(user);
+    public CommissionService.Report payCommissions(@AuthenticationPrincipal AuthenticatedUser user,
+            @RequestParam(defaultValue = "7") int days) {
+        return commissionService.markPaid(user, days);
     }
 
     @GetMapping("/store")

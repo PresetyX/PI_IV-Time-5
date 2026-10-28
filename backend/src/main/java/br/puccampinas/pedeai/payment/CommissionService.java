@@ -20,13 +20,14 @@ import org.springframework.stereotype.Service;
 
 import br.puccampinas.pedeai.auth.AuthenticatedUser;
 import br.puccampinas.pedeai.common.ForbiddenException;
+import br.puccampinas.pedeai.common.InvalidRequestException;
 import br.puccampinas.pedeai.store.OpeningStatusCalculator;
 
 @Service
 public class CommissionService {
 
     private static final Set<String> ROLES = Set.of("OWNER", "MANAGER");
-    private static final int PERIOD_DAYS = 7;
+    private static final int MAX_DAYS = 90;
 
     private final MongoTemplate mongo;
     private final Clock clock;
@@ -36,10 +37,13 @@ public class CommissionService {
         this.clock = clock;
     }
 
-    public Report report(AuthenticatedUser user) {
+    public Report report(AuthenticatedUser user, int days) {
         requireRole(user);
         LocalDate today = LocalDate.now(clock.withZone(OpeningStatusCalculator.STORE_ZONE));
-        LocalDate from = today.minusDays(PERIOD_DAYS - 1L);
+        if (days < 1 || days > MAX_DAYS) {
+            throw new InvalidRequestException("days must be between 1 and 90");
+        }
+        LocalDate from = today.minusDays(days - 1L);
         Date start = Date.from(from.atStartOfDay(OpeningStatusCalculator.STORE_ZONE).toInstant());
 
         Document store = mongo.findById(user.storeId(), Document.class, "store");
@@ -102,11 +106,11 @@ public class CommissionService {
                 list.stream().map(Row::view).toList());
     }
 
-    public Report markPaid(AuthenticatedUser user) {
+    public Report markPaid(AuthenticatedUser user, int days) {
         requireRole(user);
         mongo.updateMulti(Query.query(Criteria.where("storeId").is(user.storeId()).and("status").is("CONFIRMED")),
                 new Update().set("status", "PAID").set("paidAt", Date.from(clock.instant())), "commission");
-        return report(user);
+        return report(user, days);
     }
 
     private static long number(Object value) {

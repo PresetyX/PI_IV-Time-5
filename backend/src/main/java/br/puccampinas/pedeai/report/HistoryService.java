@@ -59,7 +59,11 @@ public class HistoryService {
                 from = today.minusDays(6);
                 to = today.plusDays(1);
             }
-            default -> throw new InvalidRequestException("period must be TODAY, YESTERDAY or WEEK");
+            case "MONTH" -> {
+                from = today.minusDays(29);
+                to = today.plusDays(1);
+            }
+            default -> throw new InvalidRequestException("period must be TODAY, YESTERDAY, WEEK or MONTH");
         }
 
         ObjectId storeId = user.storeId();
