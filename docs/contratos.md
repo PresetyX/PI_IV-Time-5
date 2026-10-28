@@ -60,3 +60,62 @@ Estado do server (pelo socket) e do banco. 200 quando os dois estão no ar, 503 
 Cardápio da loja: categorias visíveis, em ordem de `position`, cada uma com os produtos disponíveis. 404 se a loja não existe ou está inativa.
 
 ## Endpoints autenticados
+
+### POST /api/orders
+
+Envia o carrinho de uma comanda como pedido. Aceita o token de convidado (`GUEST`) e os perfis `OWNER`, `MANAGER` e `WAITER`. A loja vem sempre do token. O cliente não manda preço de item: manda o que escolheu e o total que viu na tela, e o backend recalcula tudo com o cardápio atual.
+
+Corpo:
+
+```json
+{
+  "tabId": "...",
+  "totalCents": 9000,
+  "ageConfirmed": false,
+  "items": [
+    {
+      "productId": "...",
+      "quantity": 2,
+      "note": "sem cebola",
+      "options": [{ "group": "Adicionais", "label": "Bacon extra" }]
+    }
+  ]
+}
+```
+
+- `items`: de 1 a 25 itens. `quantity` de 1 a 20. `note` com até 140 caracteres, opcional.
+- `options`: opcional. O acréscimo de cada opção vem do cardápio, nunca do corpo. Grupo obrigatório, mínimo e máximo de cada grupo são conferidos.
+- `ageConfirmed`: obrigatório como `true` quando há bebida alcoólica no pedido.
+
+Ordem das conferências:
+
+1. A comanda existe, é da loja, está `OPEN` e (para convidado) pertence à sessão: dono ou participante não removido.
+2. A casa está aberta, dentro do horário de pedidos e sem pausa.
+3. Todo item existe na loja e está disponível agora.
+4. Opções válidas e, se houver bebida alcoólica, `ageConfirmed` verdadeiro.
+5. O backend pede `VALIDATE_ORDER` ao `server/` pelo socket (ver `protocolo.md`). Sem resposta em 3 segundos, o pedido é recusado e nada é gravado.
+6. Só então o pedido é gravado, com nome e preço copiados do cardápio, o número do dia e o evento `CREATED`.
+
+Resposta 201:
+
+```json
+{ "id": "...", "number": 7, "status": "RECEIVED", "totalCents": 9000, "createdAt": "2026-10-27T23:00:00Z" }
+```
+
+`number` recomeça em 1 a cada dia, contado pelo fuso da casa (`America/Sao_Paulo`). `totalCents` é a soma dos itens; a taxa de serviço é da comanda, não do pedido.
+
+Erros (formato padrão, com `message` pronta para a tela):
+
+| Status | `error` | Quando |
+| --- | --- | --- |
+| 400 | `validation` | Corpo inválido, identificador malformado, opção inexistente ou fora do mínimo e máximo do grupo, itens recusados pelo `server/` |
+| 400 | `age_confirmation_required` | Há bebida alcoólica e `ageConfirmed` não é `true` |
+| 403 | `forbidden` | O convidado não é dono nem participante da comanda |
+| 404 | `not_found` | Comanda ou loja não encontrada |
+| 409 | `item_unavailable` | Algum item está esgotado ou saiu do cardápio; a mensagem lista os nomes |
+| 409 | `total_mismatch` | O total enviado não bate com o cardápio atual (preço mudou) |
+| 409 | `store_closed` | Fora do horário de pedidos |
+| 409 | `store_paused` | A casa pausou os pedidos |
+| 409 | `tab_not_open` | A comanda não está `OPEN` |
+| 502 | `upstream_error` | O `server/` respondeu algo inesperado; o pedido foi recusado |
+| 503 | `server_unavailable` | O `server/` não respondeu em 3 segundos; o pedido foi recusado |

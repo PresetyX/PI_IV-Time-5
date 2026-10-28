@@ -7,8 +7,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -30,9 +32,15 @@ public class SocketClient {
 
     public SocketResponse send(String command, Map<String, String> params) {
         String line = buildLine(command, params);
+        long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(TIMEOUT_MILLIS);
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(host, port), TIMEOUT_MILLIS);
-            socket.setSoTimeout(TIMEOUT_MILLIS);
+            // O prazo de 3 s vale para a conversa inteira, não só para cada etapa.
+            long remainingMillis = TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime());
+            if (remainingMillis <= 0) {
+                throw new SocketTimeoutException("Server did not answer within " + TIMEOUT_MILLIS + " ms");
+            }
+            socket.setSoTimeout((int) remainingMillis);
 
             BufferedWriter writer = new BufferedWriter(
                     new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));

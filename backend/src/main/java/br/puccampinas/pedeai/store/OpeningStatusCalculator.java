@@ -1,10 +1,12 @@
 package br.puccampinas.pedeai.store;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +37,23 @@ public class OpeningStatusCalculator {
             return new OpeningStatus(true, accepting, paused, window.closesAt(), window.lastOrderAt(), null);
         }
         return new OpeningStatus(false, false, paused, null, null, nextOpening(hours, now).orElse(null));
+    }
+
+    /**
+     * Janela em que a casa está aberta agora, no formato que o server de validação espera:
+     * abertura e último horário para pedidos (HH:mm), mais a hora atual no fuso da casa.
+     */
+    public Optional<OrderingWindow> orderingWindow(Store store) {
+        Instant instant = clock.instant();
+        LocalDateTime now = LocalDateTime.ofInstant(instant, STORE_ZONE);
+        List<OpeningHours> hours = store.openingHours() == null ? List.of() : store.openingHours();
+        return currentWindow(hours, now).map(window -> new OrderingWindow(
+                window.opensAt(),
+                window.lastOrderAt(),
+                now.toLocalTime().truncatedTo(ChronoUnit.MINUTES).toString()));
+    }
+
+    public record OrderingWindow(String opensAt, String lastOrderAt, String now) {
     }
 
     private Optional<Window> currentWindow(List<OpeningHours> hours, LocalDateTime now) {
@@ -73,8 +92,8 @@ public class OpeningStatusCalculator {
         return day.getDayOfWeek().getValue() % DAYS_IN_WEEK;
     }
 
-    private record Window(LocalDateTime start, LocalDateTime end, LocalDateTime lastOrder, String closesAt,
-            String lastOrderAt) {
+    private record Window(LocalDateTime start, LocalDateTime end, LocalDateTime lastOrder, String opensAt,
+            String closesAt, String lastOrderAt) {
 
         static Window of(LocalDate day, OpeningHours entry) {
             LocalTime opens = LocalTime.parse(entry.opensAt());
@@ -87,7 +106,7 @@ public class OpeningStatusCalculator {
                 lastOrder = last.isBefore(opens) ? day.plusDays(1).atTime(last) : day.atTime(last);
             }
             String lastOrderAt = entry.lastOrderAt() != null ? entry.lastOrderAt() : entry.closesAt();
-            return new Window(start, end, lastOrder, entry.closesAt(), lastOrderAt);
+            return new Window(start, end, lastOrder, entry.opensAt(), entry.closesAt(), lastOrderAt);
         }
     }
 }

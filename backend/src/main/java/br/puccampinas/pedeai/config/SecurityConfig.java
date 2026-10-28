@@ -4,6 +4,7 @@ import jakarta.servlet.DispatcherType;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -33,6 +34,8 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/health", "/api/public/**", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/orders")
+                                .hasAnyRole("GUEST", "OWNER", "MANAGER", "WAITER")
                         .anyRequest().hasAnyRole("OWNER", "MANAGER", "WAITER", "KITCHEN"));
         return http.build();
     }
