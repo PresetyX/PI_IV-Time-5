@@ -116,7 +116,7 @@ const ALERTS = [
 const STATUS = [
   { label: 'Recebido', color: '#F7B26A' },
   { label: 'Em preparo', color: '#FF7A45' },
-  { label: 'Pronto', color: '#5FD08A' },
+  { label: 'Pronto', color: '#2E9E5B' },
 ];
 
 function sparkline(points: number[], width: number, height: number) {
@@ -129,15 +129,15 @@ function sparkline(points: number[], width: number, height: number) {
 }
 
 function Panel({ children, sx }: { children: ReactNode; sx?: object }) {
-  return <Box sx={{ p: 4, borderRadius: '16px', bgcolor: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', ...sx }}>{children}</Box>;
+  return <Box sx={{ p: 4, borderRadius: '16px', bgcolor: '#FBF8F5', border: `1px solid ${line}`, ...sx }}>{children}</Box>;
 }
 
-function Kpi({ label, value, hint, tone = white }: { label: string; value: ReactNode; hint: string; tone?: string }) {
+function Kpi({ label, value, hint, tone = ink }: { label: string; value: ReactNode; hint: string; tone?: string }) {
   return (
     <Panel>
-      <Typography sx={{ fontFamily: sans, fontWeight: 700, fontSize: 11, color: 'rgba(255,255,255,.55)' }}>{label}</Typography>
+      <Typography sx={{ fontFamily: sans, fontWeight: 700, fontSize: 11, color: muted }}>{label}</Typography>
       <Typography sx={{ mt: 1, fontFamily: sans, fontWeight: 800, fontSize: { xs: 18, md: 22 }, letterSpacing: '-0.03em', color: tone, fontVariantNumeric: 'tabular-nums' }}>{value}</Typography>
-      <Typography sx={{ fontFamily: sans, fontWeight: 600, fontSize: 10.5, color: '#5FD08A' }}>{hint}</Typography>
+      <Typography sx={{ fontFamily: sans, fontWeight: 600, fontSize: 10.5, color: '#2E9E5B' }}>{hint}</Typography>
     </Panel>
   );
 }
@@ -164,59 +164,59 @@ export function ObservabilitySection() {
   const prep = 11 + ((tick * 7) % 4);
 
   return (
-    <Box component="section" id="observabilidade" sx={{ px: { xs: 0, md: 5 }, py: { xs: 0, md: 6 }, scrollMarginTop: 90 }}>
-      <Box ref={ref} sx={{ position: 'relative', maxWidth: 1240, mx: 'auto', borderRadius: { xs: 0, md: '32px' }, clipPath: { md: 'inset(0 round 32px)' }, overflow: 'hidden', bgcolor: '#0C0C0C', color: white }}>
-        <Box aria-hidden sx={{ position: 'absolute', inset: 0, opacity: 0.32 }}>
-          <Clip id={CLIPS.grill} quality={360} sx={{ animation: `${drift} 20s ease-in-out infinite alternate`, ...motionSafe }} />
-        </Box>
-        <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(70% 90% at 80% 50%, rgba(12,12,12,.6), rgba(12,12,12,.95) 70%)' }} />
-        <Container maxWidth="lg" sx={{ position: 'relative', py: { xs: 14, md: 16 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '.85fr 1.15fr' }, gap: { xs: 10, md: 8 }, alignItems: 'center' }}>
+    <Box component="section" id="observabilidade" sx={{ position: 'relative', py: { xs: 14, md: 18 }, scrollMarginTop: 90, overflow: 'hidden' }}>
+      <Box aria-hidden sx={{ position: 'absolute', right: '-8%', top: '8%', width: 560, height: 560, borderRadius: '50%', background: 'radial-gradient(circle, rgba(235,90,36,.10), rgba(235,90,36,0) 70%)' }} />
+      <Box aria-hidden sx={{ position: 'absolute', left: '-10%', bottom: '0%', width: 480, height: 480, borderRadius: '50%', background: 'radial-gradient(circle, rgba(150,120,255,.08), rgba(150,120,255,0) 70%)' }} />
+      <Box ref={ref}>
+        <Container maxWidth="lg" sx={{ position: 'relative', display: 'grid', gridTemplateColumns: { xs: '1fr', md: '.85fr 1.15fr' }, gap: { xs: 10, md: 8 }, alignItems: 'center' }}>
           <Reveal from="left">
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2, px: 3, py: 1.5, borderRadius: 999, bgcolor: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.16)', fontFamily: sans, fontWeight: 800, fontSize: 11, letterSpacing: 1.6 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#FF4D3D', boxShadow: '0 0 0 4px rgba(255,77,61,.25)', animation: 'live 1.4s ease infinite', '@keyframes live': { '50%': { opacity: 0.35 } }, ...motionSafe }} />
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2, px: 3, py: 1.25, borderRadius: 999, bgcolor: peach, fontFamily: sans, fontWeight: 800, fontSize: 11, letterSpacing: 1.4, color: accent }}>
+              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#FF4D3D', boxShadow: '0 0 0 4px rgba(255,77,61,.18)', animation: 'live 1.4s ease infinite', '@keyframes live': { '50%': { opacity: 0.35 } }, ...motionSafe }} />
               OBSERVABILIDADE AO VIVO
             </Box>
-            <Typography component="h2" sx={{ mt: 5, fontFamily: sans, fontWeight: 800, fontSize: { xs: 30, md: 42 }, lineHeight: 1.12, letterSpacing: '-0.03em' }}>
-              A operação inteira <Em color="#F7B26A">na palma da mão</Em>
-            </Typography>
-            <Typography sx={{ mt: 4, maxWidth: 440, fontFamily: sans, fontWeight: 500, fontSize: 15, lineHeight: 1.7, color: 'rgba(255,255,255,.7)' }}>
+            <Box sx={{ mt: 4 }}>
+              <Title align="left" accent="na palma da mão" size={40}>
+                A operação inteira
+              </Title>
+            </Box>
+            <Sub align="left" sx={{ mt: 4, maxWidth: 440 }}>
               Cada pedido, comanda e pagamento vira um dado em tempo real. A gestão enxerga gargalos antes de virar reclamação e decide com número, não com achismo.
-            </Typography>
+            </Sub>
             <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0, mt: 7, display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <Check dark>Alertas de atraso por pedido e por mesa</Check>
-              <Check dark>Faturamento, ticket e pedidos por hora ao vivo</Check>
-              <Check dark>Itens que acabam saem do cardápio na hora</Check>
-              <Check dark>Histórico de cada comanda para auditoria</Check>
+              <Check>Alertas de atraso por pedido e por mesa</Check>
+              <Check>Faturamento, ticket e pedidos por hora ao vivo</Check>
+              <Check>Itens que acabam saem do cardápio na hora</Check>
+              <Check>Histórico de cada comanda para auditoria</Check>
             </Box>
           </Reveal>
           <Reveal from="right" delay={150}>
-            <Box sx={{ borderRadius: '22px', bgcolor: 'rgba(20,20,20,.75)', border: '1px solid rgba(255,255,255,.12)', backdropFilter: 'blur(16px)', boxShadow: '0 50px 90px -40px rgba(0,0,0,.9)', overflow: 'hidden' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 4, py: 3, borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+            <Box sx={{ borderRadius: '24px', bgcolor: white, border: `1px solid ${line}`, boxShadow: '0 40px 70px -50px rgba(0,0,0,.45)', overflow: 'hidden' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 4, py: 3, borderBottom: `1px solid ${line}`, bgcolor: '#FBFAF8' }}>
                 {['#FF5F57', '#FEBC2E', '#28C840'].map((color) => (
                   <Box key={color} sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: color }} />
                 ))}
-                <Typography sx={{ ml: 3, fontFamily: sans, fontWeight: 700, fontSize: 12, color: 'rgba(255,255,255,.55)' }}>Gestão · hoje</Typography>
-                <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1.5, fontFamily: sans, fontWeight: 700, fontSize: 11, color: '#5FD08A' }}>
-                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#5FD08A' }} />
+                <Typography sx={{ ml: 3, fontFamily: sans, fontWeight: 700, fontSize: 12, color: muted }}>Gestão · hoje</Typography>
+                <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1.5, fontFamily: sans, fontWeight: 700, fontSize: 11, color: '#2E9E5B' }}>
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#2E9E5B', animation: 'live 1.4s ease infinite', ...motionSafe }} />
                   ao vivo
                 </Box>
               </Box>
               <Box sx={{ p: { xs: 3, md: 4 }, display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 3 }}>
-                  <Kpi label="Faturamento" value={formatPrice(revenue)} hint="+12% vs. ontem" tone="#F7B26A" />
+                  <Kpi label="Faturamento" value={formatPrice(revenue)} hint="+12% vs. ontem" tone={accent} />
                   <Kpi label="Ticket médio" value="R$ 104,80" hint="+R$ 9 na semana" />
                   <Kpi label="Preparo médio" value={`${prep} min`} hint="meta: 15 min" />
                   <Kpi label="Mesas ocupadas" value={`${occupied}/20`} hint={`${Math.round((occupied / 20) * 100)}% do salão`} />
                 </Box>
                 <Panel sx={{ p: 0, overflow: 'hidden' }}>
-                  <Box sx={{ px: 4, pt: 3, display: 'flex', justifyContent: 'space-between', fontFamily: sans, fontWeight: 700, fontSize: 12, color: 'rgba(255,255,255,.6)' }}>
+                  <Box sx={{ px: 4, pt: 3, display: 'flex', justifyContent: 'space-between', fontFamily: sans, fontWeight: 700, fontSize: 12, color: muted }}>
                     <span>Pedidos por hora</span>
-                    <Box component="span" sx={{ color: white }}>{series[series.length - 1]} agora</Box>
+                    <Box component="span" sx={{ color: ink }}>{series[series.length - 1]} agora</Box>
                   </Box>
                   <Box component="svg" viewBox="0 0 520 130" preserveAspectRatio="none" sx={{ display: 'block', width: '100%', height: 130 }}>
                     <defs>
                       <linearGradient id="obs-area" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0" stopColor="#EB5A24" stopOpacity=".45" />
+                        <stop offset="0" stopColor="#EB5A24" stopOpacity=".28" />
                         <stop offset="1" stopColor="#EB5A24" stopOpacity="0" />
                       </linearGradient>
                     </defs>
@@ -229,12 +229,12 @@ export function ObservabilitySection() {
                 </Panel>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.1fr .9fr' }, gap: 3 }}>
                   <Panel>
-                    <Typography sx={{ fontFamily: sans, fontWeight: 700, fontSize: 12, color: 'rgba(255,255,255,.6)' }}>Alertas</Typography>
+                    <Typography sx={{ fontFamily: sans, fontWeight: 700, fontSize: 12, color: muted }}>Alertas</Typography>
                     <Box sx={{ mt: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
                       {alerts.map((alert, index) => (
                         <Box
                           key={`${tick}-${index}`}
-                          sx={{ display: 'flex', alignItems: 'center', gap: 2, fontFamily: sans, fontWeight: 600, fontSize: 12.5, color: index ? 'rgba(255,255,255,.6)' : white, animation: index ? 'none' : 'alertIn .5s cubic-bezier(.2,.75,.2,1) both', '@keyframes alertIn': { from: { opacity: 0, transform: 'translateX(-12px)' }, to: { opacity: 1, transform: 'none' } }, ...motionSafe }}
+                          sx={{ display: 'flex', alignItems: 'center', gap: 2, fontFamily: sans, fontWeight: 600, fontSize: 12.5, color: index ? body : ink, animation: index ? 'none' : 'alertIn .5s cubic-bezier(.2,.75,.2,1) both', '@keyframes alertIn': { from: { opacity: 0, transform: 'translateX(-12px)' }, to: { opacity: 1, transform: 'none' } }, ...motionSafe }}
                         >
                           <Box sx={{ width: 8, height: 8, flexShrink: 0, borderRadius: '50%', bgcolor: alert.tone }} />
                           {alert.text}
@@ -243,12 +243,12 @@ export function ObservabilitySection() {
                     </Box>
                   </Panel>
                   <Panel>
-                    <Typography sx={{ fontFamily: sans, fontWeight: 700, fontSize: 12, color: 'rgba(255,255,255,.6)' }}>Fila da cozinha</Typography>
+                    <Typography sx={{ fontFamily: sans, fontWeight: 700, fontSize: 12, color: muted }}>Fila da cozinha</Typography>
                     <Box sx={{ mt: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
                       {['#0185 · Mesa 05', '#0186 · Balcão', '#0187 · Mesa 12'].map((order, index) => {
                         const status = STATUS[(tick + index) % STATUS.length];
                         return (
-                          <Box key={order} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, fontFamily: sans, fontWeight: 700, fontSize: 12.5 }}>
+                          <Box key={order} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, fontFamily: sans, fontWeight: 700, fontSize: 12.5, color: ink }}>
                             {order}
                             <Box sx={{ px: 2, py: 0.5, borderRadius: 999, bgcolor: `${status.color}26`, color: status.color, fontSize: 11, transition: 'all .5s ease' }}>{status.label}</Box>
                           </Box>
@@ -401,10 +401,7 @@ export function CtaSection() {
   return (
     <Box component="section" id="contato" sx={{ scrollMarginTop: 90, py: { xs: 0, md: 8 } }}>
       <Box sx={{ position: 'relative', maxWidth: 1220, mx: 'auto', bgcolor: '#0F0F0F', color: white, borderRadius: { xs: 0, md: '28px' }, overflow: 'hidden', minHeight: { md: 400 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '300px 1fr 300px' }, alignItems: 'center' }}>
-        <Box aria-hidden sx={{ position: 'absolute', inset: 0, opacity: 0.25 }}>
-          <Clip id={CLIPS.stirFry} quality={360} sx={{ filter: 'grayscale(.4)' }} />
-        </Box>
-        <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(50% 80% at 50% 50%, rgba(15,15,15,.5), rgba(15,15,15,.92))' }} />
+        <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(45% 80% at 50% 50%, rgba(235,90,36,.16), rgba(15,15,15,0) 70%)' }} />
         <Box sx={{ position: 'relative', display: { xs: 'none', md: 'flex' }, alignSelf: 'end', justifyContent: 'center', pt: 10 }}>
           <Box sx={{ width: 250, pt: 8, pb: 8, borderRadius: '125px 125px 0 0', bgcolor: white, color: ink, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <ChefMascot size={170} phrases={['Bora vender mais?', 'Me leva pra sua casa!', 'Clica em testar!']} />
@@ -432,7 +429,7 @@ export function CtaSection() {
           <Box sx={{ position: 'relative', textAlign: 'center' }}>
             <Typography sx={{ mb: 5, fontFamily: sans, fontWeight: 800, fontSize: 16 }}>O seu prato aqui</Typography>
             <Box sx={{ width: 200, height: 200, mx: 'auto', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 24px 40px -18px rgba(0,0,0,.6)', animation: `${turn} 40s linear infinite`, ...motionSafe }}>
-              <Photo id={PHOTOS.fries} alt="Porção de batata frita" width={400} height={400} />
+              <Photo id={PHOTOS.spread} alt="Mesa com vários pratos" width={400} height={400} />
             </Box>
           </Box>
         </Box>
