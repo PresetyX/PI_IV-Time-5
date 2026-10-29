@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Accordion, AccordionDetails, AccordionSummary, Box, ButtonBase, Container, Typography } from '@mui/material';
 import BrandMark from '../../components/BrandMark';
-import { CountUp, Cutout, PHOTOS, Photo, Reveal, Sub, Title, bob, landing, motionSafe, photo, turn } from './landingKit';
+import { CLIPS, Clip, CountUp, Cutout, Em, PHOTOS, Photo, Reveal, Sub, Title, bob, drift, landing, marquee, motionSafe, photo, turn, useInView } from './landingKit';
 import type { MenuHighlight } from './landingEffects';
 import { CurvedGallery, PersonaCard, TiltCard, TrendingCarousel } from './landingEffects';
 
-const { accent, accentDark, peach, ink, body, muted, line, white, serif, sans, script } = landing;
+const { accent, accentDark, peach, ink, body, muted, line, white, sans } = landing;
 
 function PillButton({ to, children, tone = 'accent' }: { to: string; children: ReactNode; tone?: 'accent' | 'white' | 'outline' }) {
   const styles = {
@@ -29,7 +29,7 @@ export function PersonaSection() {
         <Reveal from="left">
           <Box sx={{ position: 'relative', height: { xs: 420, md: 470 }, borderRadius: '24px', overflow: 'hidden', bgcolor: ink, '&:hover .hero-burger': { transform: 'scale(1.06) rotate(-1deg)' } }}>
             <Box className="hero-burger" sx={{ position: 'absolute', inset: 0, transition: 'transform 1.4s cubic-bezier(.2,.75,.2,1)' }}>
-              <Photo id={PHOTOS.burgerStack} alt="Triunfo duplo, o lanche da casa" width={1100} />
+              <Photo id={PHOTOS.burgerStack} alt="Triunfo duplo, o lanche da casa" width={1100} sx={{ animation: `${drift} 16s ease-in-out infinite alternate`, ...motionSafe }} />
             </Box>
             <Box sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 80% at 50% 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.75) 100%)' }} />
             {[...Array(14)].map((_, index) => (
@@ -53,12 +53,14 @@ export function PersonaSection() {
             ))}
             <Box sx={{ position: 'absolute', left: 24, top: { xs: 24, sm: 'auto' }, bottom: { xs: 'auto', sm: 104 }, px: 4, py: 3, borderRadius: '14px', bgcolor: 'rgba(255,255,255,.94)', boxShadow: '0 10px 30px -12px rgba(0,0,0,.5)' }}>
               <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 11, letterSpacing: 1.5, color: accent }}>DONO DA CASA</Typography>
-              <Typography sx={{ fontFamily: script, fontSize: 32, lineHeight: 1.1, color: ink }}>Marcos Lima</Typography>
+              <Typography sx={{ fontSize: 28, lineHeight: 1.15 }}>
+                <Em color={ink}>Marcos Lima</Em>
+              </Typography>
             </Box>
             <Box sx={{ position: 'absolute', left: 24, right: 24, bottom: 24, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 3 }}>
               <Box>
                 <Typography sx={{ fontFamily: sans, fontWeight: 600, fontSize: 13, color: '#F7B26A' }}>Triunfo duplo · R$ 39,00</Typography>
-                <Typography sx={{ fontFamily: serif, fontSize: { xs: 22, md: 26 }, color: white }}>O lanche mais pedido da casa</Typography>
+                <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: { xs: 20, md: 24 }, lineHeight: 1.2, letterSpacing: '-0.02em', color: white }}>O lanche mais pedido da casa</Typography>
               </Box>
               <PillButton to="/t/triunfo-lanches/cardapio" tone="white">
                 Ver cardápio
@@ -69,16 +71,16 @@ export function PersonaSection() {
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <Reveal from="right">
-            <Typography component="h2" sx={{ fontFamily: serif, fontWeight: 600, fontSize: { xs: 30, md: 38 }, lineHeight: 1.15, color: ink }}>
-              Conheça a <Box component="span" sx={{ color: accent }}>Triunfo Lanches</Box>
-            </Typography>
+            <Title align="left" accent="Triunfo Lanches" size={38}>
+              Conheça a
+            </Title>
             <Sub align="left" sx={{ mt: 3 }}>
               A Triunfo é a casa de demonstração do Pede Aí, em Campinas. Tem salão com mesas, balcão de retirada e uma equipe de quatro pessoas. Tudo o que você vê aqui roda no sistema de verdade, com o cardápio e as mesas dela.
             </Sub>
           </Reveal>
           <Reveal from="right" delay={150} sx={{ flex: 1 }}>
             <Box sx={{ position: 'relative', height: '100%', minHeight: 280, borderRadius: '24px', overflow: 'hidden' }}>
-              <Photo id={PHOTOS.chefWoman} alt="Cozinheira montando os pratos" width={900} />
+              <Clip id={CLIPS.salad} alt="Cozinheiro montando uma salada" />
               <Box sx={{ position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)', width: { xs: 200, sm: 220 }, px: 4, py: 5, gap: 5, borderRadius: '18px', bgcolor: 'rgba(255,255,255,.94)', backdropFilter: 'blur(10px)', boxShadow: '0 20px 40px -20px rgba(0,0,0,.45)', display: 'flex', flexDirection: 'column' }}>
                 {[
                   { to: 10, suffix: '', label: 'Mesas com QR', icon: 'M4 10h16M6 10v9M18 10v9M8 6h8' },
@@ -186,6 +188,136 @@ export function TrendingSection() {
   );
 }
 
+const TICKER = ['QR na mesa', 'Comanda dividida', 'Cozinha ao vivo', 'Pix na mesa', 'Caixa fechado', 'Curva ABC', 'Tela grande na TV', 'Sem app para instalar'];
+
+function Ribbon({ tilt, dark = false }: { tilt: number; dark?: boolean }) {
+  const items = [...TICKER, ...TICKER];
+  return (
+    <Box sx={{ mx: '-4%', py: 3.5, transform: `rotate(${tilt}deg)`, bgcolor: dark ? ink : accent, color: white, overflow: 'hidden', boxShadow: '0 24px 40px -28px rgba(0,0,0,.7)' }}>
+      <Box sx={{ display: 'flex', width: 'max-content', animation: `${marquee} ${dark ? 46 : 36}s linear infinite ${dark ? 'reverse' : 'normal'}`, ...motionSafe }}>
+        {items.map((item, index) => (
+          <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 5, pr: 5, fontFamily: sans, fontWeight: 800, fontSize: { xs: 17, md: 22 }, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
+            {index % 3 === 1 ? <Em color={dark ? '#F7B26A' : white}>{item}</Em> : item}
+            <Box component="span" sx={{ fontSize: '0.75em', color: dark ? accent : ink }}>✦</Box>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
+export function MarqueeBand() {
+  return (
+    <Box aria-hidden sx={{ position: 'relative', py: { xs: 12, md: 16 }, overflow: 'hidden' }}>
+      <Ribbon tilt={-2.5} />
+      <Box sx={{ mt: -10 }}>
+        <Ribbon tilt={2} dark />
+      </Box>
+    </Box>
+  );
+}
+
+const FLOW = [
+  { label: 'Recebido', color: '#F7B26A' },
+  { label: 'Em preparo', color: '#EB5A24' },
+  { label: 'Pronto', color: '#5FD08A' },
+  { label: 'Entregue', color: '#9DB4FF' },
+];
+
+const LIVE_ORDERS = [
+  { code: '#0042', place: 'Mesa 05', item: '2× X-salada', offset: 0 },
+  { code: '#0043', place: 'Balcão', item: 'Batata frita 500 g', offset: 1 },
+  { code: '#0044', place: 'Mesa 08', item: 'Milk-shake de morango', offset: 2 },
+];
+
+export function KitchenLiveSection() {
+  const { ref, visible } = useInView<HTMLDivElement>(0.3);
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!visible || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const timer = window.setInterval(() => setTick((value) => value + 1), 2200);
+    return () => window.clearInterval(timer);
+  }, [visible]);
+
+  return (
+    <Box component="section" id="ao-vivo" aria-label="Cozinha ao vivo" sx={{ px: { xs: 0, md: 5 }, py: { xs: 0, md: 6 } }}>
+      <Box ref={ref} sx={{ position: 'relative', maxWidth: 1220, mx: 'auto', borderRadius: { xs: 0, md: '28px' }, overflow: 'hidden', bgcolor: ink, color: white }}>
+        <Box aria-hidden sx={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+          <Clip id={CLIPS.fries} sx={{ animation: `${drift} 18s ease-in-out infinite alternate`, ...motionSafe }} />
+        </Box>
+        <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: { xs: 'rgba(10,10,10,.8)', md: 'linear-gradient(90deg, rgba(10,10,10,.94) 0%, rgba(10,10,10,.72) 48%, rgba(10,10,10,.3) 100%)' } }} />
+        <Container maxWidth="lg" sx={{ position: 'relative', py: { xs: 14, md: 16 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.1fr .9fr' }, gap: { xs: 10, md: 8 }, alignItems: 'center' }}>
+          <Reveal from="left">
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2, px: 3, py: 1.5, borderRadius: 999, bgcolor: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.16)', fontFamily: sans, fontWeight: 800, fontSize: 11, letterSpacing: 1.6 }}>
+              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#FF4D3D', boxShadow: '0 0 0 4px rgba(255,77,61,.25)', animation: 'live 1.4s ease infinite', '@keyframes live': { '50%': { opacity: 0.35 } }, ...motionSafe }} />
+              AO VIVO NA COZINHA
+            </Box>
+            <Typography component="h2" sx={{ mt: 5, fontFamily: sans, fontWeight: 800, fontSize: { xs: 30, md: 42 }, lineHeight: 1.12, letterSpacing: '-0.03em' }}>
+              Enquanto o cliente escolhe, a cozinha já <Em color="#F7B26A">está no fogo</Em>
+            </Typography>
+            <Typography sx={{ mt: 4, maxWidth: 440, fontFamily: sans, fontWeight: 500, fontSize: 15, lineHeight: 1.7, color: 'rgba(255,255,255,.7)' }}>
+              Cada pedido aparece na fila da produção assim que é enviado. O salão vê quando ficou pronto e o cliente acompanha tudo da mesa.
+            </Typography>
+            <Box sx={{ mt: 8, display: 'flex', gap: { xs: 5, md: 10 } }}>
+              {[
+                { to: 15, suffix: ' s', label: 'para a fila atualizar' },
+                { to: 0, suffix: '', label: 'pedidos em papel' },
+                { to: 4, suffix: '', label: 'perfis de equipe' },
+              ].map((stat) => (
+                <Box key={stat.label}>
+                  <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 34, lineHeight: 1, letterSpacing: '-0.03em', color: white }}>
+                    <CountUp to={stat.to} suffix={stat.suffix} />
+                  </Typography>
+                  <Typography sx={{ mt: 1.5, fontFamily: sans, fontWeight: 600, fontSize: 12.5, color: 'rgba(255,255,255,.6)' }}>{stat.label}</Typography>
+                </Box>
+              ))}
+            </Box>
+          </Reveal>
+          <Reveal from="right" delay={150}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {LIVE_ORDERS.map((order, index) => {
+                const step = (tick + order.offset) % FLOW.length;
+                const status = FLOW[step];
+                return (
+                  <Box
+                    key={order.code}
+                    sx={{
+                      p: 4,
+                      ml: { md: index === 1 ? 8 : 0 },
+                      borderRadius: '18px',
+                      bgcolor: 'rgba(255,255,255,.08)',
+                      border: '1px solid rgba(255,255,255,.14)',
+                      backdropFilter: 'blur(14px)',
+                      boxShadow: '0 30px 50px -30px rgba(0,0,0,.8)',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 3 }}>
+                      <Box>
+                        <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 15 }}>
+                          {order.code} · {order.place}
+                        </Typography>
+                        <Typography sx={{ mt: 0.5, fontFamily: sans, fontWeight: 500, fontSize: 13, color: 'rgba(255,255,255,.65)' }}>{order.item}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 3, py: 1.25, borderRadius: 999, bgcolor: `${status.color}26`, color: status.color, fontFamily: sans, fontWeight: 800, fontSize: 12, whiteSpace: 'nowrap', transition: 'all .5s ease' }}>
+                        <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: status.color, transition: 'background-color .5s ease' }} />
+                        {status.label}
+                      </Box>
+                    </Box>
+                    <Box sx={{ mt: 3.5, height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,.1)', overflow: 'hidden' }}>
+                      <Box sx={{ height: '100%', width: `${((step + 1) / FLOW.length) * 100}%`, borderRadius: 2, bgcolor: status.color, transition: 'width .8s cubic-bezier(.2,.75,.2,1), background-color .5s ease' }} />
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Reveal>
+        </Container>
+      </Box>
+    </Box>
+  );
+}
+
 function FloatingChip({ icon, title, text, tone, delay }: { icon: string; title: string; text: string; tone: string; delay: number }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, px: 3, py: 2.5, borderRadius: '14px', bgcolor: white, boxShadow: '0 18px 30px -22px rgba(0,0,0,.45)', animation: `${bob} 6s ease-in-out ${delay}s infinite`, '--tilt': '0deg', transition: 'transform .3s ease', ...motionSafe }}>
@@ -195,7 +327,7 @@ function FloatingChip({ icon, title, text, tone, delay }: { icon: string; title:
         </Box>
       </Box>
       <Box>
-        <Typography sx={{ fontFamily: serif, fontSize: 14, color: ink }}>{title}</Typography>
+        <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 13.5, color: ink }}>{title}</Typography>
         <Typography sx={{ fontFamily: sans, fontWeight: 600, fontSize: 11.5, color: muted }}>{text}</Typography>
       </Box>
     </Box>
@@ -227,20 +359,22 @@ export function MasterSection() {
 
         <Box sx={{ mt: 12, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1.1fr .9fr .9fr 1.1fr' }, gap: 4, alignItems: 'center' }}>
           <Reveal delay={0}>
-            <Box sx={{ position: 'relative', height: 240, borderRadius: '18px', overflow: 'hidden', '&:hover img': { transform: 'scale(1.08)' }, '& img': { transition: 'transform 1s ease' } }}>
-              <Photo id={PHOTOS.chopping} alt="Preparo na cozinha" width={700} />
+            <Box sx={{ position: 'relative', height: 240, borderRadius: '18px', overflow: 'hidden', '&:hover video': { transform: 'scale(1.08)' }, '& video': { transition: 'transform 1s ease' } }}>
+              <Clip id={CLIPS.garlic} alt="Cozinheiro picando alho" quality={360} />
               <Box sx={{ position: 'absolute', right: 12, top: 12, px: 3, py: 1, borderRadius: 999, bgcolor: 'rgba(0,0,0,.55)', color: white, fontFamily: sans, fontWeight: 700, fontSize: 11 }}>Passo 01</Box>
-              <Box sx={{ position: 'absolute', left: 12, bottom: 12, px: 3, py: 1.5, borderRadius: 999, bgcolor: 'rgba(255,255,255,.9)', fontFamily: serif, fontSize: 13, color: ink }}>Pedido chega na fila</Box>
+              <Box sx={{ position: 'absolute', left: 12, bottom: 12, px: 3, py: 1.5, borderRadius: 999, bgcolor: 'rgba(255,255,255,.9)', fontFamily: sans, fontWeight: 700, fontSize: 12.5, color: ink }}>Pedido chega na fila</Box>
             </Box>
           </Reveal>
           <Reveal delay={120}>
             <Box sx={{ position: 'relative', p: 5, borderRadius: '18px', background: `linear-gradient(160deg, ${white} 0%, #FFF3EC 100%)`, border: `1px solid ${line}`, transform: { md: 'rotate(-2deg)' }, transition: 'transform .5s cubic-bezier(.2,.75,.2,1)', '&:hover': { transform: 'rotate(0deg) translateY(-6px)' } }}>
               <Box sx={{ position: 'absolute', right: 14, top: 14, width: 30, height: 30, borderRadius: '50%', bgcolor: peach, color: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>♥</Box>
-              <Typography sx={{ fontFamily: serif, fontSize: 22, lineHeight: 1.3, color: ink }}>“A cozinha nunca foi tão organizada!”</Typography>
+              <Typography sx={{ pr: 8, fontFamily: sans, fontWeight: 800, fontSize: 21, lineHeight: 1.3, letterSpacing: '-0.02em', color: ink }}>
+                “A cozinha nunca foi tão <Em>organizada!</Em>”
+              </Typography>
               <Box sx={{ mt: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box component="img" src={photo(PHOTOS.cook, 80, 80)} alt="" sx={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover' }} />
                 <Box>
-                  <Typography sx={{ fontFamily: serif, fontSize: 13.5, color: ink }}>Zé da Cozinha</Typography>
+                  <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 13.5, color: ink }}>Zé da Cozinha</Typography>
                   <Typography sx={{ fontFamily: sans, fontWeight: 600, fontSize: 11, color: muted }}>Persona · casa de demonstração</Typography>
                 </Box>
               </Box>
@@ -254,17 +388,17 @@ export function MasterSection() {
             </Box>
           </Reveal>
           <Reveal delay={360}>
-            <Box sx={{ position: 'relative', height: 330, borderRadius: '18px', overflow: 'hidden', '&:hover img': { transform: 'scale(1.06)' }, '& img': { transition: 'transform 1s ease' } }}>
-              <Photo id={PHOTOS.plating} alt="Cozinheiro finalizando os pratos" width={800} />
+            <Box sx={{ position: 'relative', height: 330, borderRadius: '18px', overflow: 'hidden', '&:hover video': { transform: 'scale(1.06)' }, '& video': { transition: 'transform 1s ease' } }}>
+              <Clip id={CLIPS.finishing} alt="Cozinheiro finalizando o prato" quality={360} />
               <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.72))' }} />
               <Box sx={{ position: 'absolute', left: 14, top: 14, display: 'flex', alignItems: 'center', gap: 1.5, px: 3, py: 1, borderRadius: 999, bgcolor: 'rgba(255,255,255,.9)', fontFamily: sans, fontWeight: 800, fontSize: 11, color: ink }}>
                 <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: accent, animation: 'pulse 1.6s ease infinite', '@keyframes pulse': { '50%': { opacity: 0.3 } }, ...motionSafe }} />
                 Produção
               </Box>
-              <Typography sx={{ position: 'absolute', left: 18, bottom: 16, fontFamily: serif, fontSize: 26, lineHeight: 1.15, color: white }}>
+              <Typography sx={{ position: 'absolute', left: 18, bottom: 16, fontFamily: sans, fontWeight: 800, fontSize: 24, lineHeight: 1.15, letterSpacing: '-0.02em', color: white }}>
                 Pronto para
                 <br />
-                ir para a mesa
+                <Em color="#F7B26A">ir para a mesa</Em>
               </Typography>
             </Box>
           </Reveal>
@@ -280,13 +414,13 @@ export function GallerySection() {
       <CurvedGallery
         images={[
           { id: PHOTOS.flames, alt: 'Chapa com fogo alto' },
-          { id: PHOTOS.friendsCooking, alt: 'Amigos cozinhando' },
+          { id: PHOTOS.friendsCooking, alt: 'Pizza sendo aberta', clip: CLIPS.pizza },
           { id: PHOTOS.chefPlating, alt: 'Cozinheiro finalizando prato' },
-          { id: PHOTOS.crowd, alt: 'Salão cheio' },
+          { id: PHOTOS.crowd, alt: 'Bar movimentado', clip: CLIPS.bar },
           { id: PHOTOS.bar, alt: 'Balcão do bar' },
-          { id: PHOTOS.plating, alt: 'Pratos saindo da cozinha' },
+          { id: PHOTOS.plating, alt: 'Chope saindo da torneira', clip: CLIPS.beer },
           { id: PHOTOS.hall, alt: 'Salão do restaurante' },
-          { id: PHOTOS.grill, alt: 'Espetinhos na brasa' },
+          { id: PHOTOS.grill, alt: 'Pizzas no forno', clip: CLIPS.oven },
         ]}
       />
     </Box>
@@ -361,7 +495,7 @@ export function FaqSection() {
                   expandIcon={<Box sx={{ fontFamily: sans, fontWeight: 600, fontSize: 22, lineHeight: 1, color: open === index ? accent : ink }}>{open === index ? '−' : '+'}</Box>}
                   sx={{ px: 5, minHeight: 58, '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': { transform: 'none' } }}
                 >
-                  <Typography sx={{ fontFamily: serif, fontSize: 15.5, color: ink }}>{item.q}</Typography>
+                  <Typography sx={{ fontFamily: sans, fontWeight: 700, fontSize: 15, color: ink }}>{item.q}</Typography>
                 </AccordionSummary>
                 <AccordionDetails sx={{ px: 5, pt: 0, pb: 5 }}>
                   <Typography sx={{ fontFamily: sans, fontWeight: 500, fontSize: 14, lineHeight: 1.7, color: body }}>{item.a}</Typography>
@@ -389,17 +523,21 @@ export function CtaSection() {
   return (
     <Box component="section" id="contato" sx={{ scrollMarginTop: 90, py: { xs: 0, md: 8 } }}>
       <Box sx={{ position: 'relative', maxWidth: 1220, mx: 'auto', bgcolor: '#0F0F0F', color: white, borderRadius: { xs: 0, md: '28px' }, overflow: 'hidden', minHeight: { md: 380 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '320px 1fr 320px' }, alignItems: 'center' }}>
-        <Box sx={{ display: { xs: 'none', md: 'flex' }, alignSelf: 'end', justifyContent: 'center', pt: 10 }}>
+        <Box aria-hidden sx={{ position: 'absolute', inset: 0, opacity: 0.22 }}>
+          <Clip id={CLIPS.waiter} quality={360} sx={{ filter: 'grayscale(.6)' }} />
+        </Box>
+        <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(50% 80% at 50% 50%, rgba(15,15,15,.55), rgba(15,15,15,.92))' }} />
+        <Box sx={{ position: 'relative', display: { xs: 'none', md: 'flex' }, alignSelf: 'end', justifyContent: 'center', pt: 10 }}>
           <Box sx={{ width: 260, pt: 6, pb: 8, borderRadius: '130px 130px 0 0', bgcolor: white, color: ink, textAlign: 'center' }}>
             <Plate id={PHOTOS.steakFries} label="Calabresa acebolada" size={190} />
             <Typography sx={{ mt: 4, fontFamily: sans, fontWeight: 800, fontSize: 18 }}>Calabresa acebolada</Typography>
           </Box>
         </Box>
-        <Reveal sx={{ textAlign: 'center', px: { xs: 6, md: 4 }, py: { xs: 14, md: 10 } }}>
+        <Reveal sx={{ position: 'relative', textAlign: 'center', px: { xs: 6, md: 4 }, py: { xs: 14, md: 10 } }}>
           <Typography component="h2" sx={{ fontFamily: sans, fontWeight: 800, fontSize: { xs: 30, md: 38 }, lineHeight: 1.15 }}>
             Faça um pedido
             <br />
-            direto da <Box component="span" sx={{ color: accent }}>sua mesa</Box>
+            direto da <Em>sua mesa</Em>
           </Typography>
           <Typography sx={{ mt: 4, mx: 'auto', maxWidth: 380, fontFamily: sans, fontWeight: 500, fontSize: 14.5, lineHeight: 1.7, color: 'rgba(255,255,255,.65)' }}>
             Entre na mesa 05 da Triunfo, peça um lanche e acompanhe o pedido chegando na cozinha.
@@ -454,7 +592,7 @@ export function Footer() {
           <Box sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <BrandMark sx={{ fontSize: 36, color: ink }} />
-              <Typography sx={{ fontFamily: serif, fontWeight: 600, fontSize: 24, color: ink }}>Pede Aí</Typography>
+              <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 22, letterSpacing: '-0.02em', color: ink }}>Pede Aí</Typography>
             </Box>
             <Typography sx={{ mt: 3, maxWidth: 260, fontFamily: sans, fontWeight: 500, fontSize: 14, lineHeight: 1.7, color: body }}>
               Pedidos digitais para bares e restaurantes, do QR na mesa ao fechamento do caixa.
@@ -502,7 +640,7 @@ export function Footer() {
           </FooterColumn>
         </Box>
         <Typography sx={{ mt: 12, pt: 5, borderTop: `1px solid ${line}`, textAlign: 'center', fontFamily: sans, fontWeight: 500, fontSize: 13, color: muted }}>
-          © {new Date().getFullYear()} Pede Aí. Feito pelo Time 5 da PUC-Campinas. Fotos: Unsplash.
+          © {new Date().getFullYear()} Pede Aí. Feito pelo Time 5 da PUC-Campinas. Fotos: Unsplash. Vídeos: Mixkit.
         </Typography>
       </Container>
     </Box>
