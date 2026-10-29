@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, ButtonBase, Typography } from '@mui/material';
-import { Photo, formatPrice, landing, photo } from './landingKit';
+import { Clip, Photo, formatPrice, landing, photo } from './landingKit';
 
 const { accent, ink, body, muted, line, white, sans } = landing;
 
@@ -141,7 +141,7 @@ export function TrendingCarousel({ items }: { items: MenuHighlight[] }) {
   );
 }
 
-export function CurvedGallery({ images }: { images: { id: string; alt: string }[] }) {
+export function CurvedGallery({ images }: { images: { id: string; alt: string; clip?: number }[] }) {
   const stage = useRef<HTMLDivElement | null>(null);
   const items = useRef<(HTMLDivElement | null)[]>([]);
   const paused = useRef(false);
@@ -202,7 +202,7 @@ export function CurvedGallery({ images }: { images: { id: string; alt: string }[
           }}
           sx={{ position: 'absolute', left: 0, top: { xs: 40, md: 60 }, height: { xs: 190, md: 250 }, borderRadius: '16px', overflow: 'hidden', willChange: 'transform', transformStyle: 'preserve-3d', boxShadow: '0 20px 40px -24px rgba(0,0,0,.5)' }}
         >
-          <Photo id={image.id} alt={image.alt} width={520} height={560} />
+          {image.clip ? <Clip id={image.clip} alt={image.alt} quality={360} /> : <Photo id={image.id} alt={image.alt} width={520} height={560} />}
         </Box>
       ))}
     </Box>
@@ -237,7 +237,7 @@ export function PersonaCard({ image, name, role, quote, sees, to }: { image: str
           <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,.8) 100%)' }} />
           <Box sx={{ position: 'absolute', left: 18, top: 18, px: 3, py: 1, borderRadius: 999, bgcolor: 'rgba(255,255,255,.92)', fontFamily: sans, fontWeight: 800, fontSize: 11.5, letterSpacing: 0.5, color: accent, textTransform: 'uppercase' }}>{role}</Box>
           <Box sx={{ position: 'absolute', left: 20, right: 20, bottom: 20, color: white }}>
-            <Typography sx={{ fontFamily: landing.serif, fontSize: 24 }}>{name}</Typography>
+            <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 22, letterSpacing: '-0.02em' }}>{name}</Typography>
             <Typography sx={{ mt: 1, fontFamily: sans, fontWeight: 500, fontSize: 13.5, opacity: 0.85 }}>“{quote}”</Typography>
           </Box>
         </Box>

@@ -14,9 +14,8 @@ export const landing = {
   line: '#EEE9E4',
   paper: '#F7F6F4',
   white: '#FFFFFF',
-  serif: '"Playfair Display", Georgia, serif',
+  display: '"Playfair Display", Georgia, serif',
   sans: 'Manrope, system-ui, sans-serif',
-  script: '"Great Vibes", cursive',
 };
 
 export function photo(id: string, width = 900, height?: number): string {
@@ -60,6 +59,30 @@ export const PHOTOS = {
   lettuce: '1622206151226-18ca2c9ab4a1',
 };
 
+export const CLIPS = {
+  brigade: 15875,
+  chef: 39535,
+  bigKitchen: 43048,
+  grill: 4678,
+  fries: 9278,
+  oven: 42481,
+  finishing: 13261,
+  salad: 13258,
+  garlic: 43055,
+  pizza: 42469,
+  bar: 4043,
+  waiter: 4672,
+  beer: 8709,
+};
+
+export function clipSource(id: number, quality: 360 | 720 = 720): string {
+  return `https://assets.mixkit.co/videos/${id}/${id}-${quality}.mp4`;
+}
+
+export function clipPoster(id: number): string {
+  return `https://assets.mixkit.co/videos/${id}/${id}-thumb-720-0.jpg`;
+}
+
 export const bob = keyframes`
   0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
   50% { transform: translateY(-12px) rotate(calc(var(--tilt, 0deg) + 4deg)); }
@@ -73,6 +96,16 @@ export const turn = keyframes`
 export const shimmer = keyframes`
   from { background-position: 0% 50%; }
   to { background-position: 200% 50%; }
+`;
+
+export const drift = keyframes`
+  from { transform: scale(1.12) translate3d(-1.5%, -1%, 0); }
+  to { transform: scale(1.02) translate3d(1.5%, 1%, 0); }
+`;
+
+export const marquee = keyframes`
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
 `;
 
 export const motionSafe = { '@media (prefers-reduced-motion: reduce)': { animation: 'none !important', transition: 'none !important' } };
@@ -158,12 +191,60 @@ export function Title({ children, accent, align = 'center', size = 40 }: { child
       {accent && (
         <>
           {' '}
-          <Box component="span" sx={{ color: landing.accent }}>
-            {accent}
-          </Box>
+          <Em>{accent}</Em>
         </>
       )}
     </Typography>
+  );
+}
+
+export function Em({ children, color = landing.accent, sx }: { children: ReactNode; color?: string; sx?: SxProps<Theme> }) {
+  return (
+    <Box component="em" sx={[{ fontFamily: landing.display, fontStyle: 'italic', fontWeight: 600, letterSpacing: '-0.01em', color }, ...(Array.isArray(sx) ? sx : [sx])]}>
+      {children}
+    </Box>
+  );
+}
+
+export function Clip({ id, alt, quality = 720, sx }: { id: number; alt?: string; quality?: 360 | 720; sx?: SxProps<Theme> }) {
+  const ref = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return undefined;
+    node.muted = true;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const play = () => node.play().catch(() => undefined);
+    if (typeof IntersectionObserver === 'undefined') {
+      play();
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) play();
+        else node.pause();
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <Box
+      component="video"
+      ref={ref}
+      muted
+      loop
+      playsInline
+      preload="none"
+      poster={clipPoster(id)}
+      aria-label={alt}
+      aria-hidden={alt ? undefined : true}
+      sx={[{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }, ...(Array.isArray(sx) ? sx : [sx])]}
+    >
+      <source src={clipSource(id, quality)} type="video/mp4" />
+    </Box>
   );
 }
 
