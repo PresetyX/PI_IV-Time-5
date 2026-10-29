@@ -210,7 +210,7 @@ export function StatsStrip() {
 }
 
 const REASONS = [
-  { cutout: 'broccoli' as const, tilt: '-10deg', title: 'Sem app, sem atrito', text: 'O cliente aponta a câmera para o QR da mesa e o cardápio abre no navegador. Menos passos, mais pedidos.', glow: '#FFD9C7' },
+  { cutout: 'cappuccino' as const, tilt: '-8deg', title: 'Sem app, sem atrito', text: 'O cliente aponta a câmera para o QR da mesa e o cardápio abre no navegador. Menos passos, mais pedidos.', glow: '#FFD9C7' },
   { cutout: 'peppers' as const, tilt: '8deg', title: 'Comanda dividida de verdade', text: 'Cada pessoa abre a sua comanda ou entra na do amigo com um código de quatro números. No fim, cada um paga o que pediu.', glow: '#FFE9B8' },
   { cutout: 'avocado' as const, tilt: '-6deg', title: 'Sem taxa por pedido', text: 'Mensalidade fixa, sem comissão em cima das vendas. Quanto mais a casa vende, mais rápido o sistema se paga.', glow: '#D7F0DD' },
 ];
@@ -407,7 +407,7 @@ const SEGMENTS: Showcase[] = [
   { image: PHOTOS.sushi, name: 'Japonês', category: 'Rodízio e à la carte', tag: 'Mesa', banner: 'Rodízio sem papel', metrics: ['−35% de erros', '+2 pedidos por mesa'] },
   { image: PHOTOS.pasta, name: 'Cantina', category: 'Massas', tag: 'Mesa e entrega', banner: 'Segunda rodada em um toque', metrics: ['+21% no ticket', '78% pela mesa'] },
   { image: PHOTOS.tacos, name: 'Lanchonete', category: 'Para dividir', tag: 'Mesa e balcão', banner: 'Pediu, chegou', metrics: ['+18% de giro', 'Pix na mesa'] },
-  { image: PHOTOS.latte, name: 'Cafeteria', category: 'Café e doces', tag: 'Balcão', banner: 'Retirada com senha', metrics: ['Fila menor', 'Pedido pelo QR'] },
+  { image: PHOTOS.cake, name: 'Confeitaria', category: 'Bolos e doces', tag: 'Balcão', banner: 'Retirada com senha', metrics: ['Fila menor', 'Pedido pelo QR'] },
   { image: PHOTOS.iceCream, name: 'Sorveteria', category: 'Sobremesas', tag: 'Balcão', banner: 'Monte do seu jeito', metrics: ['Adicionais no cardápio', 'Senha no balcão'] },
   { image: PHOTOS.crowd, name: 'Praça de alimentação', category: 'Várias marcas', tag: 'Balcão', banner: 'Uma marca por loja', metrics: ['White-label', 'Painel por loja'] },
 ];

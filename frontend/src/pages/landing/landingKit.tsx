@@ -43,7 +43,7 @@ export const PHOTOS = {
   crowd: '1528605248644-14dd04022da1',
   bar: '1514933651103-005eec06c04b',
   hall: '1517248135467-4c7edcad34c4',
-  latte: '1760175445000-0e01e193d1cd',
+  cake: '1651378527289-36b9e2b8be58',
   sushi: '1564489563601-c53cfc451e93',
   tacos: '1511690078903-71dc5a49f5e3',
   iceCream: '1629385701021-fcd568a743e8',
@@ -284,7 +284,7 @@ export function Photo({ id, alt, width = 900, height, sx }: { id: string; alt: s
   );
 }
 
-export type CutoutName = 'chili' | 'peppers' | 'lemon' | 'cherry' | 'mushroom' | 'avocado' | 'broccoli' | 'strawberry';
+export type CutoutName = 'chili' | 'peppers' | 'lemon' | 'cherry' | 'mushroom' | 'avocado' | 'cappuccino' | 'strawberry';
 
 export function Cutout({ name, size, sx }: { name: CutoutName; size: number; sx?: SxProps<Theme> }) {
   return (
