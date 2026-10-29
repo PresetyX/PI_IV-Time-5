@@ -3,6 +3,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { Box, ButtonBase, Container, Drawer, Typography } from '@mui/material';
 import { CLIPS, Clip, Cutout, Em, PHOTOS, bob, drift, landing, motionSafe, photo, turn } from './landingKit';
 import ChefMascot, { MascotDock } from './ChefMascot';
+import { HowItWorksSection } from './landingIllustrations';
 import { ConversionSection, CtaSection, DEMO_PATH, FaqSection, Footer, ObservabilitySection, PlansSection } from './LandingInsights';
 import { GallerySection, MarqueeBand, ModulesSection, PersonasSection, ProductSection, SegmentsSection, StatsStrip, WhySection } from './LandingSections';
 
@@ -334,10 +335,7 @@ function Hero() {
         </Box>
       ))}
 
-      <Box sx={{ position: 'absolute', right: { md: '18%', xl: '22%' }, bottom: { md: 34 }, display: { xs: 'none', md: 'block' }, zIndex: 2, animation: 'heroIn 1s ease .8s both' }}>
-        <ChefMascot size={120} bubble="left" phrases={['Mesa 7 pediu 2 smash!', 'Batata saindo!', 'Conta da mesa 4 no Pix', 'Pedido novo na fila!']} />
-      </Box>
-      <Container maxWidth="md" sx={{ position: 'relative', pt: { xs: 24, md: 24 }, pb: { xs: 14, md: 12 }, textAlign: 'center' }}>
+      <Container maxWidth="md" sx={{ position: 'relative', pt: { xs: 24, md: 30 }, pb: { xs: 14, md: 14 }, textAlign: 'center' }}>
         <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2, px: 4, py: 2, borderRadius: '10px', bgcolor: 'rgba(253,231,220,.9)', boxShadow: '0 10px 30px -10px rgba(235,90,36,.45)', animation: 'heroIn .9s ease both', '@keyframes heroIn': { from: { opacity: 0, transform: 'translateY(18px)' }, to: { opacity: 1, transform: 'none' } } }}>
           <Box component="svg" viewBox="0 0 24 24" sx={{ width: 18, height: 18, fill: 'none', stroke: ink, strokeWidth: 1.8, strokeLinecap: 'round' }}>
             <path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 0-3 2-3 5s1 4 3 4v9" />
@@ -383,7 +381,10 @@ function Hero() {
           </Box>
           <Box sx={{ '@keyframes swooshDraw': { to: { strokeDashoffset: 0 } } }} />
         </Box>
-        <Box sx={{ mt: 12, display: 'flex', justifyContent: 'center', gap: 3, flexWrap: 'wrap', animation: 'heroIn .9s ease .3s both' }}>
+        <Box sx={{ position: 'relative', mt: 12, display: 'flex', justifyContent: 'center', gap: 3, flexWrap: 'wrap', animation: 'heroIn .9s ease .3s both' }}>
+          <Box sx={{ position: 'absolute', right: { md: -30, lg: -80 }, top: -30, display: { xs: 'none', md: 'block' }, zIndex: 2 }}>
+            <ChefMascot size={110} phrases={['Mesa 7 pediu 2 smash!', 'Batata saindo!', 'Conta da mesa 4 no Pix', 'Pedido novo na fila!']} />
+          </Box>
           <ButtonBase
             component={RouterLink}
             to={DEMO_PATH}
@@ -428,6 +429,7 @@ export default function LandingPage() {
         <Hero />
         <StatsStrip />
         <ProductSection />
+        <HowItWorksSection />
         <WhySection />
         <MarqueeBand />
         <ModulesSection />

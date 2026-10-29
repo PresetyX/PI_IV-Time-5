@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Accordion, AccordionDetails, AccordionSummary, Box, ButtonBase, Container, Typography } from '@mui/material';
-import ChefMascot from './ChefMascot';
+import ChefMascot, { PeekChef } from './ChefMascot';
 import { Check, reduceMotion } from './LandingSections';
 import { CLIPS, Clip, CountUp, Em, PHOTOS, Photo, Reveal, Sub, Title, bob, drift, formatPrice, landing, motionSafe, turn, useInView } from './landingKit';
 
@@ -275,7 +275,8 @@ const PLANS = [
 export function PlansSection() {
   const [yearly, setYearly] = useState(true);
   return (
-    <Box component="section" id="planos" sx={{ py: { xs: 14, md: 18 }, scrollMarginTop: 90 }}>
+    <Box component="section" id="planos" sx={{ position: 'relative', py: { xs: 14, md: 18 }, scrollMarginTop: 90, overflow: 'hidden' }}>
+      <PeekChef side="left" top="34%" phrases={['Psiu! No anual sai 20% mais barato', 'Sem taxa por pedido, viu?']} />
       <Container maxWidth="lg">
         <Reveal>
           <Title accent="sem taxa por pedido">Planos simples,</Title>

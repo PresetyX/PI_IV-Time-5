@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Box, ButtonBase, Container, Typography } from '@mui/material';
 import BrandMark from '../../components/BrandMark';
-import ChefMascot from './ChefMascot';
+import ChefMascot, { PeekChef } from './ChefMascot';
 import { CLIPS, Clip, CountUp, Cutout, Em, PHOTOS, Reveal, Sub, Title, bob, drift, formatPrice, landing, marquee, motionSafe, photo, turn } from './landingKit';
 import type { Showcase } from './landingEffects';
 import { CurvedGallery, PersonaCard, ShowcaseCarousel, TiltCard } from './landingEffects';
@@ -411,7 +411,8 @@ const SEGMENTS: Showcase[] = [
 
 export function SegmentsSection() {
   return (
-    <Box component="section" id="segmentos" sx={{ py: { xs: 14, md: 18 }, scrollMarginTop: 90 }}>
+    <Box component="section" id="segmentos" sx={{ position: 'relative', py: { xs: 14, md: 18 }, scrollMarginTop: 90, overflow: 'hidden' }}>
+      <PeekChef side="right" top="12%" phrases={['Tem casa de todo tipo aqui!', 'A sua é qual?']} />
       <Container maxWidth="lg">
         <Reveal>
           <Title accent="tipo de casa">Feito para todo</Title>
