@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
+import { keyframes } from '@emotion/react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, ButtonBase, Container, Drawer, Typography } from '@mui/material';
 import { CLIPS, Clip, Cutout, Em, PHOTOS, bob, drift, landing, motionSafe, photo, turn } from './landingKit';
 import ChefMascot, { MascotDock } from './ChefMascot';
 import { HowItWorksSection } from './landingIllustrations';
 import { ConversionSection, CtaSection, DEMO_PATH, FaqSection, Footer, ObservabilitySection, PlansSection } from './LandingInsights';
-import { GallerySection, MarqueeBand, ModulesSection, PersonasSection, ProductSection, SegmentsSection, StatsStrip, WhySection } from './LandingSections';
+import { RolesSection } from './landingRoles';
+import { GallerySection, MarqueeBand, ModulesSection, ProductSection, SegmentsSection, StatsStrip, WhySection } from './LandingSections';
 
 const { accent, accentDark, peach, ink, body, line, white, sans } = landing;
 
@@ -53,6 +55,45 @@ function HeroReel() {
         </Box>
       ))}
     </Box>
+  );
+}
+
+const sheen = keyframes`
+  0% { background-position: 160% 0, 0 0; }
+  55%, 100% { background-position: -60% 0, 0 0; }
+`;
+
+const wave = keyframes`
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(-1.2deg); }
+`;
+
+function MetallicText({ text }: { text: string }) {
+  return (
+    <Em sx={{ display: 'block', pb: 2, fontSize: '1.08em', letterSpacing: '-0.02em', filter: 'drop-shadow(0 8px 18px rgba(235,90,36,.28))' }}>
+      {text.split(' ').map((word, index) => (
+        <Box
+          key={`${word}-${index}`}
+          component="span"
+          sx={{
+            display: 'inline-block',
+            mr: '0.22em',
+            '&:last-of-type': { mr: 0 },
+            px: '0.04em',
+            backgroundImage: 'linear-gradient(105deg, rgba(255,255,255,0) 38%, rgba(255,244,230,.95) 50%, rgba(255,255,255,0) 62%), linear-gradient(180deg, #FFB98A 0%, #F4732F 34%, #B23F0E 52%, #E5612A 66%, #FF9C5E 84%, #C1491A 100%)',
+            backgroundSize: '260% 100%, 100% 100%',
+            backgroundRepeat: 'no-repeat',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+            animation: `${sheen} 4.2s cubic-bezier(.45,.05,.35,1) ${index * 0.14}s infinite, ${wave} 3.6s ease-in-out ${index * 0.22}s infinite`,
+            ...motionSafe,
+          }}
+        >
+          {word}
+        </Box>
+      ))}
+    </Em>
   );
 }
 
@@ -326,9 +367,10 @@ function Hero() {
       <Rail side="right" plates={[{ id: PHOTOS.grill, alt: 'Espetinhos' }]} />
 
       {[
-        { name: 'lettuce' as const, size: 84, left: '21%', top: 120, tilt: '-12deg', delay: 0 },
+        { name: 'lemon' as const, size: 78, left: '21%', top: 120, tilt: '-12deg', delay: 0 },
         { name: 'chili' as const, size: 96, right: '20%', top: 130, tilt: '28deg', delay: 0.8 },
-        { name: 'peppers' as const, size: 70, left: '27%', bottom: 60, tilt: '8deg', delay: 1.4 },
+        { name: 'cherry' as const, size: 96, left: '25%', bottom: 60, tilt: '8deg', delay: 1.4 },
+        { name: 'tomatoslice' as const, size: 64, right: '28%', bottom: 50, tilt: '0deg', delay: 2.1 },
       ].map((sprite, index) => (
         <Box key={index} aria-hidden sx={{ position: 'absolute', left: sprite.left, right: sprite.right, top: sprite.top, bottom: sprite.bottom, display: { xs: 'none', md: 'block' } }}>
           <Cutout name={sprite.name} size={sprite.size} sx={{ '--tilt': sprite.tilt, animation: `${bob} ${5 + index}s ease-in-out ${sprite.delay}s infinite`, filter: 'drop-shadow(0 10px 8px rgba(0,0,0,.12))', ...motionSafe }} />
@@ -344,24 +386,7 @@ function Hero() {
         </Box>
         <Typography component="h1" sx={{ mt: 6, fontFamily: sans, fontWeight: 800, fontSize: { xs: 38, sm: 54, md: 68 }, lineHeight: 1.08, letterSpacing: '-0.035em', color: ink, animation: 'heroIn .9s ease .1s both' }}>
           Comanda digital com
-          <Em
-            sx={{
-              display: 'block',
-              pb: 1,
-              fontSize: '1.08em',
-              letterSpacing: '-0.02em',
-              background: `linear-gradient(90deg, #C9561E 0%, ${accent} 35%, #F08A3C 55%, #B8461A 80%, ${accent} 100%)`,
-              backgroundSize: '200% auto',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color: 'transparent',
-              animation: 'shine 6s linear infinite',
-              '@keyframes shine': { to: { backgroundPosition: '200% center' } },
-              ...motionSafe,
-            }}
-          >
-            a cara da sua casa
-          </Em>
+          <MetallicText text="a cara da sua casa" />
         </Typography>
         <Box sx={{ position: 'relative', mt: 5, mx: 'auto', maxWidth: 560, animation: 'heroIn .9s ease .2s both' }}>
           <Typography sx={{ fontFamily: sans, fontWeight: 500, fontSize: { xs: 15, md: 17 }, lineHeight: 1.7, color: body }}>
@@ -437,7 +462,7 @@ export default function LandingPage() {
         <ObservabilitySection />
         <SegmentsSection />
         <GallerySection />
-        <PersonasSection />
+        <RolesSection />
         <PlansSection />
         <FaqSection />
         <CtaSection />

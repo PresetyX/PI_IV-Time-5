@@ -276,7 +276,7 @@ export function PlansSection() {
   const [yearly, setYearly] = useState(true);
   return (
     <Box component="section" id="planos" sx={{ position: 'relative', py: { xs: 14, md: 18 }, scrollMarginTop: 90, overflow: 'hidden' }}>
-      <PeekChef side="left" top="38%" size={230} phrases={['Psiu! No anual sai 20% mais barato', 'Sem taxa por pedido, viu?', 'O Biggas recomenda o Profissional']} />
+      <PeekChef side="left" top="9%" size={230} phrases={['Psiu! No anual sai 20% mais barato', 'Sem taxa por pedido, viu?', 'O Biggas recomenda o Profissional']} />
       <Container maxWidth="lg">
         <Reveal>
           <Title accent="sem taxa por pedido">Planos simples,</Title>

@@ -4,7 +4,7 @@ import BrandMark from '../../components/BrandMark';
 import ChefMascot, { PeekChef } from './ChefMascot';
 import { CLIPS, Clip, CountUp, Cutout, Em, PHOTOS, Reveal, Sub, Title, bob, drift, formatPrice, landing, marquee, motionSafe, photo, turn } from './landingKit';
 import type { Showcase } from './landingEffects';
-import { CurvedGallery, PersonaCard, ShowcaseCarousel, TiltCard } from './landingEffects';
+import { CurvedGallery, ShowcaseCarousel, TiltCard } from './landingEffects';
 
 const { accent, peach, ink, body, muted, line, white, sans } = landing;
 
@@ -212,7 +212,7 @@ export function StatsStrip() {
 const REASONS = [
   { cutout: 'chili' as const, tilt: '-18deg', title: 'Sem app, sem atrito', text: 'O cliente aponta a câmera para o QR da mesa e o cardápio abre no navegador. Menos passos, mais pedidos.', glow: '#FFD9C7' },
   { cutout: 'peppers' as const, tilt: '8deg', title: 'Comanda dividida de verdade', text: 'Cada pessoa abre a sua comanda ou entra na do amigo com um código de quatro números. No fim, cada um paga o que pediu.', glow: '#FFE9B8' },
-  { cutout: 'lettuce' as const, tilt: '-6deg', title: 'Sem taxa por pedido', text: 'Mensalidade fixa, sem comissão em cima das vendas. Quanto mais a casa vende, mais rápido o sistema se paga.', glow: '#D7F0DD' },
+  { cutout: 'avocado' as const, tilt: '-6deg', title: 'Sem taxa por pedido', text: 'Mensalidade fixa, sem comissão em cima das vendas. Quanto mais a casa vende, mais rápido o sistema se paga.', glow: '#D7F0DD' },
 ];
 
 export function WhySection() {
@@ -444,33 +444,6 @@ export function GallerySection() {
           { id: PHOTOS.grill, alt: 'Pizzas no forno', clip: CLIPS.oven },
         ]}
       />
-    </Box>
-  );
-}
-
-const PERSONAS = [
-  { image: PHOTOS.owner, name: 'Marcos Lima', role: 'Dono', quote: 'Fecho o caixa sabendo exatamente o que vendi.', sees: ['Faturamento por dia, semana e mês', 'Curva ABC do cardápio', 'Caixa, comissões e equipe', 'Marca e configuração da casa'], to: '/gestao' },
-  { image: PHOTOS.manager, name: 'Paula Reis', role: 'Gerente', quote: 'Vejo quais produtos puxam o faturamento.', sees: ['Dashboard e histórico de contas', 'Produtos e disponibilidade', 'Fechamento de caixa', 'Mesas e salão'], to: '/gestao/curva-abc' },
-  { image: PHOTOS.waiter, name: 'Rafa Souza', role: 'Salão', quote: 'Sei o que está pronto sem ir até a cozinha.', sees: ['Mapa das mesas', 'Entregas prontas para levar', 'Contas abertas', 'Fechamento no Pix ou cartão'], to: '/salao' },
-  { image: PHOTOS.cook, name: 'Zé Santos', role: 'Cozinha', quote: 'Os pedidos chegam na ordem certa.', sees: ['Fila por status', 'Pedidos atrasados destacados', 'Tela grande para a TV', 'Impressão da comanda'], to: '/producao' },
-];
-
-export function PersonasSection() {
-  return (
-    <Box component="section" id="equipe" sx={{ py: { xs: 14, md: 18 }, scrollMarginTop: 90 }}>
-      <Container maxWidth="lg">
-        <Reveal>
-          <Title accent="tela dela">Cada pessoa da equipe com a</Title>
-          <Sub sx={{ mt: 2 }}>As personas para quem o Pede Aí foi desenhado. Passe o mouse para ver o que cada uma enxerga no sistema.</Sub>
-        </Reveal>
-        <Box sx={{ mt: 10, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 4 }}>
-          {PERSONAS.map((persona, index) => (
-            <Reveal key={persona.name} delay={index * 110} from="zoom">
-              <PersonaCard {...persona} />
-            </Reveal>
-          ))}
-        </Box>
-      </Container>
     </Box>
   );
 }
