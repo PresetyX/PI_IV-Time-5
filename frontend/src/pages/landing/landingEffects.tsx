@@ -2,17 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, ButtonBase, Typography } from '@mui/material';
-import { Clip, Photo, formatPrice, landing, photo } from './landingKit';
+import { Clip, Photo, landing, photo } from './landingKit';
 
 const { accent, ink, body, muted, line, white, sans } = landing;
 
-export interface MenuHighlight {
+export interface Showcase {
   image: string;
   name: string;
   category: string;
-  priceCents: number;
-  prepMinutes: number;
+  tag: string;
   banner: string;
+  metrics: string[];
 }
 
 function ArrowButton({ direction, onClick }: { direction: 'prev' | 'next'; onClick: () => void }) {
@@ -29,7 +29,7 @@ function ArrowButton({ direction, onClick }: { direction: 'prev' | 'next'; onCli
   );
 }
 
-export function TrendingCarousel({ items }: { items: MenuHighlight[] }) {
+export function ShowcaseCarousel({ items }: { items: Showcase[] }) {
   const track = useRef<HTMLDivElement | null>(null);
   const [paused, setPaused] = useState(false);
   const [page, setPage] = useState(0);
@@ -101,7 +101,7 @@ export function TrendingCarousel({ items }: { items: MenuHighlight[] }) {
             <Box sx={{ position: 'relative', height: 200, overflow: 'hidden', '& img': { transition: 'transform 1s cubic-bezier(.2,.75,.2,1)' } }}>
               <Photo id={item.image} alt={item.name} width={700} height={460} />
               <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,.72) 100%)' }} />
-              <Box sx={{ position: 'absolute', right: 12, top: 12, px: 3, py: 1, borderRadius: 999, bgcolor: accent, color: white, fontFamily: sans, fontWeight: 700, fontSize: 12 }}>Aberto</Box>
+              <Box sx={{ position: 'absolute', right: 12, top: 12, px: 3, py: 1, borderRadius: 999, bgcolor: accent, color: white, fontFamily: sans, fontWeight: 700, fontSize: 12 }}>{item.tag}</Box>
               <Typography sx={{ position: 'absolute', left: 16, bottom: 12, fontFamily: sans, fontWeight: 800, fontSize: 15, color: white, letterSpacing: 0.3, textTransform: 'uppercase' }}>{item.banner}</Typography>
             </Box>
             <Box sx={{ p: 4 }}>
@@ -109,18 +109,13 @@ export function TrendingCarousel({ items }: { items: MenuHighlight[] }) {
                 <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 17, color: ink }}>{item.name}</Typography>
                 <Typography sx={{ fontFamily: sans, fontWeight: 600, fontSize: 12, color: muted }}>{item.category}</Typography>
               </Box>
-              <Box sx={{ mt: 3, display: 'flex', gap: 4, fontFamily: sans, fontWeight: 600, fontSize: 12.5, color: body }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box component="span" sx={{ color: accent }}>●</Box> {formatPrice(item.priceCents)}
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box component="svg" viewBox="0 0 24 24" sx={{ width: 14, height: 14, fill: 'none', stroke: 'currentColor', strokeWidth: 2 }}>
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 7v5l3 2" />
+              <Box sx={{ mt: 3, display: 'flex', flexWrap: 'wrap', gap: 2, fontFamily: sans, fontWeight: 700, fontSize: 12, color: body }}>
+                {item.metrics.map((metric) => (
+                  <Box key={metric} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2.5, py: 1, borderRadius: 999, bgcolor: '#F6F1EC' }}>
+                    <Box component="span" sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: accent }} />
+                    {metric}
                   </Box>
-                  {item.prepMinutes} min
-                </Box>
-                <Box>Mesa ou balcão</Box>
+                ))}
               </Box>
             </Box>
           </Box>

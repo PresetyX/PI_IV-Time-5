@@ -73,6 +73,12 @@ export const CLIPS = {
   bar: 4043,
   waiter: 4672,
   beer: 8709,
+  stirFry: 47555,
+  wok: 9286,
+  meatballs: 3806,
+  bacon: 43063,
+  cheese: 42475,
+  dough: 42467,
 };
 
 export function clipSource(id: number, quality: 360 | 720 = 720): string {
