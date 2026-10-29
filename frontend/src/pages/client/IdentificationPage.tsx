@@ -25,8 +25,10 @@ export default function IdentificationPage() {
   const { slug = '' } = useParams();
   const { state, retry } = useStore(slug);
   useStoreColor(state.status === 'ready' ? state.store.primaryColor : null);
-  const table = readVisit(slug).table;
+  const visit = readVisit(slug);
+  const table = visit.table;
 
+  if (visit.sessionId && visit.guestToken && table) return <Navigate to={`/t/${slug}/comandas`} replace />;
   if (!table) return <Navigate to={`/t/${slug}/mesa?next=identificacao`} replace />;
   if (state.status === 'loading') return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;

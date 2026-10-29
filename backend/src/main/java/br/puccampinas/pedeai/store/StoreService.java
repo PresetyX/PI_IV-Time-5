@@ -2,6 +2,7 @@ package br.puccampinas.pedeai.store;
 
 import java.util.List;
 
+import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import br.puccampinas.pedeai.common.ResourceNotFoundException;
@@ -36,6 +37,13 @@ public class StoreService {
 
     public OpeningStatus getStatus(Store store) {
         return openingStatusCalculator.calculate(store);
+    }
+
+    public boolean isAcceptingOrders(ObjectId storeId) {
+        return storeRepository.findById(storeId)
+                .filter(Store::active)
+                .map(store -> getStatus(store).acceptingOrders())
+                .orElse(false);
     }
 
     public StoreResponse getStoreInfo(String slug) {
