@@ -36,7 +36,7 @@ function ScrollProgress() {
   return <Box ref={bar} aria-hidden sx={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, zIndex: 40, transformOrigin: '0 50%', transform: 'scaleX(0)', background: `linear-gradient(90deg, #F2B27A, ${accent})` }} />;
 }
 
-const HERO_REEL = [CLIPS.grill, CLIPS.stirFry, CLIPS.cheese, CLIPS.oven, CLIPS.wok];
+const HERO_REEL = [CLIPS.wok, CLIPS.chef, CLIPS.bigKitchen];
 
 function HeroReel() {
   const [current, setCurrent] = useState(0);
@@ -363,14 +363,14 @@ function Hero() {
       <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(55% 50% at 50% 48%, rgba(255,255,255,.88) 0%, rgba(255,255,255,.35) 60%, rgba(255,255,255,0) 85%)' }} />
       <Box aria-hidden sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 160, background: 'linear-gradient(180deg, rgba(247,246,244,0), #F7F6F4)' }} />
 
-      <Rail side="left" plates={[{ id: PHOTOS.bowl, alt: 'Bowl de salada' }, { id: PHOTOS.ribs, alt: 'Costela' }]} />
-      <Rail side="right" plates={[{ id: PHOTOS.grill, alt: 'Espetinhos' }]} />
+      <Rail side="left" plates={[{ id: PHOTOS.bowl, alt: 'Bowl de salmão' }, { id: PHOTOS.pancakes, alt: 'Panquecas' }]} />
+      <Rail side="right" plates={[{ id: PHOTOS.nuggets, alt: 'Iscas de frango' }]} />
 
       {[
         { name: 'lemon' as const, size: 78, left: '21%', top: 120, tilt: '-12deg', delay: 0 },
         { name: 'chili' as const, size: 96, right: '20%', top: 130, tilt: '28deg', delay: 0.8 },
         { name: 'cherry' as const, size: 96, left: '25%', bottom: 60, tilt: '8deg', delay: 1.4 },
-        { name: 'tomatoslice' as const, size: 64, right: '28%', bottom: 50, tilt: '0deg', delay: 2.1 },
+        { name: 'mushroom' as const, size: 70, right: '28%', bottom: 50, tilt: '10deg', delay: 2.1 },
       ].map((sprite, index) => (
         <Box key={index} aria-hidden sx={{ position: 'absolute', left: sprite.left, right: sprite.right, top: sprite.top, bottom: sprite.bottom, display: { xs: 'none', md: 'block' } }}>
           <Cutout name={sprite.name} size={sprite.size} sx={{ '--tilt': sprite.tilt, animation: `${bob} ${5 + index}s ease-in-out ${sprite.delay}s infinite`, filter: 'drop-shadow(0 10px 8px rgba(0,0,0,.12))', ...motionSafe }} />

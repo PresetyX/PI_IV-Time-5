@@ -30,50 +30,44 @@ export const PHOTOS = {
   ribs: '1544025162-d76694265947',
   saladTop: '1512621776951-a57141f2eefd',
   grill: '1555939594-58d7cb561ad1',
-  burger: '1568901346375-23c9450c58cd',
-  burgerStack: '1565299507177-b0ac66763828',
   burgerClassic: '1571091718767-18b5b1457add',
-  burgers: '1550547660-d9450f859349',
   fries: '1541592106381-b31e9677c0e5',
-  steakFries: '1600891964092-4316c288032e',
   nuggets: '1562967914-608f82629710',
   shake: '1572490122747-3968b75cc699',
   juice: '1600271886742-f049cd451bba',
   beer: '1608270586620-248524c67de9',
-  brownie: '1624353365286-3f8d62daad51',
-  chopping: '1551218808-94e220e084d2',
-  flames: '1600565193348-f74bd3c7ccdf',
-  plating: '1581349485608-9469926a8e5e',
+  pancakes: '1506084868230-bb9d95c24759',
   chefPlating: '1577219491135-ce391730fb2c',
   chefWoman: '1595257841889-eca2678454e2',
   friendsCooking: '1556910103-1c02745aae4d',
   crowd: '1528605248644-14dd04022da1',
   bar: '1514933651103-005eec06c04b',
   hall: '1517248135467-4c7edcad34c4',
-  chili: '1583119022894-919a68a3d0e3',
-  peppers: '1563565375-f3fdfdbefa83',
+  latte: '1760175445000-0e01e193d1cd',
+  sushi: '1564489563601-c53cfc451e93',
+  tacos: '1511690078903-71dc5a49f5e3',
+  iceCream: '1629385701021-fcd568a743e8',
+  pasta: '1621996346565-e3dbc646d9a9',
 };
 
 export const CLIPS = {
   brigade: 15875,
   chef: 39535,
   bigKitchen: 43048,
-  grill: 4678,
-  fries: 9278,
-  oven: 42481,
+  wok: 9286,
   finishing: 13261,
-  salad: 13258,
   garlic: 43055,
-  pizza: 42469,
   bar: 4043,
   waiter: 4672,
-  beer: 8709,
-  stirFry: 47555,
-  wok: 9286,
   meatballs: 3806,
   bacon: 43063,
-  cheese: 42475,
-  dough: 42467,
+  eggs: 2686,
+  cocktail: 4295,
+  porkChop: 2439,
+  ceviche: 3793,
+  roast: 32457,
+  flour: 1669,
+  guests: 4385,
 };
 
 export function clipSource(id: number, quality: 360 | 720 = 720): string {
@@ -290,7 +284,7 @@ export function Photo({ id, alt, width = 900, height, sx }: { id: string; alt: s
   );
 }
 
-export type CutoutName = 'chili' | 'peppers' | 'lemon' | 'cherry' | 'tomatoslice' | 'mushroom' | 'avocado';
+export type CutoutName = 'chili' | 'peppers' | 'lemon' | 'cherry' | 'mushroom' | 'avocado' | 'broccoli' | 'strawberry';
 
 export function Cutout({ name, size, sx }: { name: CutoutName; size: number; sx?: SxProps<Theme> }) {
   return (
