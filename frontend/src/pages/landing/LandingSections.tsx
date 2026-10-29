@@ -130,7 +130,7 @@ export function ProductSection() {
         <Reveal from="left">
           <Box onMouseEnter={() => setHold(true)} onMouseLeave={() => setHold(false)} sx={{ position: 'relative', height: { xs: 640, md: 690 }, borderRadius: '32px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: ink }}>
             <Box aria-hidden sx={{ position: 'absolute', inset: 0, opacity: 0.5 }}>
-              <Clip id={CLIPS.cheese} quality={360} sx={{ animation: `${drift} 16s ease-in-out infinite alternate`, ...motionSafe }} />
+              <Clip id={CLIPS.eggs} quality={360} sx={{ animation: `${drift} 16s ease-in-out infinite alternate`, ...motionSafe }} />
             </Box>
             <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: `radial-gradient(60% 50% at 50% 50%, ${brand.color}88 0%, rgba(10,10,10,.78) 78%)`, transition: 'background .8s ease' }} />
             <Box sx={{ position: 'relative', mt: -6, '--tilt': '-2deg', animation: `${bob} 7s ease-in-out infinite`, ...motionSafe }}>
@@ -210,7 +210,7 @@ export function StatsStrip() {
 }
 
 const REASONS = [
-  { cutout: 'chili' as const, tilt: '-18deg', title: 'Sem app, sem atrito', text: 'O cliente aponta a câmera para o QR da mesa e o cardápio abre no navegador. Menos passos, mais pedidos.', glow: '#FFD9C7' },
+  { cutout: 'broccoli' as const, tilt: '-10deg', title: 'Sem app, sem atrito', text: 'O cliente aponta a câmera para o QR da mesa e o cardápio abre no navegador. Menos passos, mais pedidos.', glow: '#FFD9C7' },
   { cutout: 'peppers' as const, tilt: '8deg', title: 'Comanda dividida de verdade', text: 'Cada pessoa abre a sua comanda ou entra na do amigo com um código de quatro números. No fim, cada um paga o que pediu.', glow: '#FFE9B8' },
   { cutout: 'avocado' as const, tilt: '-6deg', title: 'Sem taxa por pedido', text: 'Mensalidade fixa, sem comissão em cima das vendas. Quanto mais a casa vende, mais rápido o sistema se paga.', glow: '#D7F0DD' },
 ];
@@ -269,7 +269,7 @@ function Ribbon({ tilt, dark = false }: { tilt: number; dark?: boolean }) {
       <Box sx={{ display: 'flex', width: 'max-content', animation: `${marquee} ${dark ? 50 : 40}s linear infinite ${dark ? 'reverse' : 'normal'}`, ...motionSafe }}>
         {items.map((item, index) => (
           <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 5, pr: 5, fontFamily: sans, fontWeight: 800, fontSize: { xs: 17, md: 22 }, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
-            {index % 3 === 1 ? <Em color={dark ? '#F7B26A' : white}>{item}</Em> : item}
+            {index % 3 === 1 ? <Em color={white}>{item}</Em> : item}
             {index % 3 === 0 ? <BrandMark sx={{ fontSize: '1.15em', color: dark ? accent : ink }} /> : <Box component="span" sx={{ fontSize: '0.75em', color: dark ? accent : ink }}>✦</Box>}
           </Box>
         ))}
@@ -290,14 +290,14 @@ export function MarqueeBand() {
 }
 
 const MODULES = [
-  { name: 'Cardápio digital', icon: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6', clip: CLIPS.salad, text: 'Cardápio por QR com fotos, categorias e itens pausados na hora em que acabam.', features: ['QR code por mesa', 'Fotos e descrições', 'Disponibilidade em tempo real'] },
-  { name: 'Comanda compartilhada', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8', clip: CLIPS.beer, text: 'Cada pessoa da mesa pede no próprio celular e entra na comanda do grupo com um código.', features: ['Código de 4 números', 'Cada um vê o que pediu', 'Taxa de serviço automática'] },
-  { name: 'Produção', icon: 'M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', clip: CLIPS.stirFry, text: 'A fila da cozinha por status, com atrasos destacados e tela grande para a TV.', features: ['Recebido, em preparo e pronto', 'Alerta de atraso', 'Modo tela grande'] },
+  { name: 'Cardápio digital', icon: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6', clip: CLIPS.garlic, text: 'Cardápio por QR com fotos, categorias e itens pausados na hora em que acabam.', features: ['QR code por mesa', 'Fotos e descrições', 'Disponibilidade em tempo real'] },
+  { name: 'Comanda compartilhada', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8', clip: CLIPS.cocktail, text: 'Cada pessoa da mesa pede no próprio celular e entra na comanda do grupo com um código.', features: ['Código de 4 números', 'Cada um vê o que pediu', 'Taxa de serviço automática'] },
+  { name: 'Produção', icon: 'M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', clip: CLIPS.porkChop, text: 'A fila da cozinha por status, com atrasos destacados e tela grande para a TV.', features: ['Recebido, em preparo e pronto', 'Alerta de atraso', 'Modo tela grande'] },
   { name: 'Salão', icon: 'M4 10h16M6 10v9M18 10v9M8 6h8', clip: CLIPS.waiter, text: 'Mapa das mesas, entregas prontas para levar e contas abertas na mão do garçom.', features: ['Mapa de mesas', 'Entregas prontas', 'Contas abertas'] },
   { name: 'Caixa e pagamentos', icon: 'M3 7h18v10H3zM7 12h.01M12 12a2 2 0 1 0 0-.01', clip: CLIPS.bar, text: 'Fechamento por Pix, dinheiro e cartão, sangrias e conferência do caixa no fim do dia.', features: ['Pix, débito e crédito', 'Sangria registrada', 'Fechamento conferido'] },
   { name: 'Gestão e relatórios', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2', clip: CLIPS.finishing, text: 'Faturamento por dia, semana e mês, curva ABC do cardápio e histórico de cada comanda.', features: ['Dashboard por período', 'Curva ABC', 'Histórico com busca'] },
   { name: 'Equipe e comissões', icon: 'M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z', clip: CLIPS.brigade, text: 'Perfis de dono, gerente, salão e cozinha, convites para a equipe e comissão do garçom.', features: ['4 perfis de acesso', 'Convite com senha temporária', 'Comissão por período'] },
-  { name: 'Marca própria', icon: 'M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z', clip: CLIPS.dough, text: 'Nome, frase, cor e modos de atendimento da casa em todas as telas do cliente.', features: ['Logo e cores da casa', 'Mesa, balcão e entrega', 'Telefone do cliente opcional'] },
+  { name: 'Marca própria', icon: 'M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z', clip: CLIPS.guests, text: 'Nome, frase, cor e modos de atendimento da casa em todas as telas do cliente.', features: ['Logo e cores da casa', 'Mesa, balcão e entrega', 'Telefone do cliente opcional'] },
 ];
 
 function ModuleIcon({ d, size = 22 }: { d: string; size?: number }) {
@@ -336,7 +336,7 @@ export function ModulesSection() {
               <Box sx={{ position: 'absolute', inset: 140, borderRadius: '50%', bgcolor: white, boxShadow: '0 30px 60px -30px rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <ChefMascot size={150} />
               </Box>
-              <Box sx={{ position: 'absolute', inset: 0, animation: `${turn} 80s linear infinite`, animationPlayState: hold ? 'paused' : 'running', ...motionSafe }}>
+              <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', '& button': { pointerEvents: 'auto' }, animation: `${turn} 80s linear infinite`, animationPlayState: hold ? 'paused' : 'running', ...motionSafe }}>
                 {MODULES.map((item, index) => {
                   const angle = (index / MODULES.length) * Math.PI * 2 - Math.PI / 2;
                   const selected = index === active;
@@ -402,14 +402,14 @@ export function ModulesSection() {
 }
 
 const SEGMENTS: Showcase[] = [
-  { image: PHOTOS.burgerClassic, name: 'Hamburgueria', category: 'Lanches', tag: 'Mesa e balcão', banner: 'Pedido sai da mesa', metrics: ['+21% no ticket', '78% pela mesa'] },
-  { image: PHOTOS.pizza, name: 'Pizzaria', category: 'Forno', tag: 'Mesa e entrega', banner: 'Segunda rodada em um toque', metrics: ['−35% de erros', '+2 pedidos por mesa'] },
-  { image: PHOTOS.beer, name: 'Bar e choperia', category: 'Bebidas', tag: 'Comanda aberta', banner: 'Cada um na sua comanda', metrics: ['+3 rodadas', 'Conta dividida'] },
-  { image: PHOTOS.spread, name: 'Restaurante', category: 'À la carte', tag: 'Mesa', banner: 'Cozinha no ritmo certo', metrics: ['−9 min de espera', 'Tela na cozinha'] },
-  { image: PHOTOS.fries, name: 'Porções e petiscos', category: 'Para dividir', tag: 'Mesa', banner: 'Pediu, chegou', metrics: ['+18% de giro', 'Pix na mesa'] },
-  { image: PHOTOS.grill, name: 'Churrascaria', category: 'Brasa', tag: 'Mesa', banner: 'Espeto sem fila', metrics: ['Comissão por garçom', 'Curva ABC'] },
-  { image: PHOTOS.juice, name: 'Cafeteria', category: 'Café e doces', tag: 'Balcão', banner: 'Retirada com senha', metrics: ['Fila menor', 'Pedido pelo QR'] },
-  { image: PHOTOS.hall, name: 'Praça de alimentação', category: 'Várias marcas', tag: 'Balcão', banner: 'Uma marca por loja', metrics: ['White-label', 'Painel por loja'] },
+  { image: PHOTOS.bar, name: 'Bar e choperia', category: 'Bebidas', tag: 'Comanda aberta', banner: 'Cada um na sua comanda', metrics: ['+3 rodadas', 'Conta dividida'] },
+  { image: PHOTOS.hall, name: 'Restaurante', category: 'À la carte', tag: 'Mesa', banner: 'Cozinha no ritmo certo', metrics: ['−9 min de espera', 'Tela na cozinha'] },
+  { image: PHOTOS.sushi, name: 'Japonês', category: 'Rodízio e à la carte', tag: 'Mesa', banner: 'Rodízio sem papel', metrics: ['−35% de erros', '+2 pedidos por mesa'] },
+  { image: PHOTOS.pasta, name: 'Cantina', category: 'Massas', tag: 'Mesa e entrega', banner: 'Segunda rodada em um toque', metrics: ['+21% no ticket', '78% pela mesa'] },
+  { image: PHOTOS.tacos, name: 'Lanchonete', category: 'Para dividir', tag: 'Mesa e balcão', banner: 'Pediu, chegou', metrics: ['+18% de giro', 'Pix na mesa'] },
+  { image: PHOTOS.latte, name: 'Cafeteria', category: 'Café e doces', tag: 'Balcão', banner: 'Retirada com senha', metrics: ['Fila menor', 'Pedido pelo QR'] },
+  { image: PHOTOS.iceCream, name: 'Sorveteria', category: 'Sobremesas', tag: 'Balcão', banner: 'Monte do seu jeito', metrics: ['Adicionais no cardápio', 'Senha no balcão'] },
+  { image: PHOTOS.crowd, name: 'Praça de alimentação', category: 'Várias marcas', tag: 'Balcão', banner: 'Uma marca por loja', metrics: ['White-label', 'Painel por loja'] },
 ];
 
 export function SegmentsSection() {
@@ -434,14 +434,13 @@ export function GallerySection() {
     <Box component="section" aria-label="Galeria" sx={{ py: { xs: 6, md: 8 } }}>
       <CurvedGallery
         images={[
-          { id: PHOTOS.flames, alt: 'Legumes no wok', clip: CLIPS.wok },
-          { id: PHOTOS.friendsCooking, alt: 'Pizza sendo aberta', clip: CLIPS.pizza },
-          { id: PHOTOS.chefPlating, alt: 'Cozinheiro finalizando prato' },
-          { id: PHOTOS.crowd, alt: 'Bacon na frigideira', clip: CLIPS.bacon },
-          { id: PHOTOS.bar, alt: 'Balcão do bar' },
-          { id: PHOTOS.plating, alt: 'Almôndegas no molho', clip: CLIPS.meatballs },
-          { id: PHOTOS.hall, alt: 'Salão do restaurante' },
-          { id: PHOTOS.grill, alt: 'Pizzas no forno', clip: CLIPS.oven },
+          { id: PHOTOS.chefPlating, alt: 'Cozinheiro finalizando o prato' },
+          { id: 'clip-bacon', alt: 'Bacon dourando na frigideira', clip: CLIPS.bacon },
+          { id: PHOTOS.friendsCooking, alt: 'Equipe cozinhando junta' },
+          { id: 'clip-ceviche', alt: 'Ceviche sendo montado', clip: CLIPS.ceviche },
+          { id: 'clip-roast', alt: 'Carne assada com batatas', clip: CLIPS.roast },
+          { id: PHOTOS.chefWoman, alt: 'Cozinheira montando os pratos' },
+          { id: 'clip-flour', alt: 'Massa sendo enfarinhada', clip: CLIPS.flour },
         ]}
       />
     </Box>
