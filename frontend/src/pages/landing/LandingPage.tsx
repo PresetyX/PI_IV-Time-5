@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, ButtonBase, Container, Drawer, Typography } from '@mui/material';
 import BrandMark from '../../components/BrandMark';
-import { Cutout, PHOTOS, bob, landing, motionSafe, photo, turn } from './landingKit';
+import { CLIPS, Clip, Cutout, Em, PHOTOS, bob, drift, landing, motionSafe, photo, turn } from './landingKit';
 import {
   CtaSection,
   FaqSection,
   Footer,
   GallerySection,
+  KitchenLiveSection,
+  MarqueeBand,
   MasterSection,
   PersonaSection,
   PersonasSection,
@@ -15,7 +17,7 @@ import {
   WhySection,
 } from './LandingSections';
 
-const { accent, accentDark, peach, ink, body, line, white, serif, sans } = landing;
+const { accent, accentDark, peach, ink, body, line, white, sans } = landing;
 
 const NAV = [
   { id: 'inicio', label: 'Início' },
@@ -25,6 +27,44 @@ const NAV = [
   { id: 'equipe', label: 'Equipe' },
   { id: 'duvidas', label: 'Dúvidas' },
 ];
+
+function ScrollProgress() {
+  const bar = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function onScroll() {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (bar.current) bar.current.style.transform = `scaleX(${max > 0 ? window.scrollY / max : 0})`;
+    }
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return <Box ref={bar} aria-hidden sx={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, zIndex: 40, transformOrigin: '0 50%', transform: 'scaleX(0)', background: `linear-gradient(90deg, #F2B27A, ${accent})` }} />;
+}
+
+const HERO_REEL = [CLIPS.brigade, CLIPS.chef, CLIPS.bigKitchen, CLIPS.grill];
+
+function HeroReel() {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const timer = window.setInterval(() => setCurrent((value) => (value + 1) % HERO_REEL.length), 7000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <Box aria-hidden sx={{ position: 'absolute', inset: 0, overflow: 'hidden', mixBlendMode: 'multiply', opacity: 0.2 }}>
+      {HERO_REEL.map((id, index) => (
+        <Box key={id} sx={{ position: 'absolute', inset: 0, opacity: index === current ? 1 : 0, transition: 'opacity 1.8s ease' }}>
+          <Clip id={id} sx={{ filter: 'grayscale(.55) contrast(1.15) brightness(1.05)', animation: `${drift} 14s ease-in-out infinite alternate`, ...motionSafe }} />
+        </Box>
+      ))}
+    </Box>
+  );
+}
 
 function useActiveSection() {
   const [active, setActive] = useState('inicio');
@@ -85,7 +125,7 @@ function NavBar() {
           <Box sx={{ width: 34, height: 34, borderRadius: '50%', bgcolor: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <BrandMark sx={{ fontSize: 24, color: white }} />
           </Box>
-          <Typography sx={{ fontFamily: serif, fontWeight: 600, fontSize: 22 }}>Pede Aí</Typography>
+          <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 19, letterSpacing: '-0.02em' }}>Pede Aí</Typography>
         </ButtonBase>
         <Box component="nav" sx={{ display: { xs: 'none', lg: 'flex' }, gap: 1, ml: 6 }}>
           {NAV.map((item) => {
@@ -286,9 +326,11 @@ function Rail({ side, plates }: { side: 'left' | 'right'; plates: { id: string; 
 
 function Hero() {
   return (
-    <Box component="section" id="inicio" sx={{ position: 'relative', minHeight: { xs: 700, md: 800 }, display: 'flex', alignItems: 'center', overflow: 'hidden', borderBottom: `1px solid ${line}` }}>
+    <Box component="section" id="inicio" sx={{ position: 'relative', isolation: 'isolate', minHeight: { xs: 700, md: 'max(780px, min(100vh, 940px))' }, display: 'flex', alignItems: 'center', overflow: 'hidden', borderBottom: `1px solid ${line}` }}>
       <SilkCanvas />
-      <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(60% 55% at 50% 45%, rgba(255,255,255,.85) 0%, rgba(255,255,255,0) 70%)' }} />
+      <HeroReel />
+      <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(55% 50% at 50% 48%, rgba(255,255,255,.88) 0%, rgba(255,255,255,.35) 60%, rgba(255,255,255,0) 85%)' }} />
+      <Box aria-hidden sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 160, background: 'linear-gradient(180deg, rgba(247,246,244,0), #F7F6F4)' }} />
 
       <Rail side="left" plates={[{ id: PHOTOS.bowl, alt: 'Bowl de salada' }, { id: PHOTOS.ribs, alt: 'Costela' }]} />
       <Rail side="right" plates={[{ id: PHOTOS.grill, alt: 'Espetinhos' }, { id: PHOTOS.pizza, alt: 'Pizza' }]} />
@@ -309,14 +351,16 @@ function Hero() {
           <Box component="svg" viewBox="0 0 24 24" sx={{ width: 18, height: 18, fill: 'none', stroke: ink, strokeWidth: 1.8, strokeLinecap: 'round' }}>
             <path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 0-3 2-3 5s1 4 3 4v9" />
           </Box>
-          <Typography sx={{ fontFamily: serif, fontWeight: 600, fontSize: { xs: 10.5, sm: 13 }, letterSpacing: { xs: 0.4, sm: 1.2 }, color: ink, whiteSpace: 'nowrap' }}>PEDIDOS DIGITAIS PARA BARES E RESTAURANTES</Typography>
+          <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: { xs: 10, sm: 12 }, letterSpacing: { xs: 0.6, sm: 1.6 }, color: ink, whiteSpace: 'nowrap' }}>PEDIDOS DIGITAIS PARA BARES E RESTAURANTES</Typography>
         </Box>
-        <Typography component="h1" sx={{ mt: 6, fontFamily: serif, fontWeight: 700, fontSize: { xs: 40, sm: 54, md: 66 }, lineHeight: 1.12, color: ink, animation: 'heroIn .9s ease .1s both' }}>
+        <Typography component="h1" sx={{ mt: 6, fontFamily: sans, fontWeight: 800, fontSize: { xs: 38, sm: 54, md: 68 }, lineHeight: 1.08, letterSpacing: '-0.035em', color: ink, animation: 'heroIn .9s ease .1s both' }}>
           Do QR na mesa direto
-          <Box
-            component="span"
+          <Em
             sx={{
               display: 'block',
+              pb: 1,
+              fontSize: '1.08em',
+              letterSpacing: '-0.02em',
               background: `linear-gradient(90deg, #C9561E 0%, ${accent} 35%, #F08A3C 55%, #B8461A 80%, ${accent} 100%)`,
               backgroundSize: '200% auto',
               WebkitBackgroundClip: 'text',
@@ -328,10 +372,10 @@ function Hero() {
             }}
           >
             pra cozinha da casa
-          </Box>
+          </Em>
         </Typography>
         <Box sx={{ position: 'relative', mt: 5, mx: 'auto', maxWidth: 560, animation: 'heroIn .9s ease .2s both' }}>
-          <Typography sx={{ fontFamily: serif, fontSize: { xs: 15, md: 17 }, lineHeight: 1.65, color: body }}>
+          <Typography sx={{ fontFamily: sans, fontWeight: 500, fontSize: { xs: 15, md: 17 }, lineHeight: 1.7, color: body }}>
             O cliente pede pelo celular, a cozinha recebe na hora e a gestão acompanha salão, caixa e vendas em um só lugar.
           </Typography>
           <Box component="svg" viewBox="0 0 600 60" aria-hidden sx={{ position: 'absolute', left: '-14%', right: '-14%', width: '128%', top: { xs: '70%', md: '62%' }, height: 60, overflow: 'visible' }}>
@@ -352,21 +396,21 @@ function Hero() {
           <ButtonBase
             component={RouterLink}
             to="/t/triunfo-lanches?mesa=t05-000a"
-            sx={{ height: 52, px: 7, borderRadius: 999, bgcolor: accent, color: white, fontFamily: serif, fontSize: 16, boxShadow: '0 16px 30px -14px rgba(235,90,36,.8)', transition: 'all .25s ease', '&:hover': { bgcolor: accentDark, transform: 'translateY(-2px)' } }}
+            sx={{ height: 52, px: 7, borderRadius: 999, bgcolor: accent, color: white, fontFamily: sans, fontWeight: 700, fontSize: 15, boxShadow: '0 16px 30px -14px rgba(235,90,36,.8)', transition: 'all .25s ease', '&:hover': { bgcolor: accentDark, transform: 'translateY(-2px)' } }}
           >
             Fazer um pedido
           </ButtonBase>
           <ButtonBase
             component={RouterLink}
             to="/t/triunfo-lanches/cardapio"
-            sx={{ height: 52, px: 7, borderRadius: 999, bgcolor: peach, color: ink, fontFamily: serif, fontSize: 16, fontWeight: 600, transition: 'all .25s ease', '&:hover': { bgcolor: '#FBD6C4', transform: 'translateY(-2px)' } }}
+            sx={{ height: 52, px: 7, borderRadius: 999, bgcolor: peach, color: ink, fontFamily: sans, fontSize: 15, fontWeight: 700, transition: 'all .25s ease', '&:hover': { bgcolor: '#FBD6C4', transform: 'translateY(-2px)' } }}
           >
             Ver cardápio
           </ButtonBase>
         </Box>
         <Box sx={{ mt: 7, display: 'flex', justifyContent: 'center', gap: { xs: 4, md: 8 }, flexWrap: 'wrap', animation: 'heroIn .9s ease .4s both' }}>
           {['Sem app para instalar', 'Comanda compartilhada'].map((item) => (
-            <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 2, fontFamily: serif, fontSize: 14, color: body }}>
+            <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 2, fontFamily: sans, fontWeight: 600, fontSize: 13.5, color: body }}>
               <Box sx={{ width: 34, height: '1.5px', bgcolor: accent }} />
               {item}
             </Box>
@@ -388,12 +432,15 @@ export default function LandingPage() {
 
   return (
     <Box sx={{ bgcolor: '#F7F6F4', color: ink, overflowX: 'hidden', '& .MuiContainer-root': { px: { xs: 4, sm: 6 } } }}>
+      <ScrollProgress />
       <NavBar />
       <main>
         <Hero />
         <PersonaSection />
         <WhySection />
+        <MarqueeBand />
         <TrendingSection />
+        <KitchenLiveSection />
         <MasterSection />
         <GallerySection />
         <PersonasSection />
