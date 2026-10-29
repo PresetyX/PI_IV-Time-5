@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { keyframes } from '@emotion/react';
 import { Box, Container, Typography } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material';
-import { Reveal, Sub, Title, landing, motionSafe } from './landingKit';
+import { Cutout, Reveal, Sub, Title, bob, landing, motionSafe } from './landingKit';
 
 const { accent, ink, body, white, sans } = landing;
 
@@ -269,7 +269,13 @@ const STEPS = [
 
 export function HowItWorksSection() {
   return (
-    <Box component="section" id="como-funciona" sx={{ py: { xs: 14, md: 18 }, scrollMarginTop: 90 }}>
+    <Box component="section" id="como-funciona" sx={{ position: 'relative', py: { xs: 14, md: 18 }, scrollMarginTop: 90, overflow: 'hidden' }}>
+      <Box aria-hidden sx={{ position: 'absolute', right: '7%', top: 70, display: { xs: 'none', md: 'block' } }}>
+        <Cutout name="mushroom" size={96} sx={{ '--tilt': '14deg', animation: `${bob} 6s ease-in-out infinite`, filter: 'drop-shadow(0 12px 10px rgba(0,0,0,.14))', ...motionSafe }} />
+      </Box>
+      <Box aria-hidden sx={{ position: 'absolute', left: '6%', bottom: 50, display: { xs: 'none', md: 'block' } }}>
+        <Cutout name="lemon" size={84} sx={{ '--tilt': '-10deg', animation: `${bob} 7s ease-in-out 1s infinite`, filter: 'drop-shadow(0 12px 10px rgba(0,0,0,.14))', ...motionSafe }} />
+      </Box>
       <Container maxWidth="lg">
         <Reveal>
           <Title accent="em cinco passos">Do QR à conta</Title>

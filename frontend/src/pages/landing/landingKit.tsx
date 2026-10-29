@@ -50,13 +50,8 @@ export const PHOTOS = {
   crowd: '1528605248644-14dd04022da1',
   bar: '1514933651103-005eec06c04b',
   hall: '1517248135467-4c7edcad34c4',
-  owner: '1500648767791-00dcc994a43e',
-  manager: '1494790108377-be9c29b29330',
-  waiter: '1507003211169-0a1dd7228f2d',
-  cook: '1583394293214-28ded15ee548',
   chili: '1583119022894-919a68a3d0e3',
   peppers: '1563565375-f3fdfdbefa83',
-  lettuce: '1622206151226-18ca2c9ab4a1',
 };
 
 export const CLIPS = {
@@ -295,7 +290,7 @@ export function Photo({ id, alt, width = 900, height, sx }: { id: string; alt: s
   );
 }
 
-export type CutoutName = 'chili' | 'peppers' | 'lettuce';
+export type CutoutName = 'chili' | 'peppers' | 'lemon' | 'cherry' | 'tomatoslice' | 'mushroom' | 'avocado';
 
 export function Cutout({ name, size, sx }: { name: CutoutName; size: number; sx?: SxProps<Theme> }) {
   return (
@@ -306,7 +301,7 @@ export function Cutout({ name, size, sx }: { name: CutoutName; size: number; sx?
       aria-hidden
       loading="lazy"
       draggable={false}
-      sx={[{ display: 'block', width: size, height: 'auto', userSelect: 'none', ...(name === 'lettuce' ? { maskImage: 'radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%)', WebkitMaskImage: 'radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%)' } : {}) }, ...(Array.isArray(sx) ? sx : [sx])]}
+      sx={[{ display: 'block', width: size, height: 'auto', userSelect: 'none' }, ...(Array.isArray(sx) ? sx : [sx])]}
     />
   );
 }
