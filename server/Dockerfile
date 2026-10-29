@@ -1,15 +1,17 @@
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY pom.xml .
-RUN mvn -B dependency:go-offline
+RUN --mount=type=cache,target=/root/.m2 mvn -B -q dependency:go-offline
 COPY src ./src
-RUN mvn -B -DskipTests package dependency:copy-dependencies -DoutputDirectory=target/lib
+RUN --mount=type=cache,target=/root/.m2 mvn -B -q -DskipTests package dependency:copy-dependencies -DoutputDirectory=target/lib \
+    && mkdir -p target/lib && cp target/pedeai-server-*.jar app.jar
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 RUN useradd --system --no-create-home pedeai
 COPY --from=build /app/target/lib ./lib
-COPY --from=build /app/target/pedeai-server-*.jar ./app.jar
+COPY --from=build /app/app.jar ./app.jar
 USER pedeai
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75"
 EXPOSE 5000
 ENTRYPOINT ["java", "-cp", "app.jar:lib/*", "br.puccampinas.pedeai.server.ServerApplication"]
