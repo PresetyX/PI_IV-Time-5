@@ -3,7 +3,7 @@ import { keyframes } from '@emotion/react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material';
 import { CHEF_PATHS } from '../../components/BrandMark';
-import { landing, motionSafe } from './landingKit';
+import { landing, motionSafe, useInView } from './landingKit';
 
 const sway = keyframes`
   0%, 100% { transform: rotate(-3deg); }
@@ -55,11 +55,12 @@ interface ChefMascotProps {
   phrases?: string[];
   bubble?: 'top' | 'right' | 'left';
   label?: string;
+  tilt?: number;
   onClick?: () => void;
   sx?: SxProps<Theme>;
 }
 
-export default function ChefMascot({ size, color = landing.ink, steam = true, float = true, phrases, bubble = 'top', label = 'Chef do Pede Aí', onClick, sx }: ChefMascotProps) {
+export default function ChefMascot({ size, color = landing.ink, steam = true, float = true, phrases, bubble = 'top', label = 'Chef do Pede Aí', tilt = 0, onClick, sx }: ChefMascotProps) {
   const root = useRef<HTMLButtonElement | null>(null);
   const face = useRef<SVGGElement | null>(null);
   const [awake, setAwake] = useState(false);
@@ -120,7 +121,6 @@ export default function ChefMascot({ size, color = landing.ink, steam = true, fl
     >
       {phrases && (
         <Box
-          key={`bubble-${phrase}`}
           aria-live="polite"
           sx={{
             position: 'absolute',
@@ -133,16 +133,16 @@ export default function ChefMascot({ size, color = landing.ink, steam = true, fl
             boxShadow: '0 16px 30px -16px rgba(0,0,0,.4)',
             whiteSpace: 'nowrap',
             pointerEvents: 'none',
-            animation: `${pop} .45s cubic-bezier(.2,.75,.2,1) both`,
-            ...motionSafe,
           }}
         >
-          <Typography sx={{ fontFamily: landing.sans, fontWeight: 700, fontSize: 12.5, color: landing.ink }}>{phrases[phrase]}</Typography>
+          <Typography key={phrase} sx={{ fontFamily: landing.sans, fontWeight: 700, fontSize: 12.5, color: landing.ink, animation: `${pop} .45s cubic-bezier(.2,.75,.2,1) both`, ...motionSafe }}>
+            {phrases[phrase]}
+          </Typography>
         </Box>
       )}
       <Box
-        key={`body-${hopping}`}
-        sx={{ width: '100%', height: '100%', animation: hopping ? `${hop} .7s cubic-bezier(.3,.7,.3,1)` : 'none', ...motionSafe }}
+        key={hopping}
+        sx={{ width: '100%', height: '100%', rotate: `${tilt}deg`, animation: hopping ? `${hop} .7s cubic-bezier(.3,.7,.3,1)` : 'none', ...motionSafe }}
       >
         <Box
           component="svg"
@@ -228,6 +228,26 @@ export function MascotDock() {
         Voltar ao topo
       </Box>
       <ChefMascot size={{ xs: 46, md: 54 }} steam={false} float={false} label="Voltar ao topo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
+    </Box>
+  );
+}
+
+export function PeekChef({ side, phrases, top = '40%' }: { side: 'left' | 'right'; phrases: string[]; top?: string }) {
+  const { ref, visible } = useInView<HTMLDivElement>(0.4);
+  const tilt = side === 'left' ? 22 : -22;
+  const hidden = side === 'left' ? '-120%' : '120%';
+  return (
+    <Box ref={ref} aria-hidden sx={{ position: 'absolute', top, [side]: 0, width: 150, height: 150, display: { xs: 'none', lg: 'block' }, pointerEvents: 'none' }}>
+      <Box
+        sx={{
+          pointerEvents: 'auto',
+          transform: visible ? `translateX(${side === 'left' ? '2%' : '22%'})` : `translateX(${hidden})`,
+          transition: 'transform 1.1s cubic-bezier(.34,1.56,.64,1) .2s',
+          '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+        }}
+      >
+        <ChefMascot size={140} tilt={visible ? tilt : tilt * 2} phrases={phrases} bubble={side === 'left' ? 'right' : 'left'} sx={{ '& > div:last-of-type': { transition: 'rotate 1.1s cubic-bezier(.34,1.56,.64,1) .2s' } }} />
+      </Box>
     </Box>
   );
 }
