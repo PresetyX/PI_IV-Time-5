@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 import { Box, ButtonBase, Typography } from '@mui/material';
-import { Clip, Photo, landing, photo } from './landingKit';
+import { Clip, Photo, landing } from './landingKit';
 
 const { accent, ink, body, muted, line, white, sans } = landing;
 
@@ -218,38 +217,6 @@ export function TiltCard({ children, sx }: { children: ReactNode; sx?: object })
         sx={{ height: '100%', transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`, transformStyle: 'preserve-3d', transition: 'transform .25s ease-out', '@media (prefers-reduced-motion: reduce)': { transform: 'none' }, ...sx }}
       >
         {children}
-      </Box>
-    </Box>
-  );
-}
-
-export function PersonaCard({ image, name, role, quote, sees, to }: { image: string; name: string; role: string; quote: string; sees: string[]; to: string }) {
-  return (
-    <Box tabIndex={0} sx={{ perspective: '1200px', height: 400, outline: 'none', '&:hover .flip, &:focus-visible .flip': { transform: 'rotateY(180deg)' } }}>
-      <Box className="flip" sx={{ position: 'relative', height: '100%', transformStyle: 'preserve-3d', transition: 'transform .8s cubic-bezier(.2,.75,.2,1)', '@media (prefers-reduced-motion: reduce)': { transition: 'none' } }}>
-        <Box sx={{ position: 'absolute', inset: 0, borderRadius: '22px', overflow: 'hidden', backfaceVisibility: 'hidden' }}>
-          <Box component="img" src={photo(image, 600, 800)} alt={name} loading="lazy" sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-          <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,.8) 100%)' }} />
-          <Box sx={{ position: 'absolute', left: 18, top: 18, px: 3, py: 1, borderRadius: 999, bgcolor: 'rgba(255,255,255,.92)', fontFamily: sans, fontWeight: 800, fontSize: 11.5, letterSpacing: 0.5, color: accent, textTransform: 'uppercase' }}>{role}</Box>
-          <Box sx={{ position: 'absolute', left: 20, right: 20, bottom: 20, color: white }}>
-            <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 22, letterSpacing: '-0.02em' }}>{name}</Typography>
-            <Typography sx={{ mt: 1, fontFamily: sans, fontWeight: 500, fontSize: 13.5, opacity: 0.85 }}>“{quote}”</Typography>
-          </Box>
-        </Box>
-        <Box sx={{ position: 'absolute', inset: 0, borderRadius: '22px', p: 6, bgcolor: ink, color: white, backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', display: 'flex', flexDirection: 'column' }}>
-          <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 12, letterSpacing: 1.5, color: accent, textTransform: 'uppercase' }}>O que {name.split(' ')[0]} vê</Typography>
-          <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0, mt: 5, display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {sees.map((item) => (
-              <Box component="li" key={item} sx={{ display: 'flex', gap: 3, fontFamily: sans, fontWeight: 600, fontSize: 14.5, lineHeight: 1.5, color: 'rgba(255,255,255,.88)' }}>
-                <Box component="span" sx={{ color: accent }}>—</Box>
-                {item}
-              </Box>
-            ))}
-          </Box>
-          <ButtonBase component={RouterLink} to={to} sx={{ mt: 'auto', alignSelf: 'flex-start', px: 5, height: 44, borderRadius: 999, bgcolor: accent, color: white, fontFamily: sans, fontWeight: 800, fontSize: 14 }}>
-            Ver essa tela
-          </ButtonBase>
-        </Box>
       </Box>
     </Box>
   );
