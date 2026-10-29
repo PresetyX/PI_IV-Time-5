@@ -1,108 +1,176 @@
 import { useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import { Accordion, AccordionDetails, AccordionSummary, Box, ButtonBase, Container, Typography } from '@mui/material';
+import { Box, ButtonBase, Container, Typography } from '@mui/material';
 import BrandMark from '../../components/BrandMark';
-import { CLIPS, Clip, CountUp, Cutout, Em, PHOTOS, Photo, Reveal, Sub, Title, bob, drift, landing, marquee, motionSafe, photo, turn, useInView } from './landingKit';
-import type { MenuHighlight } from './landingEffects';
-import { CurvedGallery, PersonaCard, TiltCard, TrendingCarousel } from './landingEffects';
+import ChefMascot from './ChefMascot';
+import { CLIPS, Clip, CountUp, Cutout, Em, PHOTOS, Reveal, Sub, Title, bob, drift, formatPrice, landing, marquee, motionSafe, photo, turn } from './landingKit';
+import type { Showcase } from './landingEffects';
+import { CurvedGallery, PersonaCard, ShowcaseCarousel, TiltCard } from './landingEffects';
 
-const { accent, accentDark, peach, ink, body, muted, line, white, sans } = landing;
+const { accent, peach, ink, body, muted, line, white, sans } = landing;
 
-function PillButton({ to, children, tone = 'accent' }: { to: string; children: ReactNode; tone?: 'accent' | 'white' | 'outline' }) {
-  const styles = {
-    accent: { bgcolor: accent, color: white, '&:hover': { bgcolor: accentDark } },
-    white: { bgcolor: white, color: ink, '&:hover': { bgcolor: peach } },
-    outline: { color: white, border: '1px solid rgba(255,255,255,.35)', '&:hover': { borderColor: white } },
-  }[tone];
+export const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+export function Check({ children, dark = false }: { children: string; dark?: boolean }) {
   return (
-    <ButtonBase component={RouterLink} to={to} sx={{ ...styles, height: 44, px: 5, flexShrink: 0, whiteSpace: 'nowrap', borderRadius: 999, fontFamily: sans, fontWeight: 700, fontSize: 14, transition: 'all .25s ease' }}>
+    <Box component="li" sx={{ display: 'flex', alignItems: 'flex-start', gap: 3, fontFamily: sans, fontWeight: 600, fontSize: 14.5, lineHeight: 1.5, color: dark ? 'rgba(255,255,255,.85)' : ink }}>
+      <Box sx={{ mt: '1px', width: 20, height: 20, flexShrink: 0, borderRadius: '50%', bgcolor: dark ? 'rgba(235,90,36,.2)' : peach, color: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box component="svg" viewBox="0 0 24 24" sx={{ width: 12, height: 12, fill: 'none', stroke: 'currentColor', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+          <path d="M5 12l5 5L19 7" />
+        </Box>
+      </Box>
       {children}
-    </ButtonBase>
+    </Box>
   );
 }
 
-export function PersonaSection() {
+const BRANDS = [
+  {
+    name: 'Brasa Burger',
+    tagline: 'Smash na chapa desde 2019',
+    color: '#E4572E',
+    soft: '#FDE9E2',
+    items: [
+      { name: 'Smash duplo', image: PHOTOS.burgerClassic, cents: 3400 },
+      { name: 'Batata rústica', image: PHOTOS.fries, cents: 2200 },
+      { name: 'Shake de doce de leite', image: PHOTOS.shake, cents: 1900 },
+    ],
+  },
+  {
+    name: 'Forneria Nonna',
+    tagline: 'Pizza de fermentação natural',
+    color: '#2F7D4F',
+    soft: '#E3F2E8',
+    items: [
+      { name: 'Margherita', image: PHOTOS.pizza, cents: 5600 },
+      { name: 'Salada da casa', image: PHOTOS.saladTop, cents: 2800 },
+      { name: 'Suco de laranja', image: PHOTOS.juice, cents: 1200 },
+    ],
+  },
+  {
+    name: 'Boteco do Largo',
+    tagline: 'Chope gelado e petisco',
+    color: '#2456B8',
+    soft: '#E3EBFA',
+    items: [
+      { name: 'Chope 500 ml', image: PHOTOS.beer, cents: 1600 },
+      { name: 'Costela no bafo', image: PHOTOS.ribs, cents: 6200 },
+      { name: 'Espetinhos', image: PHOTOS.grill, cents: 2600 },
+    ],
+  },
+];
+
+function PhoneMock({ brand }: { brand: (typeof BRANDS)[number] }) {
+  const total = brand.items.reduce((sum, item) => sum + item.cents, 0);
+  const fade = { transition: 'background-color .7s ease, color .7s ease, border-color .7s ease' };
   return (
-    <Box component="section" id="sobre" sx={{ py: { xs: 14, md: 20 }, scrollMarginTop: 90 }}>
-      <Container maxWidth="lg" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.15fr 1fr' }, gap: { xs: 8, md: 8 }, alignItems: 'stretch' }}>
-        <Reveal from="left">
-          <Box sx={{ position: 'relative', height: { xs: 420, md: 470 }, borderRadius: '24px', overflow: 'hidden', bgcolor: ink, '&:hover .hero-burger': { transform: 'scale(1.06) rotate(-1deg)' } }}>
-            <Box className="hero-burger" sx={{ position: 'absolute', inset: 0, transition: 'transform 1.4s cubic-bezier(.2,.75,.2,1)' }}>
-              <Photo id={PHOTOS.burgerStack} alt="Triunfo duplo, o lanche da casa" width={1100} sx={{ animation: `${drift} 16s ease-in-out infinite alternate`, ...motionSafe }} />
+    <Box sx={{ width: { xs: 260, md: 290 }, height: { xs: 540, md: 590 }, p: '10px', borderRadius: '44px', bgcolor: '#111', boxShadow: '0 50px 80px -40px rgba(0,0,0,.7), inset 0 0 0 2px #2A2A2A' }}>
+      <Box sx={{ position: 'relative', height: '100%', borderRadius: '36px', overflow: 'hidden', bgcolor: '#FBFAF8', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', width: 90, height: 24, borderRadius: 999, bgcolor: '#111', zIndex: 2 }} />
+        <Box sx={{ pt: 11, px: 5, pb: 5, bgcolor: brand.color, color: white, ...fade }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Box sx={{ width: 40, height: 40, borderRadius: '12px', bgcolor: 'rgba(255,255,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: sans, fontWeight: 800, fontSize: 18 }}>{brand.name[0]}</Box>
+            <Box>
+              <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 16, lineHeight: 1.2 }}>{brand.name}</Typography>
+              <Typography sx={{ fontFamily: sans, fontWeight: 500, fontSize: 11.5, opacity: 0.85 }}>{brand.tagline}</Typography>
             </Box>
-            <Box sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 80% at 50% 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.75) 100%)' }} />
-            {[...Array(14)].map((_, index) => (
-              <Box
-                key={index}
-                aria-hidden
-                sx={{
-                  position: 'absolute',
-                  left: `${(index * 37) % 100}%`,
-                  top: `${(index * 23) % 45}%`,
-                  width: 4 + (index % 3) * 2,
-                  height: 4 + (index % 3) * 2,
-                  borderRadius: '50%',
-                  bgcolor: index % 2 ? '#F7B26A' : '#FFE1B8',
-                  opacity: 0.8,
-                  boxShadow: '0 0 12px 2px rgba(255,170,80,.6)',
-                  animation: `${bob} ${4 + (index % 4)}s ease-in-out ${index * 0.3}s infinite`,
-                  ...motionSafe,
-                }}
-              />
-            ))}
-            <Box sx={{ position: 'absolute', left: 24, top: { xs: 24, sm: 'auto' }, bottom: { xs: 'auto', sm: 104 }, px: 4, py: 3, borderRadius: '14px', bgcolor: 'rgba(255,255,255,.94)', boxShadow: '0 10px 30px -12px rgba(0,0,0,.5)' }}>
-              <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 11, letterSpacing: 1.5, color: accent }}>DONO DA CASA</Typography>
-              <Typography sx={{ fontSize: 28, lineHeight: 1.15 }}>
-                <Em color={ink}>Marcos Lima</Em>
-              </Typography>
+          </Box>
+          <Box sx={{ mt: 4, display: 'inline-flex', px: 3, py: 1, borderRadius: 999, bgcolor: 'rgba(255,255,255,.18)', fontFamily: sans, fontWeight: 700, fontSize: 11 }}>Mesa 07 · comanda 4821</Box>
+        </Box>
+        <Box sx={{ px: 4, pt: 4, display: 'flex', gap: 2 }}>
+          {['Destaques', 'Pratos', 'Bebidas'].map((tab, index) => (
+            <Box key={tab} sx={{ px: 3, py: 1.25, borderRadius: 999, fontFamily: sans, fontWeight: 700, fontSize: 11, bgcolor: index === 0 ? brand.soft : 'transparent', color: index === 0 ? brand.color : muted, ...fade }}>
+              {tab}
             </Box>
-            <Box sx={{ position: 'absolute', left: 24, right: 24, bottom: 24, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 3 }}>
-              <Box>
-                <Typography sx={{ fontFamily: sans, fontWeight: 600, fontSize: 13, color: '#F7B26A' }}>Triunfo duplo · R$ 39,00</Typography>
-                <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: { xs: 20, md: 24 }, lineHeight: 1.2, letterSpacing: '-0.02em', color: white }}>O lanche mais pedido da casa</Typography>
+          ))}
+        </Box>
+        <Box key={brand.name} sx={{ flex: 1, px: 4, pt: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          {brand.items.map((item, index) => (
+            <Box
+              key={item.name}
+              sx={{ display: 'flex', alignItems: 'center', gap: 3, p: 2, borderRadius: '14px', bgcolor: white, border: `1px solid ${line}`, animation: `itemIn .6s cubic-bezier(.2,.75,.2,1) ${index * 0.08}s both`, '@keyframes itemIn': { from: { opacity: 0, transform: 'translateY(10px)' }, to: { opacity: 1, transform: 'none' } }, ...motionSafe }}
+            >
+              <Box component="img" src={photo(item.image, 120, 120)} alt="" sx={{ width: 52, height: 52, borderRadius: '10px', objectFit: 'cover' }} />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography noWrap sx={{ fontFamily: sans, fontWeight: 800, fontSize: 13, color: ink }}>{item.name}</Typography>
+                <Typography sx={{ fontFamily: sans, fontWeight: 700, fontSize: 12, color: brand.color }}>{formatPrice(item.cents)}</Typography>
               </Box>
-              <PillButton to="/t/triunfo-lanches/cardapio" tone="white">
-                Ver cardápio
-              </PillButton>
+              <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: brand.color, color: white, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: sans, fontWeight: 800, fontSize: 16 }}>+</Box>
+            </Box>
+          ))}
+        </Box>
+        <Box sx={{ p: 4 }}>
+          <Box sx={{ height: 46, borderRadius: 999, bgcolor: brand.color, color: white, display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 5, fontFamily: sans, fontWeight: 800, fontSize: 13, boxShadow: '0 14px 24px -14px rgba(0,0,0,.6)', ...fade }}>
+            <span>Enviar pedido</span>
+            <span>{formatPrice(total)}</span>
+          </Box>
+          <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, fontFamily: sans, fontWeight: 600, fontSize: 10, color: muted }}>
+            <BrandMark sx={{ fontSize: 12 }} /> tecnologia Pede Aí
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+export function ProductSection() {
+  const [current, setCurrent] = useState(0);
+  const [hold, setHold] = useState(false);
+
+  useEffect(() => {
+    if (hold || reduceMotion()) return undefined;
+    const timer = window.setInterval(() => setCurrent((value) => (value + 1) % BRANDS.length), 3400);
+    return () => window.clearInterval(timer);
+  }, [hold]);
+
+  const brand = BRANDS[current];
+
+  return (
+    <Box component="section" id="produto" sx={{ py: { xs: 14, md: 18 }, scrollMarginTop: 90 }}>
+      <Container maxWidth="lg" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: { xs: 12, md: 10 }, alignItems: 'center' }}>
+        <Reveal from="left">
+          <Box onMouseEnter={() => setHold(true)} onMouseLeave={() => setHold(false)} sx={{ position: 'relative', height: { xs: 640, md: 690 }, borderRadius: '32px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: ink }}>
+            <Box aria-hidden sx={{ position: 'absolute', inset: 0, opacity: 0.5 }}>
+              <Clip id={CLIPS.cheese} quality={360} sx={{ animation: `${drift} 16s ease-in-out infinite alternate`, ...motionSafe }} />
+            </Box>
+            <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: `radial-gradient(60% 50% at 50% 50%, ${brand.color}88 0%, rgba(10,10,10,.78) 78%)`, transition: 'background .8s ease' }} />
+            <Box sx={{ position: 'relative', mt: -6, '--tilt': '-2deg', animation: `${bob} 7s ease-in-out infinite`, ...motionSafe }}>
+              <PhoneMock brand={brand} />
+            </Box>
+            <Box sx={{ position: 'absolute', left: '50%', bottom: 18, transform: 'translateX(-50%)', display: 'flex', gap: 1.5, p: 1.5, borderRadius: 999, bgcolor: 'rgba(255,255,255,.14)', backdropFilter: 'blur(10px)' }}>
+              {BRANDS.map((item, index) => (
+                <ButtonBase
+                  key={item.name}
+                  onClick={() => setCurrent(index)}
+                  aria-label={`Ver marca ${item.name}`}
+                  sx={{ height: 30, px: index === current ? 3 : 0, minWidth: 30, borderRadius: 999, bgcolor: index === current ? white : 'transparent', color: ink, gap: 2, fontFamily: sans, fontWeight: 800, fontSize: 11.5, whiteSpace: 'nowrap', transition: 'all .4s ease' }}
+                >
+                  <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: item.color, boxShadow: '0 0 0 2px rgba(255,255,255,.75)' }} />
+                  {index === current && item.name}
+                </ButtonBase>
+              ))}
             </Box>
           </Box>
         </Reveal>
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        <Box>
           <Reveal from="right">
-            <Title align="left" accent="Triunfo Lanches" size={38}>
-              Conheça a
-            </Title>
-            <Sub align="left" sx={{ mt: 3 }}>
-              A Triunfo é a casa de demonstração do Pede Aí, em Campinas. Tem salão com mesas, balcão de retirada e uma equipe de quatro pessoas. Tudo o que você vê aqui roda no sistema de verdade, com o cardápio e as mesas dela.
+            <Box sx={{ display: 'inline-flex', px: 3, py: 1.25, borderRadius: 999, bgcolor: peach, fontFamily: sans, fontWeight: 800, fontSize: 11, letterSpacing: 1.4, color: accent }}>WHITE-LABEL</Box>
+            <Box sx={{ mt: 4 }}>
+              <Title align="left" accent="cara de cada casa" size={40}>
+                Uma plataforma com a
+              </Title>
+            </Box>
+            <Sub align="left" sx={{ mt: 4, maxWidth: 470 }}>
+              O Pede Aí é o sistema de comandas digitais que o restaurante coloca com a própria marca. O cliente vê o seu logo, as suas cores e o seu cardápio. A gente cuida da tecnologia por trás.
             </Sub>
           </Reveal>
-          <Reveal from="right" delay={150} sx={{ flex: 1 }}>
-            <Box sx={{ position: 'relative', height: '100%', minHeight: 280, borderRadius: '24px', overflow: 'hidden' }}>
-              <Clip id={CLIPS.salad} alt="Cozinheiro montando uma salada" />
-              <Box sx={{ position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)', width: { xs: 200, sm: 220 }, px: 4, py: 5, gap: 5, borderRadius: '18px', bgcolor: 'rgba(255,255,255,.94)', backdropFilter: 'blur(10px)', boxShadow: '0 20px 40px -20px rgba(0,0,0,.45)', display: 'flex', flexDirection: 'column' }}>
-                {[
-                  { to: 10, suffix: '', label: 'Mesas com QR', icon: 'M4 10h16M6 10v9M18 10v9M8 6h8' },
-                  { to: 12, suffix: '', label: 'Itens no cardápio', icon: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6' },
-                  { to: 12, suffix: ' min', label: 'Preparo médio', icon: 'M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z' },
-                ].map((stat) => (
-                  <Box key={stat.label} sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <Box sx={{ width: 38, height: 38, flexShrink: 0, borderRadius: '50%', bgcolor: peach, color: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Box component="svg" viewBox="0 0 24 24" sx={{ width: 18, height: 18, fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                        <path d={stat.icon} />
-                      </Box>
-                    </Box>
-                    <Box>
-                      <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 20, lineHeight: 1.1, color: ink }}>
-                        <CountUp to={stat.to} suffix={stat.suffix} />
-                      </Typography>
-                      <Typography sx={{ fontFamily: sans, fontWeight: 600, fontSize: 12, color: muted }}>{stat.label}</Typography>
-                    </Box>
-                  </Box>
-                ))}
-              </Box>
+          <Reveal from="right" delay={150}>
+            <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0, mt: 7, display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+              <Check>Logo, nome, frase e cor principal da casa</Check>
+              <Check>QR code próprio em cada mesa, sem app para baixar</Check>
+              <Check>Mesa, balcão e entrega ligados conforme a operação</Check>
+              <Check>Cardápio com fotos e itens pausados em tempo real</Check>
             </Box>
+            <Typography sx={{ mt: 7, fontFamily: sans, fontWeight: 600, fontSize: 13, color: muted }}>Troque a marca no celular ao lado e veja o cardápio se adaptar.</Typography>
           </Reveal>
         </Box>
       </Container>
@@ -110,10 +178,38 @@ export function PersonaSection() {
   );
 }
 
+export function StatsStrip() {
+  const stats = [
+    { to: 23, prefix: '+', suffix: '%', label: 'no ticket médio por mesa' },
+    { to: 41, prefix: '−', suffix: '%', label: 'de espera até o primeiro pedido' },
+    { to: 8, prefix: '', suffix: '', label: 'módulos integrados' },
+    { to: 0, prefix: 'R$ ', suffix: '', label: 'de taxa por pedido' },
+  ];
+  return (
+    <Box sx={{ position: 'relative', mt: { xs: -8, md: -12 }, pb: { xs: 4, md: 6 } }}>
+      <Container maxWidth="lg">
+        <Reveal>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, borderRadius: '24px', bgcolor: white, border: `1px solid ${line}`, overflow: 'hidden', boxShadow: '0 40px 70px -55px rgba(0,0,0,.5)' }}>
+            {stats.map((stat, index) => (
+              <Box key={stat.label} sx={{ p: { xs: 5, md: 7 }, borderLeft: { md: index ? `1px solid ${line}` : 'none' }, borderTop: { xs: index > 1 ? `1px solid ${line}` : 'none', md: 'none' }, borderRight: { xs: index % 2 === 0 ? `1px solid ${line}` : 'none', md: 'none' } }}>
+                <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: { xs: 32, md: 44 }, lineHeight: 1, letterSpacing: '-0.04em', color: index === 0 ? accent : ink }}>
+                  <CountUp to={stat.to} prefix={stat.prefix} suffix={stat.suffix} />
+                </Typography>
+                <Typography sx={{ mt: 2, fontFamily: sans, fontWeight: 600, fontSize: 13, color: body }}>{stat.label}</Typography>
+              </Box>
+            ))}
+          </Box>
+          <Typography sx={{ mt: 3, textAlign: 'center', fontFamily: sans, fontWeight: 500, fontSize: 11.5, color: muted }}>Projeções do time com base em operações simuladas. Os resultados variam de casa para casa.</Typography>
+        </Reveal>
+      </Container>
+    </Box>
+  );
+}
+
 const REASONS = [
-  { cutout: 'chili' as const, tilt: '-18deg', title: 'O que faz o Pede Aí diferente', text: 'O cliente pede pelo navegador, sem baixar nada, e o pedido cai direto na fila da cozinha. Sem papel e sem pedido perdido.', glow: '#FFD9C7' },
+  { cutout: 'chili' as const, tilt: '-18deg', title: 'Sem app, sem atrito', text: 'O cliente aponta a câmera para o QR da mesa e o cardápio abre no navegador. Menos passos, mais pedidos.', glow: '#FFD9C7' },
   { cutout: 'peppers' as const, tilt: '8deg', title: 'Comanda dividida de verdade', text: 'Cada pessoa abre a sua comanda ou entra na do amigo com um código de quatro números. No fim, cada um paga o que pediu.', glow: '#FFE9B8' },
-  { cutout: 'lettuce' as const, tilt: '-6deg', title: 'A cara da sua casa', text: 'Nome, frase e cor da casa aparecem nas telas do cliente. Mesa, balcão e entrega ligam e desligam na configuração.', glow: '#D7F0DD' },
+  { cutout: 'lettuce' as const, tilt: '-6deg', title: 'Sem taxa por pedido', text: 'Mensalidade fixa, sem comissão em cima das vendas. Quanto mais a casa vende, mais rápido o sistema se paga.', glow: '#D7F0DD' },
 ];
 
 export function WhySection() {
@@ -161,44 +257,17 @@ export function WhySection() {
   );
 }
 
-const TRENDING: MenuHighlight[] = [
-  { image: PHOTOS.burgerClassic, name: 'X-salada', category: 'Lanches', priceCents: 2800, prepMinutes: 12, banner: 'O clássico da casa' },
-  { image: PHOTOS.fries, name: 'Batata frita', category: 'Porções', priceCents: 3200, prepMinutes: 15, banner: '500 g com sal grosso' },
-  { image: PHOTOS.shake, name: 'Milk-shake', category: 'Bebidas', priceCents: 1800, prepMinutes: 8, banner: 'Chocolate, morango ou baunilha' },
-  { image: PHOTOS.burgerStack, name: 'Triunfo duplo', category: 'Lanches', priceCents: 3900, prepMinutes: 15, banner: 'Dois hambúrgueres' },
-  { image: PHOTOS.steakFries, name: 'Calabresa acebolada', category: 'Porções', priceCents: 3800, prepMinutes: 18, banner: 'Com pão de alho' },
-  { image: PHOTOS.nuggets, name: 'Nuggets', category: 'Porções', priceCents: 2400, prepMinutes: 12, banner: '12 unidades com barbecue' },
-  { image: PHOTOS.juice, name: 'Suco de laranja', category: 'Bebidas', priceCents: 1200, prepMinutes: 5, banner: 'Feito na hora' },
-  { image: PHOTOS.brownie, name: 'Petit gateau', category: 'Sobremesas', priceCents: 2200, prepMinutes: 10, banner: 'Com sorvete de creme' },
-];
-
-export function TrendingSection() {
-  return (
-    <Box component="section" id="cardapio" sx={{ py: { xs: 14, md: 18 }, scrollMarginTop: 90 }}>
-      <Container maxWidth="lg">
-        <Reveal>
-          <Title>Os mais pedidos da Triunfo</Title>
-          <Sub sx={{ mt: 2 }}>Cardápio real da casa de demonstração, com preço e tempo de preparo.</Sub>
-        </Reveal>
-        <Reveal delay={150} sx={{ mt: 10 }}>
-          <TrendingCarousel items={TRENDING} />
-        </Reveal>
-      </Container>
-    </Box>
-  );
-}
-
-const TICKER = ['QR na mesa', 'Comanda dividida', 'Cozinha ao vivo', 'Pix na mesa', 'Caixa fechado', 'Curva ABC', 'Tela grande na TV', 'Sem app para instalar'];
+const TICKER = ['White-label', 'QR na mesa', 'Comanda dividida', 'Cozinha ao vivo', 'Sem taxa por pedido', 'Caixa fechado', 'Curva ABC', 'Tela grande na TV', 'Sem app para instalar'];
 
 function Ribbon({ tilt, dark = false }: { tilt: number; dark?: boolean }) {
   const items = [...TICKER, ...TICKER];
   return (
     <Box sx={{ mx: '-4%', py: 3.5, transform: `rotate(${tilt}deg)`, bgcolor: dark ? ink : accent, color: white, overflow: 'hidden', boxShadow: '0 24px 40px -28px rgba(0,0,0,.7)' }}>
-      <Box sx={{ display: 'flex', width: 'max-content', animation: `${marquee} ${dark ? 46 : 36}s linear infinite ${dark ? 'reverse' : 'normal'}`, ...motionSafe }}>
+      <Box sx={{ display: 'flex', width: 'max-content', animation: `${marquee} ${dark ? 50 : 40}s linear infinite ${dark ? 'reverse' : 'normal'}`, ...motionSafe }}>
         {items.map((item, index) => (
           <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 5, pr: 5, fontFamily: sans, fontWeight: 800, fontSize: { xs: 17, md: 22 }, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
             {index % 3 === 1 ? <Em color={dark ? '#F7B26A' : white}>{item}</Em> : item}
-            <Box component="span" sx={{ fontSize: '0.75em', color: dark ? accent : ink }}>✦</Box>
+            {index % 3 === 0 ? <BrandMark sx={{ fontSize: '1.15em', color: dark ? accent : ink }} /> : <Box component="span" sx={{ fontSize: '0.75em', color: dark ? accent : ink }}>✦</Box>}
           </Box>
         ))}
       </Box>
@@ -217,192 +286,140 @@ export function MarqueeBand() {
   );
 }
 
-const FLOW = [
-  { label: 'Recebido', color: '#F7B26A' },
-  { label: 'Em preparo', color: '#EB5A24' },
-  { label: 'Pronto', color: '#5FD08A' },
-  { label: 'Entregue', color: '#9DB4FF' },
+const MODULES = [
+  { name: 'Cardápio digital', icon: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6', clip: CLIPS.salad, text: 'Cardápio por QR com fotos, categorias e itens pausados na hora em que acabam.', features: ['QR code por mesa', 'Fotos e descrições', 'Disponibilidade em tempo real'] },
+  { name: 'Comanda compartilhada', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8', clip: CLIPS.beer, text: 'Cada pessoa da mesa pede no próprio celular e entra na comanda do grupo com um código.', features: ['Código de 4 números', 'Cada um vê o que pediu', 'Taxa de serviço automática'] },
+  { name: 'Produção', icon: 'M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', clip: CLIPS.stirFry, text: 'A fila da cozinha por status, com atrasos destacados e tela grande para a TV.', features: ['Recebido, em preparo e pronto', 'Alerta de atraso', 'Modo tela grande'] },
+  { name: 'Salão', icon: 'M4 10h16M6 10v9M18 10v9M8 6h8', clip: CLIPS.waiter, text: 'Mapa das mesas, entregas prontas para levar e contas abertas na mão do garçom.', features: ['Mapa de mesas', 'Entregas prontas', 'Contas abertas'] },
+  { name: 'Caixa e pagamentos', icon: 'M3 7h18v10H3zM7 12h.01M12 12a2 2 0 1 0 0-.01', clip: CLIPS.bar, text: 'Fechamento por Pix, dinheiro e cartão, sangrias e conferência do caixa no fim do dia.', features: ['Pix, débito e crédito', 'Sangria registrada', 'Fechamento conferido'] },
+  { name: 'Gestão e relatórios', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2', clip: CLIPS.finishing, text: 'Faturamento por dia, semana e mês, curva ABC do cardápio e histórico de cada comanda.', features: ['Dashboard por período', 'Curva ABC', 'Histórico com busca'] },
+  { name: 'Equipe e comissões', icon: 'M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z', clip: CLIPS.brigade, text: 'Perfis de dono, gerente, salão e cozinha, convites para a equipe e comissão do garçom.', features: ['4 perfis de acesso', 'Convite com senha temporária', 'Comissão por período'] },
+  { name: 'Marca própria', icon: 'M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z', clip: CLIPS.dough, text: 'Nome, frase, cor e modos de atendimento da casa em todas as telas do cliente.', features: ['Logo e cores da casa', 'Mesa, balcão e entrega', 'Telefone do cliente opcional'] },
 ];
 
-const LIVE_ORDERS = [
-  { code: '#0042', place: 'Mesa 05', item: '2× X-salada', offset: 0 },
-  { code: '#0043', place: 'Balcão', item: 'Batata frita 500 g', offset: 1 },
-  { code: '#0044', place: 'Mesa 08', item: 'Milk-shake de morango', offset: 2 },
-];
+function ModuleIcon({ d, size = 22 }: { d: string; size?: number }) {
+  return (
+    <Box component="svg" viewBox="0 0 24 24" sx={{ width: size, height: size, fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+      <path d={d} />
+    </Box>
+  );
+}
 
-export function KitchenLiveSection() {
-  const { ref, visible } = useInView<HTMLDivElement>(0.3);
-  const [tick, setTick] = useState(0);
+export function ModulesSection() {
+  const [active, setActive] = useState(0);
+  const [hold, setHold] = useState(false);
 
   useEffect(() => {
-    if (!visible || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
-    const timer = window.setInterval(() => setTick((value) => value + 1), 2200);
+    if (hold || reduceMotion()) return undefined;
+    const timer = window.setInterval(() => setActive((value) => (value + 1) % MODULES.length), 5200);
     return () => window.clearInterval(timer);
-  }, [visible]);
+  }, [hold]);
+
+  const module = MODULES[active];
+  const radius = 205;
 
   return (
-    <Box component="section" id="ao-vivo" aria-label="Cozinha ao vivo" sx={{ px: { xs: 0, md: 5 }, py: { xs: 0, md: 6 } }}>
-      <Box ref={ref} sx={{ position: 'relative', maxWidth: 1220, mx: 'auto', borderRadius: { xs: 0, md: '28px' }, overflow: 'hidden', bgcolor: ink, color: white }}>
-        <Box aria-hidden sx={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-          <Clip id={CLIPS.fries} sx={{ animation: `${drift} 18s ease-in-out infinite alternate`, ...motionSafe }} />
-        </Box>
-        <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: { xs: 'rgba(10,10,10,.8)', md: 'linear-gradient(90deg, rgba(10,10,10,.94) 0%, rgba(10,10,10,.72) 48%, rgba(10,10,10,.3) 100%)' } }} />
-        <Container maxWidth="lg" sx={{ position: 'relative', py: { xs: 14, md: 16 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.1fr .9fr' }, gap: { xs: 10, md: 8 }, alignItems: 'center' }}>
-          <Reveal from="left">
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2, px: 3, py: 1.5, borderRadius: 999, bgcolor: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.16)', fontFamily: sans, fontWeight: 800, fontSize: 11, letterSpacing: 1.6 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#FF4D3D', boxShadow: '0 0 0 4px rgba(255,77,61,.25)', animation: 'live 1.4s ease infinite', '@keyframes live': { '50%': { opacity: 0.35 } }, ...motionSafe }} />
-              AO VIVO NA COZINHA
+    <Box component="section" id="modulos" sx={{ py: { xs: 14, md: 18 }, scrollMarginTop: 90 }}>
+      <Container maxWidth="lg">
+        <Reveal>
+          <Title accent="um só lugar">Oito módulos, a operação inteira em</Title>
+          <Sub sx={{ mt: 2 }}>Da leitura do QR ao fechamento do caixa. Escolha um módulo para ver o que ele faz.</Sub>
+        </Reveal>
+        <Box onMouseEnter={() => setHold(true)} onMouseLeave={() => setHold(false)} sx={{ mt: 12, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: { xs: 8, md: 10 }, alignItems: 'center' }}>
+          <Reveal from="zoom">
+            <Box sx={{ display: { xs: 'none', md: 'block' }, position: 'relative', width: 500, height: 500, mx: 'auto' }}>
+              <Box aria-hidden sx={{ position: 'absolute', inset: 45, borderRadius: '50%', border: '1.5px dashed #E2D9D0' }} />
+              <Box aria-hidden sx={{ position: 'absolute', inset: 120, borderRadius: '50%', background: 'conic-gradient(from 0deg, #FFD9C7, #EFE4FF, #D7F0DD, #FFE9B8, #FFD9C7)', filter: 'blur(26px)', opacity: 0.9, animation: `${turn} 12s linear infinite`, ...motionSafe }} />
+              <Box sx={{ position: 'absolute', inset: 140, borderRadius: '50%', bgcolor: white, boxShadow: '0 30px 60px -30px rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ChefMascot size={150} />
+              </Box>
+              <Box sx={{ position: 'absolute', inset: 0, animation: `${turn} 80s linear infinite`, animationPlayState: hold ? 'paused' : 'running', ...motionSafe }}>
+                {MODULES.map((item, index) => {
+                  const angle = (index / MODULES.length) * Math.PI * 2 - Math.PI / 2;
+                  const selected = index === active;
+                  return (
+                    <Box key={item.name} sx={{ position: 'absolute', left: 250 + Math.cos(angle) * radius - 32, top: 250 + Math.sin(angle) * radius - 32 }}>
+                      <Box sx={{ animation: `${turn} 80s linear infinite reverse`, animationPlayState: hold ? 'paused' : 'running', ...motionSafe }}>
+                        <ButtonBase
+                          aria-label={item.name}
+                          onClick={() => setActive(index)}
+                          sx={{ width: 64, height: 64, borderRadius: '20px', bgcolor: selected ? accent : white, color: selected ? white : ink, border: `1px solid ${selected ? accent : line}`, boxShadow: selected ? '0 18px 30px -12px rgba(235,90,36,.7)' : '0 14px 24px -18px rgba(0,0,0,.4)', transform: selected ? 'scale(1.14)' : 'none', transition: 'all .35s ease', '&:hover': { transform: 'scale(1.14)' } }}
+                        >
+                          <ModuleIcon d={item.icon} size={26} />
+                        </ButtonBase>
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
             </Box>
-            <Typography component="h2" sx={{ mt: 5, fontFamily: sans, fontWeight: 800, fontSize: { xs: 30, md: 42 }, lineHeight: 1.12, letterSpacing: '-0.03em' }}>
-              Enquanto o cliente escolhe, a cozinha já <Em color="#F7B26A">está no fogo</Em>
-            </Typography>
-            <Typography sx={{ mt: 4, maxWidth: 440, fontFamily: sans, fontWeight: 500, fontSize: 15, lineHeight: 1.7, color: 'rgba(255,255,255,.7)' }}>
-              Cada pedido aparece na fila da produção assim que é enviado. O salão vê quando ficou pronto e o cliente acompanha tudo da mesa.
-            </Typography>
-            <Box sx={{ mt: 8, display: 'flex', gap: { xs: 5, md: 10 } }}>
-              {[
-                { to: 15, suffix: ' s', label: 'para a fila atualizar' },
-                { to: 0, suffix: '', label: 'pedidos em papel' },
-                { to: 4, suffix: '', label: 'perfis de equipe' },
-              ].map((stat) => (
-                <Box key={stat.label}>
-                  <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 34, lineHeight: 1, letterSpacing: '-0.03em', color: white }}>
-                    <CountUp to={stat.to} suffix={stat.suffix} />
-                  </Typography>
-                  <Typography sx={{ mt: 1.5, fontFamily: sans, fontWeight: 600, fontSize: 12.5, color: 'rgba(255,255,255,.6)' }}>{stat.label}</Typography>
-                </Box>
+            <Box sx={{ display: { xs: 'flex', md: 'none' }, gap: 2, overflowX: 'auto', pb: 2, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+              {MODULES.map((item, index) => (
+                <ButtonBase key={item.name} onClick={() => setActive(index)} sx={{ flexShrink: 0, gap: 2, px: 3.5, height: 42, borderRadius: 999, bgcolor: index === active ? accent : white, color: index === active ? white : ink, border: `1px solid ${index === active ? accent : line}`, fontFamily: sans, fontWeight: 700, fontSize: 13 }}>
+                  <ModuleIcon d={item.icon} size={17} />
+                  {item.name}
+                </ButtonBase>
               ))}
             </Box>
           </Reveal>
-          <Reveal from="right" delay={150}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {LIVE_ORDERS.map((order, index) => {
-                const step = (tick + order.offset) % FLOW.length;
-                const status = FLOW[step];
-                return (
-                  <Box
-                    key={order.code}
-                    sx={{
-                      p: 4,
-                      ml: { md: index === 1 ? 8 : 0 },
-                      borderRadius: '18px',
-                      bgcolor: 'rgba(255,255,255,.08)',
-                      border: '1px solid rgba(255,255,255,.14)',
-                      backdropFilter: 'blur(14px)',
-                      boxShadow: '0 30px 50px -30px rgba(0,0,0,.8)',
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 3 }}>
-                      <Box>
-                        <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 15 }}>
-                          {order.code} · {order.place}
-                        </Typography>
-                        <Typography sx={{ mt: 0.5, fontFamily: sans, fontWeight: 500, fontSize: 13, color: 'rgba(255,255,255,.65)' }}>{order.item}</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 3, py: 1.25, borderRadius: 999, bgcolor: `${status.color}26`, color: status.color, fontFamily: sans, fontWeight: 800, fontSize: 12, whiteSpace: 'nowrap', transition: 'all .5s ease' }}>
-                        <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: status.color, transition: 'background-color .5s ease' }} />
-                        {status.label}
-                      </Box>
-                    </Box>
-                    <Box sx={{ mt: 3.5, height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,.1)', overflow: 'hidden' }}>
-                      <Box sx={{ height: '100%', width: `${((step + 1) / FLOW.length) * 100}%`, borderRadius: 2, bgcolor: status.color, transition: 'width .8s cubic-bezier(.2,.75,.2,1), background-color .5s ease' }} />
-                    </Box>
-                  </Box>
-                );
-              })}
-            </Box>
-          </Reveal>
-        </Container>
-      </Box>
-    </Box>
-  );
-}
-
-function FloatingChip({ icon, title, text, tone, delay }: { icon: string; title: string; text: string; tone: string; delay: number }) {
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, px: 3, py: 2.5, borderRadius: '14px', bgcolor: white, boxShadow: '0 18px 30px -22px rgba(0,0,0,.45)', animation: `${bob} 6s ease-in-out ${delay}s infinite`, '--tilt': '0deg', transition: 'transform .3s ease', ...motionSafe }}>
-      <Box sx={{ width: 34, height: 34, flexShrink: 0, borderRadius: '10px', bgcolor: tone, color: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Box component="svg" viewBox="0 0 24 24" sx={{ width: 17, height: 17, fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-          <path d={icon} />
-        </Box>
-      </Box>
-      <Box>
-        <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 13.5, color: ink }}>{title}</Typography>
-        <Typography sx={{ fontFamily: sans, fontWeight: 600, fontSize: 11.5, color: muted }}>{text}</Typography>
-      </Box>
-    </Box>
-  );
-}
-
-export function MasterSection() {
-  return (
-    <Box
-      component="section"
-      id="gestao"
-      sx={{ py: { xs: 14, md: 18 }, scrollMarginTop: 90, backgroundImage: 'linear-gradient(rgba(0,0,0,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.035) 1px, transparent 1px)', backgroundSize: '48px 48px' }}
-    >
-      <Container maxWidth="lg">
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 4 }}>
-          <Reveal from="left">
-            <Title align="left" accent="confiança" size={38}>
-              Domine a arte de
-              <br />
-              atender com
-            </Title>
-          </Reveal>
           <Reveal from="right">
-            <Sub align="left" sx={{ maxWidth: 340 }}>
-              Do primeiro pedido ao fechamento do caixa, cada passo do atendimento fica registrado e visível para quem precisa.
-            </Sub>
-          </Reveal>
-        </Box>
-
-        <Box sx={{ mt: 12, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1.1fr .9fr .9fr 1.1fr' }, gap: 4, alignItems: 'center' }}>
-          <Reveal delay={0}>
-            <Box sx={{ position: 'relative', height: 240, borderRadius: '18px', overflow: 'hidden', '&:hover video': { transform: 'scale(1.08)' }, '& video': { transition: 'transform 1s ease' } }}>
-              <Clip id={CLIPS.garlic} alt="Cozinheiro picando alho" quality={360} />
-              <Box sx={{ position: 'absolute', right: 12, top: 12, px: 3, py: 1, borderRadius: 999, bgcolor: 'rgba(0,0,0,.55)', color: white, fontFamily: sans, fontWeight: 700, fontSize: 11 }}>Passo 01</Box>
-              <Box sx={{ position: 'absolute', left: 12, bottom: 12, px: 3, py: 1.5, borderRadius: 999, bgcolor: 'rgba(255,255,255,.9)', fontFamily: sans, fontWeight: 700, fontSize: 12.5, color: ink }}>Pedido chega na fila</Box>
-            </Box>
-          </Reveal>
-          <Reveal delay={120}>
-            <Box sx={{ position: 'relative', p: 5, borderRadius: '18px', background: `linear-gradient(160deg, ${white} 0%, #FFF3EC 100%)`, border: `1px solid ${line}`, transform: { md: 'rotate(-2deg)' }, transition: 'transform .5s cubic-bezier(.2,.75,.2,1)', '&:hover': { transform: 'rotate(0deg) translateY(-6px)' } }}>
-              <Box sx={{ position: 'absolute', right: 14, top: 14, width: 30, height: 30, borderRadius: '50%', bgcolor: peach, color: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>♥</Box>
-              <Typography sx={{ pr: 8, fontFamily: sans, fontWeight: 800, fontSize: 21, lineHeight: 1.3, letterSpacing: '-0.02em', color: ink }}>
-                “A cozinha nunca foi tão <Em>organizada!</Em>”
-              </Typography>
-              <Box sx={{ mt: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Box component="img" src={photo(PHOTOS.cook, 80, 80)} alt="" sx={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover' }} />
-                <Box>
-                  <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 13.5, color: ink }}>Zé da Cozinha</Typography>
-                  <Typography sx={{ fontFamily: sans, fontWeight: 600, fontSize: 11, color: muted }}>Persona · casa de demonstração</Typography>
+            <Box sx={{ borderRadius: '26px', overflow: 'hidden', bgcolor: white, border: `1px solid ${line}`, boxShadow: '0 40px 70px -50px rgba(0,0,0,.45)' }}>
+              <Box sx={{ position: 'relative', height: { xs: 200, md: 240 }, bgcolor: ink, overflow: 'hidden' }}>
+                <Clip key={module.clip} id={module.clip} quality={360} alt={module.name} sx={{ animation: 'clipIn .8s ease both', '@keyframes clipIn': { from: { opacity: 0, transform: 'scale(1.06)' }, to: { opacity: 1, transform: 'none' } } }} />
+                <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.72))' }} />
+                <Box sx={{ position: 'absolute', left: 20, bottom: 18, display: 'flex', alignItems: 'center', gap: 3, color: white }}>
+                  <Box sx={{ width: 44, height: 44, borderRadius: '14px', bgcolor: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ModuleIcon d={module.icon} />
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontFamily: sans, fontWeight: 700, fontSize: 11, letterSpacing: 1.4, opacity: 0.8 }}>MÓDULO {String(active + 1).padStart(2, '0')}</Typography>
+                    <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 22, letterSpacing: '-0.02em' }}>{module.name}</Typography>
+                  </Box>
+                </Box>
+              </Box>
+              <Box key={module.name} sx={{ p: { xs: 5, md: 7 }, animation: 'textIn .6s ease both', '@keyframes textIn': { from: { opacity: 0, transform: 'translateY(10px)' }, to: { opacity: 1, transform: 'none' } }, ...motionSafe }}>
+                <Typography sx={{ fontFamily: sans, fontWeight: 500, fontSize: 15, lineHeight: 1.7, color: body }}>{module.text}</Typography>
+                <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0, mt: 5, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {module.features.map((feature) => (
+                    <Check key={feature}>{feature}</Check>
+                  ))}
+                </Box>
+                <Box sx={{ mt: 6, display: 'flex', gap: 1.5 }}>
+                  {MODULES.map((item, index) => (
+                    <Box key={item.name} sx={{ height: 4, flex: 1, borderRadius: 2, bgcolor: index === active ? accent : index < active ? '#F4C9B5' : line, transition: 'background-color .4s ease' }} />
+                  ))}
                 </Box>
               </Box>
             </Box>
           </Reveal>
-          <Reveal delay={240}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, p: 3, borderRadius: '18px', bgcolor: 'rgba(255,255,255,.6)', border: `1px solid ${line}` }}>
-              <FloatingChip icon="M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" title="Fila ao vivo" text="Atualiza a cada 15 s" tone="#FFE7DC" delay={0} />
-              <FloatingChip icon="M4 7h16M4 12h16M4 17h10" title="Comanda dividida" text="Código de 4 números" tone="#EEE8FB" delay={0.8} />
-              <FloatingChip icon="M3 7h18v10H3zM7 12h.01M12 12a2 2 0 1 0 0-.01" title="Conta fechada" text="Pix, dinheiro ou cartão" tone="#E3F3E8" delay={1.6} />
-            </Box>
-          </Reveal>
-          <Reveal delay={360}>
-            <Box sx={{ position: 'relative', height: 330, borderRadius: '18px', overflow: 'hidden', '&:hover video': { transform: 'scale(1.06)' }, '& video': { transition: 'transform 1s ease' } }}>
-              <Clip id={CLIPS.finishing} alt="Cozinheiro finalizando o prato" quality={360} />
-              <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.72))' }} />
-              <Box sx={{ position: 'absolute', left: 14, top: 14, display: 'flex', alignItems: 'center', gap: 1.5, px: 3, py: 1, borderRadius: 999, bgcolor: 'rgba(255,255,255,.9)', fontFamily: sans, fontWeight: 800, fontSize: 11, color: ink }}>
-                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: accent, animation: 'pulse 1.6s ease infinite', '@keyframes pulse': { '50%': { opacity: 0.3 } }, ...motionSafe }} />
-                Produção
-              </Box>
-              <Typography sx={{ position: 'absolute', left: 18, bottom: 16, fontFamily: sans, fontWeight: 800, fontSize: 24, lineHeight: 1.15, letterSpacing: '-0.02em', color: white }}>
-                Pronto para
-                <br />
-                <Em color="#F7B26A">ir para a mesa</Em>
-              </Typography>
-            </Box>
-          </Reveal>
         </Box>
+      </Container>
+    </Box>
+  );
+}
+
+const SEGMENTS: Showcase[] = [
+  { image: PHOTOS.burgerClassic, name: 'Hamburgueria', category: 'Lanches', tag: 'Mesa e balcão', banner: 'Pedido sai da mesa', metrics: ['+21% no ticket', '78% pela mesa'] },
+  { image: PHOTOS.pizza, name: 'Pizzaria', category: 'Forno', tag: 'Mesa e entrega', banner: 'Segunda rodada em um toque', metrics: ['−35% de erros', '+2 pedidos por mesa'] },
+  { image: PHOTOS.beer, name: 'Bar e choperia', category: 'Bebidas', tag: 'Comanda aberta', banner: 'Cada um na sua comanda', metrics: ['+3 rodadas', 'Conta dividida'] },
+  { image: PHOTOS.spread, name: 'Restaurante', category: 'À la carte', tag: 'Mesa', banner: 'Cozinha no ritmo certo', metrics: ['−9 min de espera', 'Tela na cozinha'] },
+  { image: PHOTOS.fries, name: 'Porções e petiscos', category: 'Para dividir', tag: 'Mesa', banner: 'Pediu, chegou', metrics: ['+18% de giro', 'Pix na mesa'] },
+  { image: PHOTOS.grill, name: 'Churrascaria', category: 'Brasa', tag: 'Mesa', banner: 'Espeto sem fila', metrics: ['Comissão por garçom', 'Curva ABC'] },
+  { image: PHOTOS.juice, name: 'Cafeteria', category: 'Café e doces', tag: 'Balcão', banner: 'Retirada com senha', metrics: ['Fila menor', 'Pedido pelo QR'] },
+  { image: PHOTOS.hall, name: 'Praça de alimentação', category: 'Várias marcas', tag: 'Balcão', banner: 'Uma marca por loja', metrics: ['White-label', 'Painel por loja'] },
+];
+
+export function SegmentsSection() {
+  return (
+    <Box component="section" id="segmentos" sx={{ py: { xs: 14, md: 18 }, scrollMarginTop: 90 }}>
+      <Container maxWidth="lg">
+        <Reveal>
+          <Title accent="tipo de casa">Feito para todo</Title>
+          <Sub sx={{ mt: 2 }}>O mesmo sistema se ajusta ao jeito de atender de cada segmento.</Sub>
+        </Reveal>
+        <Reveal delay={150} sx={{ mt: 10 }}>
+          <ShowcaseCarousel items={SEGMENTS} />
+        </Reveal>
       </Container>
     </Box>
   );
@@ -413,12 +430,12 @@ export function GallerySection() {
     <Box component="section" aria-label="Galeria" sx={{ py: { xs: 6, md: 8 } }}>
       <CurvedGallery
         images={[
-          { id: PHOTOS.flames, alt: 'Chapa com fogo alto' },
+          { id: PHOTOS.flames, alt: 'Legumes no wok', clip: CLIPS.wok },
           { id: PHOTOS.friendsCooking, alt: 'Pizza sendo aberta', clip: CLIPS.pizza },
           { id: PHOTOS.chefPlating, alt: 'Cozinheiro finalizando prato' },
-          { id: PHOTOS.crowd, alt: 'Bar movimentado', clip: CLIPS.bar },
+          { id: PHOTOS.crowd, alt: 'Bacon na frigideira', clip: CLIPS.bacon },
           { id: PHOTOS.bar, alt: 'Balcão do bar' },
-          { id: PHOTOS.plating, alt: 'Chope saindo da torneira', clip: CLIPS.beer },
+          { id: PHOTOS.plating, alt: 'Almôndegas no molho', clip: CLIPS.meatballs },
           { id: PHOTOS.hall, alt: 'Salão do restaurante' },
           { id: PHOTOS.grill, alt: 'Pizzas no forno', clip: CLIPS.oven },
         ]}
@@ -428,10 +445,10 @@ export function GallerySection() {
 }
 
 const PERSONAS = [
-  { image: PHOTOS.owner, name: 'Marcos Lima', role: 'Dono', quote: 'Fecho o caixa sabendo exatamente o que vendi.', sees: ['Faturamento por dia, semana e mês', 'Curva ABC do cardápio', 'Caixa, comissões e equipe', 'Configuração da casa'], to: '/gestao' },
+  { image: PHOTOS.owner, name: 'Marcos Lima', role: 'Dono', quote: 'Fecho o caixa sabendo exatamente o que vendi.', sees: ['Faturamento por dia, semana e mês', 'Curva ABC do cardápio', 'Caixa, comissões e equipe', 'Marca e configuração da casa'], to: '/gestao' },
   { image: PHOTOS.manager, name: 'Paula Reis', role: 'Gerente', quote: 'Vejo quais produtos puxam o faturamento.', sees: ['Dashboard e histórico de contas', 'Produtos e disponibilidade', 'Fechamento de caixa', 'Mesas e salão'], to: '/gestao/curva-abc' },
   { image: PHOTOS.waiter, name: 'Rafa Souza', role: 'Salão', quote: 'Sei o que está pronto sem ir até a cozinha.', sees: ['Mapa das mesas', 'Entregas prontas para levar', 'Contas abertas', 'Fechamento no Pix ou cartão'], to: '/salao' },
-  { image: PHOTOS.cook, name: 'Zé da Cozinha', role: 'Cozinha', quote: 'Os pedidos chegam na ordem certa.', sees: ['Fila por status', 'Pedidos atrasados destacados', 'Tela grande para a TV', 'Impressão da comanda'], to: '/producao' },
+  { image: PHOTOS.cook, name: 'Zé Santos', role: 'Cozinha', quote: 'Os pedidos chegam na ordem certa.', sees: ['Fila por status', 'Pedidos atrasados destacados', 'Tela grande para a TV', 'Impressão da comanda'], to: '/producao' },
 ];
 
 export function PersonasSection() {
@@ -440,7 +457,7 @@ export function PersonasSection() {
       <Container maxWidth="lg">
         <Reveal>
           <Title accent="tela dela">Cada pessoa da equipe com a</Title>
-          <Sub sx={{ mt: 2 }}>Personas da casa de demonstração. Passe o mouse para ver o que cada uma enxerga no sistema.</Sub>
+          <Sub sx={{ mt: 2 }}>As personas para quem o Pede Aí foi desenhado. Passe o mouse para ver o que cada uma enxerga no sistema.</Sub>
         </Reveal>
         <Box sx={{ mt: 10, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 4 }}>
           {PERSONAS.map((persona, index) => (
@@ -453,197 +470,3 @@ export function PersonasSection() {
     </Box>
   );
 }
-
-const QUESTIONS = [
-  { q: 'O cliente precisa baixar algum aplicativo?', a: 'Não. Ele lê o QR code da mesa com a câmera do celular e o cardápio abre no navegador. Também dá para digitar o número da mesa.' },
-  { q: 'Como funciona a comanda compartilhada?', a: 'Quem abre a comanda recebe um código de quatro números. Quem está na mesma mesa entra com esse código e tudo o que pedir cai na mesma conta.' },
-  { q: 'O pedido vai direto para a cozinha?', a: 'Sim. Assim que o cliente envia, o pedido aparece como Recebido no painel de produção, que se atualiza sozinho a cada 15 segundos.' },
-  { q: 'Dá para colocar a identidade da minha casa?', a: 'Dá. Na configuração você define nome, frase de apresentação, cor principal e modos de atendimento.' },
-  { q: 'Como fecham a conta e o caixa?', a: 'O salão registra o pagamento em Pix, dinheiro, débito ou crédito. No fim do dia a gestão confere cada forma de pagamento, registra sangrias e fecha o caixa.' },
-  { q: 'Quem da equipe vê o quê?', a: 'São quatro perfis: dono, gerente, salão e cozinha. Cada um vê só as telas do seu trabalho.' },
-];
-
-export function FaqSection() {
-  const [open, setOpen] = useState<number | false>(0);
-  return (
-    <Box component="section" id="duvidas" sx={{ position: 'relative', py: { xs: 14, md: 18 }, scrollMarginTop: 90, overflow: 'hidden' }}>
-      <Container maxWidth="lg" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '.9fr 1.2fr' }, gap: { xs: 8, md: 10 }, alignItems: 'center' }}>
-        <Reveal from="left">
-          <Title align="left" accent="frequentes" size={36}>
-            Perguntas
-          </Title>
-          <Box sx={{ position: 'relative', mt: 8, width: { xs: 260, md: 340 }, height: { xs: 260, md: 340 }, mx: { xs: 'auto', md: 0 } }}>
-            <Box sx={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'conic-gradient(from 0deg, #FFD9C7, #EFE4FF, #D7F0DD, #FFE9B8, #FFD9C7)', filter: 'blur(28px)', opacity: 0.85, animation: `${turn} 14s linear infinite`, ...motionSafe }} />
-            <Box sx={{ position: 'absolute', inset: '12%', borderRadius: '50%', bgcolor: 'rgba(255,255,255,.75)' }} />
-            <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <BrandMark sx={{ fontSize: { xs: 150, md: 200 }, color: ink, '--tilt': '-4deg', animation: `${bob} 5s ease-in-out infinite`, ...motionSafe }} />
-            </Box>
-          </Box>
-        </Reveal>
-        <Reveal from="right">
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {QUESTIONS.map((item, index) => (
-              <Accordion
-                key={item.q}
-                disableGutters
-                elevation={0}
-                expanded={open === index}
-                onChange={(_, expanded) => setOpen(expanded ? index : false)}
-                sx={{ borderRadius: '14px !important', bgcolor: open === index ? white : 'rgba(255,255,255,.6)', border: `1px solid ${open === index ? '#F4C9B5' : line}`, '&:before': { display: 'none' }, transition: 'all .3s ease' }}
-              >
-                <AccordionSummary
-                  expandIcon={<Box sx={{ fontFamily: sans, fontWeight: 600, fontSize: 22, lineHeight: 1, color: open === index ? accent : ink }}>{open === index ? '−' : '+'}</Box>}
-                  sx={{ px: 5, minHeight: 58, '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': { transform: 'none' } }}
-                >
-                  <Typography sx={{ fontFamily: sans, fontWeight: 700, fontSize: 15, color: ink }}>{item.q}</Typography>
-                </AccordionSummary>
-                <AccordionDetails sx={{ px: 5, pt: 0, pb: 5 }}>
-                  <Typography sx={{ fontFamily: sans, fontWeight: 500, fontSize: 14, lineHeight: 1.7, color: body }}>{item.a}</Typography>
-                </AccordionDetails>
-              </Accordion>
-            ))}
-          </Box>
-        </Reveal>
-      </Container>
-    </Box>
-  );
-}
-
-function Plate({ id, label, size }: { id: string; label: string; size: number }) {
-  return (
-    <Box sx={{ textAlign: 'center' }}>
-      <Box sx={{ width: size, height: size, mx: 'auto', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 24px 40px -18px rgba(0,0,0,.6)', animation: `${turn} 40s linear infinite`, ...motionSafe }}>
-        <Photo id={id} alt={label} width={size * 2} height={size * 2} />
-      </Box>
-    </Box>
-  );
-}
-
-export function CtaSection() {
-  return (
-    <Box component="section" id="contato" sx={{ scrollMarginTop: 90, py: { xs: 0, md: 8 } }}>
-      <Box sx={{ position: 'relative', maxWidth: 1220, mx: 'auto', bgcolor: '#0F0F0F', color: white, borderRadius: { xs: 0, md: '28px' }, overflow: 'hidden', minHeight: { md: 380 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '320px 1fr 320px' }, alignItems: 'center' }}>
-        <Box aria-hidden sx={{ position: 'absolute', inset: 0, opacity: 0.22 }}>
-          <Clip id={CLIPS.waiter} quality={360} sx={{ filter: 'grayscale(.6)' }} />
-        </Box>
-        <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(50% 80% at 50% 50%, rgba(15,15,15,.55), rgba(15,15,15,.92))' }} />
-        <Box sx={{ position: 'relative', display: { xs: 'none', md: 'flex' }, alignSelf: 'end', justifyContent: 'center', pt: 10 }}>
-          <Box sx={{ width: 260, pt: 6, pb: 8, borderRadius: '130px 130px 0 0', bgcolor: white, color: ink, textAlign: 'center' }}>
-            <Plate id={PHOTOS.steakFries} label="Calabresa acebolada" size={190} />
-            <Typography sx={{ mt: 4, fontFamily: sans, fontWeight: 800, fontSize: 18 }}>Calabresa acebolada</Typography>
-          </Box>
-        </Box>
-        <Reveal sx={{ position: 'relative', textAlign: 'center', px: { xs: 6, md: 4 }, py: { xs: 14, md: 10 } }}>
-          <Typography component="h2" sx={{ fontFamily: sans, fontWeight: 800, fontSize: { xs: 30, md: 38 }, lineHeight: 1.15 }}>
-            Faça um pedido
-            <br />
-            direto da <Em>sua mesa</Em>
-          </Typography>
-          <Typography sx={{ mt: 4, mx: 'auto', maxWidth: 380, fontFamily: sans, fontWeight: 500, fontSize: 14.5, lineHeight: 1.7, color: 'rgba(255,255,255,.65)' }}>
-            Entre na mesa 05 da Triunfo, peça um lanche e acompanhe o pedido chegando na cozinha.
-          </Typography>
-          <Box sx={{ mt: 7, display: 'flex', justifyContent: 'center', gap: 3, flexWrap: 'wrap' }}>
-            <PillButton to="/t/triunfo-lanches?mesa=t05-000a">Pedir agora</PillButton>
-            <PillButton to="/login" tone="outline">
-              Entrar como equipe
-            </PillButton>
-          </Box>
-        </Reveal>
-        <Box sx={{ display: { xs: 'none', md: 'flex' }, alignSelf: 'stretch', position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
-          <Box sx={{ position: 'absolute', inset: '0 0 0 30px', bgcolor: accent, borderRadius: '0 0 0 180px' }} />
-          <Box sx={{ position: 'relative', textAlign: 'center' }}>
-            <Typography sx={{ mb: 5, fontFamily: sans, fontWeight: 800, fontSize: 18 }}>Batata frita</Typography>
-            <Plate id={PHOTOS.fries} label="Batata frita" size={200} />
-          </Box>
-        </Box>
-      </Box>
-    </Box>
-  );
-}
-
-function FooterColumn({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Box>
-      <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 15, color: ink }}>{title}</Typography>
-      <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0, mt: 4, display: 'flex', flexDirection: 'column', gap: 2.5, fontFamily: sans, fontWeight: 500, fontSize: 14, color: body, '& a': { color: body, textDecoration: 'none', transition: 'color .2s ease', '&:hover': { color: accent } } }}>
-        {children}
-      </Box>
-    </Box>
-  );
-}
-
-function ContactLine({ icon, children }: { icon: string; children: ReactNode }) {
-  return (
-    <Box component="li" sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-      <Box component="svg" viewBox="0 0 24 24" sx={{ mt: '2px', width: 16, height: 16, flexShrink: 0, fill: 'none', stroke: accent, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-        <path d={icon} />
-      </Box>
-      <Box>{children}</Box>
-    </Box>
-  );
-}
-
-export function Footer() {
-  return (
-    <Box component="footer" sx={{ position: 'relative', mt: 10, overflow: 'hidden', bgcolor: white, borderTop: `1px solid ${line}` }}>
-      <Box aria-hidden sx={{ position: 'absolute', right: -120, top: -80, width: 420, height: 420, borderRadius: '50%', background: 'radial-gradient(circle, rgba(235,90,36,.10), rgba(235,90,36,0) 70%)' }} />
-      <Container maxWidth="lg" sx={{ position: 'relative', pt: 14, pb: 6 }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1.4fr 1fr 1fr 1.3fr' }, gap: 8 }}>
-          <Box sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <BrandMark sx={{ fontSize: 36, color: ink }} />
-              <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 22, letterSpacing: '-0.02em', color: ink }}>Pede Aí</Typography>
-            </Box>
-            <Typography sx={{ mt: 3, maxWidth: 260, fontFamily: sans, fontWeight: 500, fontSize: 14, lineHeight: 1.7, color: body }}>
-              Pedidos digitais para bares e restaurantes, do QR na mesa ao fechamento do caixa.
-            </Typography>
-          </Box>
-          <FooterColumn title="Navegação">
-            <li><a href="#sobre">Sobre</a></li>
-            <li><a href="#cardapio">Cardápio</a></li>
-            <li><a href="#equipe">Equipe</a></li>
-            <li><a href="#duvidas">Dúvidas</a></li>
-          </FooterColumn>
-          <FooterColumn title="Sistema">
-            <li><RouterLink to="/t/triunfo-lanches">Casa de demonstração</RouterLink></li>
-            <li><RouterLink to="/producao">Painel da cozinha</RouterLink></li>
-            <li><RouterLink to="/salao">Painel do salão</RouterLink></li>
-            <li><RouterLink to="/gestao">Gestão</RouterLink></li>
-          </FooterColumn>
-          <FooterColumn title="Contato">
-            <ContactLine icon="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21zM12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z">
-              Rua das Palmeiras, 320
-              <br />
-              Centro, Campinas, SP
-            </ContactLine>
-            <ContactLine icon="M4 6h16v12H4zM4 7l8 6 8-6">PUC-Campinas · Projeto Integrador IV</ContactLine>
-            <Box component="li" sx={{ display: 'flex', gap: 2, mt: 1 }}>
-              {[
-                { href: 'https://github.com/PresetyX/PI_IV-Time-5', label: 'GitHub', icon: 'M9 19c-4 1.5-4-2-6-2.5M15 21v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12 12 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21' },
-                { href: '/t/triunfo-lanches', label: 'Casa de demonstração', icon: 'M3 11l9-7 9 7v9H3zM9 20v-6h6v6' },
-                { href: '/login', label: 'Entrar', icon: 'M15 3h4v18h-4M10 17l5-5-5-5M15 12H3' },
-              ].map((social) => (
-                <Box
-                  key={social.label}
-                  component="a"
-                  href={social.href}
-                  aria-label={social.label}
-                  {...(social.href.startsWith('http') ? { target: '_blank', rel: 'noreferrer' } : {})}
-                  sx={{ width: 36, height: 36, borderRadius: '50%', bgcolor: accent, color: `${white} !important`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .25s ease', '&:hover': { transform: 'translateY(-3px)' } }}
-                >
-                  <Box component="svg" viewBox="0 0 24 24" sx={{ width: 17, height: 17, fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                    <path d={social.icon} />
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          </FooterColumn>
-        </Box>
-        <Typography sx={{ mt: 12, pt: 5, borderTop: `1px solid ${line}`, textAlign: 'center', fontFamily: sans, fontWeight: 500, fontSize: 13, color: muted }}>
-          © {new Date().getFullYear()} Pede Aí. Feito pelo Time 5 da PUC-Campinas. Fotos: Unsplash. Vídeos: Mixkit.
-        </Typography>
-      </Container>
-    </Box>
-  );
-}
-
