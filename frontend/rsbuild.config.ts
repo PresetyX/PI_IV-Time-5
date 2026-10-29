@@ -16,7 +16,7 @@ export default defineConfig({
         tag: 'link',
         attrs: {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap',
+          href: 'https://fonts.googleapis.com/css2?family=Great+Vibes&family=Manrope:wght@500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap',
         },
       },
     ],
