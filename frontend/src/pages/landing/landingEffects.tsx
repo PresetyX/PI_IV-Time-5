@@ -138,7 +138,6 @@ export function ShowcaseCarousel({ items }: { items: Showcase[] }) {
 export function CurvedGallery({ images }: { images: { id: string; alt: string; clip?: number }[] }) {
   const stage = useRef<HTMLDivElement | null>(null);
   const items = useRef<(HTMLDivElement | null)[]>([]);
-  const paused = useRef(false);
   const list = [...images, ...images, ...images];
 
   useEffect(() => {
@@ -155,7 +154,7 @@ export function CurvedGallery({ images }: { images: { id: string; alt: string; c
       const gap = 18;
       const step = card + gap;
       const loop = step * images.length;
-      if (!paused.current && !reduce) offset = (offset + ((now - last) / 1000) * 38) % loop;
+      if (!reduce) offset = (offset + ((now - last) / 1000) * 38) % loop;
       last = now;
       items.current.forEach((element, index) => {
         if (!element) return;
@@ -180,12 +179,6 @@ export function CurvedGallery({ images }: { images: { id: string; alt: string; c
     <Box
       ref={stage}
       aria-label="Galeria de cozinhas e salões"
-      onMouseEnter={() => {
-        paused.current = true;
-      }}
-      onMouseLeave={() => {
-        paused.current = false;
-      }}
       sx={{ position: 'relative', height: { xs: 260, md: 360 }, perspective: '1100px', overflow: 'hidden', maskImage: 'linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%)' }}
     >
       {list.map((image, index) => (
