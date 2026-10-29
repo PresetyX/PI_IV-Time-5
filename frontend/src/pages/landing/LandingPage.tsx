@@ -1,30 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, ButtonBase, Container, Drawer, Typography } from '@mui/material';
-import BrandMark from '../../components/BrandMark';
 import { CLIPS, Clip, Cutout, Em, PHOTOS, bob, drift, landing, motionSafe, photo, turn } from './landingKit';
-import {
-  CtaSection,
-  FaqSection,
-  Footer,
-  GallerySection,
-  KitchenLiveSection,
-  MarqueeBand,
-  MasterSection,
-  PersonaSection,
-  PersonasSection,
-  TrendingSection,
-  WhySection,
-} from './LandingSections';
+import ChefMascot, { MascotDock } from './ChefMascot';
+import { ConversionSection, CtaSection, DEMO_PATH, FaqSection, Footer, ObservabilitySection, PlansSection } from './LandingInsights';
+import { GallerySection, MarqueeBand, ModulesSection, PersonasSection, ProductSection, SegmentsSection, StatsStrip, WhySection } from './LandingSections';
 
 const { accent, accentDark, peach, ink, body, line, white, sans } = landing;
 
 const NAV = [
-  { id: 'inicio', label: 'Início' },
-  { id: 'sobre', label: 'Sobre' },
-  { id: 'por-que', label: 'Vantagens' },
-  { id: 'cardapio', label: 'Cardápio' },
-  { id: 'equipe', label: 'Equipe' },
+  { id: 'produto', label: 'Produto' },
+  { id: 'modulos', label: 'Módulos' },
+  { id: 'conversao', label: 'Conversão' },
+  { id: 'observabilidade', label: 'Observabilidade' },
+  { id: 'planos', label: 'Planos' },
   { id: 'duvidas', label: 'Dúvidas' },
 ];
 
@@ -44,7 +33,7 @@ function ScrollProgress() {
   return <Box ref={bar} aria-hidden sx={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, zIndex: 40, transformOrigin: '0 50%', transform: 'scaleX(0)', background: `linear-gradient(90deg, #F2B27A, ${accent})` }} />;
 }
 
-const HERO_REEL = [CLIPS.brigade, CLIPS.chef, CLIPS.bigKitchen, CLIPS.grill];
+const HERO_REEL = [CLIPS.grill, CLIPS.stirFry, CLIPS.cheese, CLIPS.oven, CLIPS.wok];
 
 function HeroReel() {
   const [current, setCurrent] = useState(0);
@@ -59,7 +48,7 @@ function HeroReel() {
     <Box aria-hidden sx={{ position: 'absolute', inset: 0, overflow: 'hidden', mixBlendMode: 'multiply', opacity: 0.2 }}>
       {HERO_REEL.map((id, index) => (
         <Box key={id} sx={{ position: 'absolute', inset: 0, opacity: index === current ? 1 : 0, transition: 'opacity 1.8s ease' }}>
-          <Clip id={id} sx={{ filter: 'grayscale(.55) contrast(1.15) brightness(1.05)', animation: `${drift} 14s ease-in-out infinite alternate`, ...motionSafe }} />
+          <Clip id={id} quality={360} sx={{ filter: 'grayscale(.55) contrast(1.15) brightness(1.05)', animation: `${drift} 14s ease-in-out infinite alternate`, ...motionSafe }} />
         </Box>
       ))}
     </Box>
@@ -67,7 +56,7 @@ function HeroReel() {
 }
 
 function useActiveSection() {
-  const [active, setActive] = useState('inicio');
+  const [active, setActive] = useState('');
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -77,7 +66,7 @@ function useActiveSection() {
         const node = document.getElementById(item.id);
         return node && node.getBoundingClientRect().top < window.innerHeight * 0.35;
       });
-      setActive(current?.id ?? 'inicio');
+      setActive(current?.id ?? '');
     }
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -122,12 +111,12 @@ function NavBar() {
         }}
       >
         <ButtonBase onClick={() => go('inicio')} sx={{ gap: 2, borderRadius: 999, color: white }}>
-          <Box sx={{ width: 34, height: 34, borderRadius: '50%', bgcolor: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <BrandMark sx={{ fontSize: 24, color: white }} />
+          <Box sx={{ width: 38, height: 38, borderRadius: '50%', bgcolor: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ChefMascot size={30} color={white} steam={false} float={false} label="Pede Aí" />
           </Box>
           <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: 19, letterSpacing: '-0.02em' }}>Pede Aí</Typography>
         </ButtonBase>
-        <Box component="nav" sx={{ display: { xs: 'none', lg: 'flex' }, gap: 1, ml: 6 }}>
+        <Box component="nav" sx={{ display: { xs: 'none', lg: 'flex' }, gap: 0.5, ml: 4 }}>
           {NAV.map((item) => {
             const selected = active === item.id;
             return (
@@ -136,12 +125,12 @@ function NavBar() {
                 onClick={() => go(item.id)}
                 sx={{
                   gap: 1.5,
-                  px: 4,
+                  px: 3.5,
                   height: 34,
                   borderRadius: 999,
                   fontFamily: sans,
                   fontWeight: 600,
-                  fontSize: 14,
+                  fontSize: 13.5,
                   color: selected ? ink : 'rgba(255,255,255,.88)',
                   bgcolor: selected ? white : 'transparent',
                   transition: 'all .3s ease',
@@ -163,7 +152,7 @@ function NavBar() {
           </ButtonBase>
           <ButtonBase
             component={RouterLink}
-            to="/t/triunfo-lanches?mesa=t05-000a"
+            to={DEMO_PATH}
             sx={{ ml: 1, height: 46, px: { xs: 4, md: 6 }, borderRadius: 999, bgcolor: accent, color: white, fontFamily: sans, fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap', transition: 'background-color .25s ease', '&:hover': { bgcolor: accentDark } }}
           >
             Testar agora
@@ -339,22 +328,24 @@ function Hero() {
         { name: 'lettuce' as const, size: 84, left: '21%', top: 120, tilt: '-12deg', delay: 0 },
         { name: 'chili' as const, size: 96, right: '20%', top: 130, tilt: '28deg', delay: 0.8 },
         { name: 'peppers' as const, size: 70, left: '27%', bottom: 60, tilt: '8deg', delay: 1.4 },
-        { name: 'lettuce' as const, size: 70, right: '27%', bottom: 50, tilt: '30deg', delay: 2 },
       ].map((sprite, index) => (
         <Box key={index} aria-hidden sx={{ position: 'absolute', left: sprite.left, right: sprite.right, top: sprite.top, bottom: sprite.bottom, display: { xs: 'none', md: 'block' } }}>
           <Cutout name={sprite.name} size={sprite.size} sx={{ '--tilt': sprite.tilt, animation: `${bob} ${5 + index}s ease-in-out ${sprite.delay}s infinite`, filter: 'drop-shadow(0 10px 8px rgba(0,0,0,.12))', ...motionSafe }} />
         </Box>
       ))}
 
+      <Box sx={{ position: 'absolute', right: { md: '18%', xl: '22%' }, bottom: { md: 34 }, display: { xs: 'none', md: 'block' }, zIndex: 2, animation: 'heroIn 1s ease .8s both' }}>
+        <ChefMascot size={120} bubble="left" phrases={['Mesa 7 pediu 2 smash!', 'Batata saindo!', 'Conta da mesa 4 no Pix', 'Pedido novo na fila!']} />
+      </Box>
       <Container maxWidth="md" sx={{ position: 'relative', pt: { xs: 24, md: 24 }, pb: { xs: 14, md: 12 }, textAlign: 'center' }}>
         <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2, px: 4, py: 2, borderRadius: '10px', bgcolor: 'rgba(253,231,220,.9)', boxShadow: '0 10px 30px -10px rgba(235,90,36,.45)', animation: 'heroIn .9s ease both', '@keyframes heroIn': { from: { opacity: 0, transform: 'translateY(18px)' }, to: { opacity: 1, transform: 'none' } } }}>
           <Box component="svg" viewBox="0 0 24 24" sx={{ width: 18, height: 18, fill: 'none', stroke: ink, strokeWidth: 1.8, strokeLinecap: 'round' }}>
             <path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 0-3 2-3 5s1 4 3 4v9" />
           </Box>
-          <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: { xs: 10, sm: 12 }, letterSpacing: { xs: 0.6, sm: 1.6 }, color: ink, whiteSpace: 'nowrap' }}>PEDIDOS DIGITAIS PARA BARES E RESTAURANTES</Typography>
+          <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: { xs: 10, sm: 12 }, letterSpacing: { xs: 0.6, sm: 1.6 }, color: ink, whiteSpace: 'nowrap' }}>PLATAFORMA WHITE-LABEL DE COMANDAS DIGITAIS</Typography>
         </Box>
         <Typography component="h1" sx={{ mt: 6, fontFamily: sans, fontWeight: 800, fontSize: { xs: 38, sm: 54, md: 68 }, lineHeight: 1.08, letterSpacing: '-0.035em', color: ink, animation: 'heroIn .9s ease .1s both' }}>
-          Do QR na mesa direto
+          Comanda digital com
           <Em
             sx={{
               display: 'block',
@@ -371,12 +362,12 @@ function Hero() {
               ...motionSafe,
             }}
           >
-            pra cozinha da casa
+            a cara da sua casa
           </Em>
         </Typography>
         <Box sx={{ position: 'relative', mt: 5, mx: 'auto', maxWidth: 560, animation: 'heroIn .9s ease .2s both' }}>
           <Typography sx={{ fontFamily: sans, fontWeight: 500, fontSize: { xs: 15, md: 17 }, lineHeight: 1.7, color: body }}>
-            O cliente pede pelo celular, a cozinha recebe na hora e a gestão acompanha salão, caixa e vendas em um só lugar.
+            Cardápio por QR, comanda compartilhada, cozinha, salão, caixa e gestão numa plataforma que leva a marca do seu restaurante. Sem app para instalar e sem taxa por pedido.
           </Typography>
           <Box component="svg" viewBox="0 0 600 60" aria-hidden sx={{ position: 'absolute', left: '-14%', right: '-14%', width: '128%', top: { xs: '70%', md: '62%' }, height: 60, overflow: 'visible' }}>
             <defs>
@@ -395,21 +386,20 @@ function Hero() {
         <Box sx={{ mt: 12, display: 'flex', justifyContent: 'center', gap: 3, flexWrap: 'wrap', animation: 'heroIn .9s ease .3s both' }}>
           <ButtonBase
             component={RouterLink}
-            to="/t/triunfo-lanches?mesa=t05-000a"
+            to={DEMO_PATH}
             sx={{ height: 52, px: 7, borderRadius: 999, bgcolor: accent, color: white, fontFamily: sans, fontWeight: 700, fontSize: 15, boxShadow: '0 16px 30px -14px rgba(235,90,36,.8)', transition: 'all .25s ease', '&:hover': { bgcolor: accentDark, transform: 'translateY(-2px)' } }}
           >
-            Fazer um pedido
+            Testar a demonstração
           </ButtonBase>
           <ButtonBase
-            component={RouterLink}
-            to="/t/triunfo-lanches/cardapio"
+            onClick={() => go('modulos')}
             sx={{ height: 52, px: 7, borderRadius: 999, bgcolor: peach, color: ink, fontFamily: sans, fontSize: 15, fontWeight: 700, transition: 'all .25s ease', '&:hover': { bgcolor: '#FBD6C4', transform: 'translateY(-2px)' } }}
           >
-            Ver cardápio
+            Conhecer os módulos
           </ButtonBase>
         </Box>
         <Box sx={{ mt: 7, display: 'flex', justifyContent: 'center', gap: { xs: 4, md: 8 }, flexWrap: 'wrap', animation: 'heroIn .9s ease .4s both' }}>
-          {['Sem app para instalar', 'Comanda compartilhada'].map((item) => (
+          {['Sua marca e suas cores', 'Sem taxa por pedido', 'Pronto em um dia'].map((item) => (
             <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 2, fontFamily: sans, fontWeight: 600, fontSize: 13.5, color: body }}>
               <Box sx={{ width: 34, height: '1.5px', bgcolor: accent }} />
               {item}
@@ -424,7 +414,7 @@ function Hero() {
 export default function LandingPage() {
   useEffect(() => {
     const previous = document.title;
-    document.title = 'Pede Aí · Pedidos digitais para bares e restaurantes';
+    document.title = 'Pede Aí · Comandas digitais white-label para restaurantes';
     return () => {
       document.title = previous;
     };
@@ -436,18 +426,22 @@ export default function LandingPage() {
       <NavBar />
       <main>
         <Hero />
-        <PersonaSection />
+        <StatsStrip />
+        <ProductSection />
         <WhySection />
         <MarqueeBand />
-        <TrendingSection />
-        <KitchenLiveSection />
-        <MasterSection />
+        <ModulesSection />
+        <ConversionSection />
+        <ObservabilitySection />
+        <SegmentsSection />
         <GallerySection />
         <PersonasSection />
+        <PlansSection />
         <FaqSection />
         <CtaSection />
       </main>
       <Footer />
+      <MascotDock />
     </Box>
   );
 }
