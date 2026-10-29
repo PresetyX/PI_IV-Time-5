@@ -83,6 +83,34 @@ Fluxo de uma requisição: `frontend` chama `backend` por HTTP, `backend` lê e 
 
 ## Como rodar
 
+### Com Docker (tudo de uma vez)
+
+Pré-requisito: Docker com Compose v2.
+
+```bash
+cp .env.example .env
+```
+
+Preencha `JWT_SECRET` no `.env` da raiz com uma chave de pelo menos 32 caracteres. Depois:
+
+```bash
+docker compose up --build
+```
+
+Sobem o MongoDB local, o server, o backend e o frontend, nessa ordem. Na primeira subida, o serviço `db-init` cria as coleções com `banco/init-mongo.js` e carrega a casa `triunfo-lanches` com `banco/seed.js`. Nas próximas, o seed é pulado e os dados continuam no volume `mongo-data`.
+
+| Serviço | Endereço |
+| --- | --- |
+| Site e aplicação | `http://localhost:3000` |
+| Backend | `http://localhost:8080/health` |
+| MongoDB | `mongodb://localhost:27017/pedeai` |
+
+Login da equipe na casa de demonstração: qualquer usuário do `banco/seed.js` com a senha `pedeai123`.
+
+Para usar o Atlas em vez do Mongo local, coloque a string de conexão em `MONGODB_URI` no `.env` da raiz. Para zerar o banco local: `docker compose down -v`.
+
+### Sem Docker
+
 Pré-requisitos: JDK 17 ou superior, Maven 3.9 ou superior, Node 20 ou superior e acesso a um MongoDB (Atlas ou local).
 
 ### 1. Variáveis de ambiente
