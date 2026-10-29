@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import BrandMark from '../../components/BrandMark';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import ActionButton from '../../components/client/ActionButton';
 import ClientScreen from '../../components/client/ClientScreen';
 import ClosedStoreScreen from '../../components/client/ClosedStoreScreen';
 import { ClientError, ClientLoading } from '../../components/client/ClientStates';
 import FootNote from '../../components/client/FootNote';
-import { BagIcon, ChevronRightIcon, ReceiptIcon, TableIcon, TruckIcon } from '../../components/client/icons';
+import { BagIcon, ChevronRightIcon, TableIcon, TruckIcon } from '../../components/client/icons';
 import { useStore } from '../../hooks/useStore';
 import { useStoreColor } from '../../hooks/useStoreColor';
 import { formatStreet } from '../../services/store';
@@ -62,10 +63,10 @@ function ServiceModeChoice({ store }: { store: Store }) {
             justifyContent: 'center',
             borderRadius: '14px',
             bgcolor: colors.background,
-            color: 'primary.main',
+            color: colors.text,
           }}
         >
-          <ReceiptIcon sx={{ fontSize: 28 }} />
+          <BrandMark aria-hidden sx={{ fontSize: 28 }} />
         </Box>
         <Typography variant="h2" component="p" sx={{ mt: 4, color: 'inherit' }}>
           {store.name}

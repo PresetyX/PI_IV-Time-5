@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
+import BrandMark from '../components/BrandMark';
 import { ApiError } from '../services/api';
 import { login, routeForRole } from '../services/auth';
 import { tokens } from '../theme/theme';
@@ -73,6 +74,7 @@ export default function LoginPage() {
           borderRight: `1px solid ${colors.divider}`,
         }}
       >
+        <BrandMark aria-hidden sx={{ fontSize: 96, color: colors.text, mb: 6 }} />
         <Typography variant="h1" component="p">
           Pede Aí
         </Typography>
@@ -92,13 +94,12 @@ export default function LoginPage() {
         }}
       >
         <Box sx={{ width: '100%', maxWidth: 390, mx: { xs: 'auto', md: 0 } }}>
-          <Typography
-            variant="h3"
-            component="p"
-            sx={{ display: { xs: 'block', md: 'none' }, mb: 8, color: colors.textSecondary }}
-          >
-            Pede Aí
-          </Typography>
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 3, mb: 8 }}>
+            <BrandMark aria-hidden sx={{ fontSize: 44, color: colors.text }} />
+            <Typography variant="h3" component="p" sx={{ color: colors.textSecondary }}>
+              Pede Aí
+            </Typography>
+          </Box>
           <Typography variant="h2" component="h1">
             Entrar
           </Typography>

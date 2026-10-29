@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import BrandMark from '../../components/BrandMark';
 import { Box, Typography } from '@mui/material';
 import ActionButton from '../../components/client/ActionButton';
 import ClientScreen from '../../components/client/ClientScreen';
 import ClosedStoreScreen from '../../components/client/ClosedStoreScreen';
 import { ClientError, ClientLoading } from '../../components/client/ClientStates';
-import { ArrowRightIcon, ReceiptIcon } from '../../components/client/icons';
+import { ArrowRightIcon } from '../../components/client/icons';
 import { useStore } from '../../hooks/useStore';
 import { useStoreColor } from '../../hooks/useStoreColor';
 import { formatHour } from '../../services/hours';
@@ -216,13 +217,13 @@ function CoverHero({ store, tableNumber }: { store: Store; tableNumber?: number 
           overflow: 'hidden',
           borderRadius: `${radius.card}px`,
           bgcolor: colors.background,
-          color: 'primary.main',
+          color: colors.text,
         }}
       >
         {store.logoUrl ? (
           <Box component="img" src={store.logoUrl} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
-          <ReceiptIcon sx={{ fontSize: 40 }} />
+          <BrandMark aria-hidden sx={{ fontSize: 40 }} />
         )}
       </Box>
     </Box>

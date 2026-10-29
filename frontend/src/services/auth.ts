@@ -1,4 +1,4 @@
-import { api, saveToken } from './api';
+import { api, getToken, saveToken } from './api';
 
 export type Role = 'OWNER' | 'MANAGER' | 'WAITER' | 'KITCHEN';
 
@@ -38,4 +38,15 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
   const response = await api.post<LoginResponse>('/api/auth/login', request, { anonymous: true });
   saveToken(response.token);
   return response;
+}
+
+export function currentRole(): Role | null {
+  const token = getToken();
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as { role?: Role };
+    return payload.role ?? null;
+  } catch {
+    return null;
+  }
 }
