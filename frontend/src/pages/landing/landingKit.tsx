@@ -197,10 +197,30 @@ export function Title({ children, accent, align = 'center', size = 40 }: { child
       {accent && (
         <>
           {' '}
-          <Em>{accent}</Em>
+          <Scribble>{accent}</Scribble>
         </>
       )}
     </Typography>
+  );
+}
+
+export function Scribble({ children }: { children: ReactNode }) {
+  const { ref, visible } = useInView<HTMLSpanElement>(0.6);
+  return (
+    <Box component="span" ref={ref} sx={{ position: 'relative', display: 'inline-block', whiteSpace: 'nowrap' }}>
+      <Em>{children}</Em>
+      <Box component="svg" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden sx={{ position: 'absolute', left: '-2%', bottom: '-0.12em', width: '104%', height: '0.32em', overflow: 'visible' }}>
+        <path
+          d="M4 14 C 60 4, 120 18, 180 9 S 270 6, 296 11"
+          fill="none"
+          stroke={landing.accent}
+          strokeWidth={4}
+          strokeLinecap="round"
+          opacity={0.55}
+          style={{ strokeDasharray: 320, strokeDashoffset: visible ? 0 : 320, transition: 'stroke-dashoffset 1.2s cubic-bezier(.2,.75,.2,1) .35s' }}
+        />
+      </Box>
+    </Box>
   );
 }
 
