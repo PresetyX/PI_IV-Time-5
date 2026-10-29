@@ -40,12 +40,23 @@ const floatBody = keyframes`
   50% { transform: translateY(-8px); }
 `;
 
+const burstOut = keyframes`
+  0% { transform: translate(-50%, -50%) scale(.2); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1) rotate(160deg); opacity: 0; }
+`;
+
+const snore = keyframes`
+  0% { transform: translate(0, 0) scale(.6); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translate(26px, -60px) scale(1.2); opacity: 0; }
+`;
+
 const pop = keyframes`
   from { opacity: 0; transform: translateY(8px) scale(.9); }
   to { opacity: 1; transform: none; }
 `;
 
-type Size = number | { xs?: number; sm?: number; md?: number; lg?: number };
+type Size = number | { xs?: number; sm?: number; md?: number; lg?: number; xl?: number };
 
 interface ChefMascotProps {
   size: Size;
@@ -56,19 +67,22 @@ interface ChefMascotProps {
   bubble?: 'top' | 'right' | 'left';
   label?: string;
   tilt?: number;
+  flip?: boolean;
+  sleepy?: boolean;
   onClick?: () => void;
   sx?: SxProps<Theme>;
 }
 
-export default function ChefMascot({ size, color = landing.ink, steam = true, float = true, phrases, bubble = 'top', label = 'Chef do Pede Aí', tilt = 0, onClick, sx }: ChefMascotProps) {
+export default function ChefMascot({ size, color = landing.ink, steam = true, float = true, phrases, bubble = 'top', label = 'Biggas, o chef do Pede Aí', tilt = 0, flip = false, sleepy = false, onClick, sx }: ChefMascotProps) {
   const root = useRef<HTMLButtonElement | null>(null);
   const face = useRef<SVGGElement | null>(null);
   const [awake, setAwake] = useState(false);
   const [hopping, setHopping] = useState(0);
   const [phrase, setPhrase] = useState(0);
+  const [burst, setBurst] = useState(0);
 
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    if (sleepy || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
     let frame = 0;
     const onMove = (event: PointerEvent) => {
       cancelAnimationFrame(frame);
@@ -79,7 +93,7 @@ export default function ChefMascot({ size, color = landing.ink, steam = true, fl
         const rect = node.getBoundingClientRect();
         const dx = (event.clientX - (rect.left + rect.width / 2)) / window.innerWidth;
         const dy = (event.clientY - (rect.top + rect.height / 2)) / window.innerHeight;
-        group.style.transform = `translate(${Math.max(-1, Math.min(1, dx * 2)) * 14}px, ${Math.max(-1, Math.min(1, dy * 2)) * 10}px)`;
+        group.style.transform = `translate(${Math.max(-1, Math.min(1, dx * 2)) * 14 * (flip ? -1 : 1)}px, ${Math.max(-1, Math.min(1, dy * 2)) * 10}px)`;
       });
     };
     window.addEventListener('pointermove', onMove, { passive: true });
@@ -87,7 +101,7 @@ export default function ChefMascot({ size, color = landing.ink, steam = true, fl
       cancelAnimationFrame(frame);
       window.removeEventListener('pointermove', onMove);
     };
-  }, []);
+  }, [flip, sleepy]);
 
   useEffect(() => {
     if (!phrases || phrases.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
@@ -97,6 +111,7 @@ export default function ChefMascot({ size, color = landing.ink, steam = true, fl
 
   function poke() {
     setHopping((value) => value + 1);
+    setBurst((value) => value + 1);
     if (phrases) setPhrase((value) => (value + 1) % phrases.length);
     onClick?.();
   }
@@ -140,6 +155,40 @@ export default function ChefMascot({ size, color = landing.ink, steam = true, fl
           </Typography>
         </Box>
       )}
+      {burst > 0 &&
+        Array.from({ length: 10 }).map((_, index) => {
+          const angle = (index / 10) * Math.PI * 2;
+          return (
+            <Box
+              key={`${burst}-${index}`}
+              aria-hidden
+              sx={{
+                position: 'absolute',
+                left: '50%',
+                top: '45%',
+                width: index % 2 ? 10 : 14,
+                height: index % 2 ? 10 : 14,
+                bgcolor: index % 3 ? landing.accent : '#F7B26A',
+                clipPath: 'polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%)',
+                pointerEvents: 'none',
+                '--dx': `${Math.cos(angle) * 90}%`,
+                '--dy': `${Math.sin(angle) * 90}%`,
+                animation: `${burstOut} .8s cubic-bezier(.2,.75,.2,1) forwards`,
+                ...motionSafe,
+              }}
+            />
+          );
+        })}
+      {sleepy &&
+        ['z', 'z', 'Z'].map((letter, index) => (
+          <Typography
+            key={index}
+            aria-hidden
+            sx={{ position: 'absolute', right: '6%', top: '8%', fontFamily: landing.sans, fontWeight: 800, fontSize: 18 + index * 6, color: landing.accent, opacity: 0, pointerEvents: 'none', animation: `${snore} 3s ease-out ${index}s infinite`, ...motionSafe }}
+          >
+            {letter}
+          </Typography>
+        ))}
       <Box
         key={hopping}
         sx={{ width: '100%', height: '100%', rotate: `${tilt}deg`, animation: hopping ? `${hop} .7s cubic-bezier(.3,.7,.3,1)` : 'none', ...motionSafe }}
@@ -148,7 +197,7 @@ export default function ChefMascot({ size, color = landing.ink, steam = true, fl
           component="svg"
           viewBox="395 200 410 450"
           aria-hidden
-          sx={{ display: 'block', width: '100%', height: '100%', overflow: 'visible', animation: float ? `${floatBody} 4.5s ease-in-out infinite` : 'none', ...motionSafe }}
+          sx={{ display: 'block', width: '100%', height: '100%', overflow: 'visible', scale: flip ? '-1 1' : '1 1', animation: float ? `${floatBody} ${sleepy ? 7 : 4.5}s ease-in-out infinite` : 'none', ...motionSafe }}
         >
           {steam &&
             [0, 1, 2].map((index) => (
@@ -175,7 +224,7 @@ export default function ChefMascot({ size, color = landing.ink, steam = true, fl
                 <circle cx={548} cy={531} r={11} fill="currentColor" />
               </>
             ) : (
-              <Box component="g" sx={{ transformBox: 'fill-box', transformOrigin: 'center', animation: `${blink} 4.2s ease-in-out infinite`, ...motionSafe }}>
+              <Box component="g" sx={{ transformBox: 'fill-box', transformOrigin: 'center', animation: sleepy ? 'none' : `${blink} 4.2s ease-in-out infinite`, ...motionSafe }}>
                 <path d={CHEF_PATHS.eyes} fill="none" stroke="currentColor" strokeWidth={11} strokeLinecap="round" />
               </Box>
             )}
@@ -225,28 +274,28 @@ export function MascotDock() {
       }}
     >
       <Box className="dock-tip" sx={{ position: 'absolute', right: '110%', px: 3, py: 1.5, borderRadius: '12px', bgcolor: landing.ink, color: landing.white, fontFamily: landing.sans, fontWeight: 700, fontSize: 12.5, whiteSpace: 'nowrap', opacity: 0, transform: 'translateX(8px)', transition: 'all .3s ease', pointerEvents: 'none' }}>
-        Voltar ao topo
+        O Biggas te leva pro topo
       </Box>
       <ChefMascot size={{ xs: 46, md: 54 }} steam={false} float={false} label="Voltar ao topo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
     </Box>
   );
 }
 
-export function PeekChef({ side, phrases, top = '40%' }: { side: 'left' | 'right'; phrases: string[]; top?: string }) {
+export function PeekChef({ side, phrases, top = '40%', size = 200 }: { side: 'left' | 'right'; phrases: string[]; top?: string; size?: number }) {
   const { ref, visible } = useInView<HTMLDivElement>(0.4);
-  const tilt = side === 'left' ? 22 : -22;
+  const tilt = side === 'left' ? 16 : -16;
   const hidden = side === 'left' ? '-120%' : '120%';
   return (
-    <Box ref={ref} aria-hidden sx={{ position: 'absolute', top, [side]: 0, width: 150, height: 150, display: { xs: 'none', lg: 'block' }, pointerEvents: 'none' }}>
+    <Box ref={ref} aria-hidden sx={{ position: 'absolute', top, [side]: 0, zIndex: 3, width: size, height: size, display: { xs: 'none', lg: 'block' }, pointerEvents: 'none' }}>
       <Box
         sx={{
           pointerEvents: 'auto',
-          transform: visible ? `translateX(${side === 'left' ? '2%' : '22%'})` : `translateX(${hidden})`,
+          transform: visible ? `translateX(${side === 'left' ? '-16%' : '16%'})` : `translateX(${hidden})`,
           transition: 'transform 1.1s cubic-bezier(.34,1.56,.64,1) .2s',
           '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
         }}
       >
-        <ChefMascot size={140} tilt={visible ? tilt : tilt * 2} phrases={phrases} bubble={side === 'left' ? 'right' : 'left'} sx={{ '& > div:last-of-type': { transition: 'rotate 1.1s cubic-bezier(.34,1.56,.64,1) .2s' } }} />
+        <ChefMascot size={size} flip={side === 'left'} tilt={visible ? tilt : tilt * 2} phrases={phrases} bubble={side === 'left' ? 'right' : 'left'} sx={{ '& > div:last-of-type': { transition: 'rotate 1.1s cubic-bezier(.34,1.56,.64,1) .2s' } }} />
       </Box>
     </Box>
   );
