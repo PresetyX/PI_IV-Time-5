@@ -80,6 +80,21 @@ export default function ChefMascot({ size, color = landing.ink, steam = true, fl
   const [hopping, setHopping] = useState(0);
   const [phrase, setPhrase] = useState(0);
   const [burst, setBurst] = useState(0);
+  const [wink, setWink] = useState(false);
+
+  useEffect(() => {
+    let timer = 0;
+    const onWink = () => {
+      setWink(true);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setWink(false), 900);
+    };
+    window.addEventListener('biggas:wink', onWink);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('biggas:wink', onWink);
+    };
+  }, []);
 
   useEffect(() => {
     if (sleepy || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
@@ -112,6 +127,7 @@ export default function ChefMascot({ size, color = landing.ink, steam = true, fl
   function poke() {
     setHopping((value) => value + 1);
     setBurst((value) => value + 1);
+    window.dispatchEvent(new Event('biggas:wink'));
     if (phrases) setPhrase((value) => (value + 1) % phrases.length);
     onClick?.();
   }
@@ -218,7 +234,13 @@ export default function ChefMascot({ size, color = landing.ink, steam = true, fl
             <path d={CHEF_PATHS.band} fill="currentColor" />
           </Box>
           <g ref={face} style={{ transition: 'transform .25s ease-out' }}>
-            {awake ? (
+            {wink ? (
+              <>
+                <circle cx={477} cy={513} r={11} fill="currentColor" />
+                <path d="M528 534 Q547 518 566 534" fill="none" stroke="currentColor" strokeWidth={11} strokeLinecap="round" />
+                <Box component="path" d="M590 488 l6 14 14 6 -14 6 -6 14 -6 -14 -14 -6 14 -6z" sx={{ fill: landing.accent, transformBox: 'fill-box', transformOrigin: 'center', animation: `${pop} .5s cubic-bezier(.2,.75,.2,1) both` }} />
+              </>
+            ) : awake ? (
               <>
                 <circle cx={477} cy={513} r={11} fill="currentColor" />
                 <circle cx={548} cy={531} r={11} fill="currentColor" />
