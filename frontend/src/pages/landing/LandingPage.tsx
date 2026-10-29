@@ -323,7 +323,7 @@ function Hero() {
       <Box aria-hidden sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 160, background: 'linear-gradient(180deg, rgba(247,246,244,0), #F7F6F4)' }} />
 
       <Rail side="left" plates={[{ id: PHOTOS.bowl, alt: 'Bowl de salada' }, { id: PHOTOS.ribs, alt: 'Costela' }]} />
-      <Rail side="right" plates={[{ id: PHOTOS.grill, alt: 'Espetinhos' }, { id: PHOTOS.pizza, alt: 'Pizza' }]} />
+      <Rail side="right" plates={[{ id: PHOTOS.grill, alt: 'Espetinhos' }]} />
 
       {[
         { name: 'lettuce' as const, size: 84, left: '21%', top: 120, tilt: '-12deg', delay: 0 },
