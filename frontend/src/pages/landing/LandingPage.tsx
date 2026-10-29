@@ -378,13 +378,7 @@ function Hero() {
       ))}
 
       <Container maxWidth="md" sx={{ position: 'relative', pt: { xs: 24, md: 30 }, pb: { xs: 14, md: 14 }, textAlign: 'center' }}>
-        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2, px: 4, py: 2, borderRadius: '10px', bgcolor: 'rgba(253,231,220,.9)', boxShadow: '0 10px 30px -10px rgba(235,90,36,.45)', animation: 'heroIn .9s ease both', '@keyframes heroIn': { from: { opacity: 0, transform: 'translateY(18px)' }, to: { opacity: 1, transform: 'none' } } }}>
-          <Box component="svg" viewBox="0 0 24 24" sx={{ width: 18, height: 18, fill: 'none', stroke: ink, strokeWidth: 1.8, strokeLinecap: 'round' }}>
-            <path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 0-3 2-3 5s1 4 3 4v9" />
-          </Box>
-          <Typography sx={{ fontFamily: sans, fontWeight: 800, fontSize: { xs: 10, sm: 12 }, letterSpacing: { xs: 0.6, sm: 1.6 }, color: ink, whiteSpace: 'nowrap' }}>PLATAFORMA WHITE-LABEL DE COMANDAS DIGITAIS</Typography>
-        </Box>
-        <Typography component="h1" sx={{ mt: 6, fontFamily: sans, fontWeight: 800, fontSize: { xs: 38, sm: 54, md: 68 }, lineHeight: 1.08, letterSpacing: '-0.035em', color: ink, animation: 'heroIn .9s ease .1s both' }}>
+        <Typography component="h1" sx={{ fontFamily: sans, fontWeight: 800, fontSize: { xs: 38, sm: 54, md: 68 }, lineHeight: 1.08, letterSpacing: '-0.035em', color: ink, animation: 'heroIn .9s ease .1s both', '@keyframes heroIn': { from: { opacity: 0, transform: 'translateY(18px)' }, to: { opacity: 1, transform: 'none' } } }}>
           Comanda digital com
           <MetallicText text="a cara da sua casa" />
         </Typography>
