@@ -382,8 +382,8 @@ function Hero() {
           <Box sx={{ '@keyframes swooshDraw': { to: { strokeDashoffset: 0 } } }} />
         </Box>
         <Box sx={{ position: 'relative', mt: 12, display: 'flex', justifyContent: 'center', gap: 3, flexWrap: 'wrap', animation: 'heroIn .9s ease .3s both' }}>
-          <Box sx={{ position: 'absolute', right: { md: -30, lg: -80 }, top: -30, display: { xs: 'none', md: 'block' }, zIndex: 2 }}>
-            <ChefMascot size={110} phrases={['Mesa 7 pediu 2 smash!', 'Batata saindo!', 'Conta da mesa 4 no Pix', 'Pedido novo na fila!']} />
+          <Box sx={{ position: 'absolute', right: { md: -30, lg: -70, xl: -160 }, top: { md: -50, xl: -80 }, display: { xs: 'none', md: 'block' }, zIndex: 2, animation: 'biggasDrop 1.3s cubic-bezier(.34,1.56,.64,1) .7s both', '@keyframes biggasDrop': { from: { opacity: 0, transform: 'translateY(-420px) rotate(-35deg)' }, '60%': { opacity: 1 }, to: { opacity: 1, transform: 'none' } }, ...motionSafe }}>
+            <ChefMascot size={{ md: 140, lg: 160, xl: 190 }} phrases={['Oi, eu sou o Biggas!', 'Mesa 7 pediu 2 smash!', 'Batata saindo!', 'Conta da mesa 4 no Pix', 'Pedido novo na fila!']} />
           </Box>
           <ButtonBase
             component={RouterLink}

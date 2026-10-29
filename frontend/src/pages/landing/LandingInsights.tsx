@@ -276,7 +276,7 @@ export function PlansSection() {
   const [yearly, setYearly] = useState(true);
   return (
     <Box component="section" id="planos" sx={{ position: 'relative', py: { xs: 14, md: 18 }, scrollMarginTop: 90, overflow: 'hidden' }}>
-      <PeekChef side="left" top="34%" phrases={['Psiu! No anual sai 20% mais barato', 'Sem taxa por pedido, viu?']} />
+      <PeekChef side="left" top="38%" size={230} phrases={['Psiu! No anual sai 20% mais barato', 'Sem taxa por pedido, viu?', 'O Biggas recomenda o Profissional']} />
       <Container maxWidth="lg">
         <Reveal>
           <Title accent="sem taxa por pedido">Planos simples,</Title>
@@ -408,7 +408,7 @@ export function CtaSection() {
         <Box sx={{ position: 'relative', display: { xs: 'none', md: 'flex' }, alignSelf: 'end', justifyContent: 'center', pt: 10 }}>
           <Box sx={{ width: 250, pt: 8, pb: 8, borderRadius: '125px 125px 0 0', bgcolor: white, color: ink, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <ChefMascot size={170} phrases={['Bora vender mais?', 'Me leva pra sua casa!', 'Clica em testar!']} />
-            <Typography sx={{ mt: 4, fontFamily: sans, fontWeight: 800, fontSize: 16 }}>O chef do Pede Aí</Typography>
+            <Typography sx={{ mt: 4, fontFamily: sans, fontWeight: 800, fontSize: 16 }}>Biggas, o chef do Pede Aí</Typography>
           </Box>
         </Box>
         <Reveal sx={{ position: 'relative', textAlign: 'center', px: { xs: 6, md: 4 }, py: { xs: 14, md: 12 } }}>
@@ -456,6 +456,9 @@ export function Footer() {
   return (
     <Box component="footer" sx={{ position: 'relative', mt: 10, overflow: 'hidden', bgcolor: white, borderTop: `1px solid ${line}` }}>
       <Box aria-hidden sx={{ position: 'absolute', right: -120, top: -80, width: 420, height: 420, borderRadius: '50%', background: 'radial-gradient(circle, rgba(235,90,36,.10), rgba(235,90,36,0) 70%)' }} />
+      <Box sx={{ position: 'absolute', right: 70, top: 40, display: { xs: 'none', xl: 'block' } }}>
+        <ChefMascot size={150} sleepy steam={false} label="Biggas dormindo, passe o mouse para acordar" />
+      </Box>
       <Container maxWidth="lg" sx={{ position: 'relative', pt: 14, pb: 6 }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1.4fr 1fr 1fr 1.3fr' }, gap: 8 }}>
           <Box sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}>

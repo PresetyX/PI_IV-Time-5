@@ -135,6 +135,9 @@ export function ProductSection() {
             <Box aria-hidden sx={{ position: 'absolute', inset: 0, background: `radial-gradient(60% 50% at 50% 50%, ${brand.color}88 0%, rgba(10,10,10,.78) 78%)`, transition: 'background .8s ease' }} />
             <Box sx={{ position: 'relative', mt: -6, '--tilt': '-2deg', animation: `${bob} 7s ease-in-out infinite`, ...motionSafe }}>
               <PhoneMock brand={brand} />
+              <Box sx={{ position: 'absolute', right: { xs: -50, md: -78 }, top: { xs: 150, md: 170 }, zIndex: 2 }}>
+                <ChefMascot size={{ xs: 90, md: 120 }} color={white} flip tilt={-14} phrases={[`Essa é a ${brand.name}!`, 'Troque a marca aqui embaixo', 'Mesmo sistema, outra cara']} />
+              </Box>
             </Box>
             <Box sx={{ position: 'absolute', left: '50%', bottom: 18, transform: 'translateX(-50%)', display: 'flex', gap: 1.5, p: 1.5, borderRadius: 999, bgcolor: 'rgba(255,255,255,.14)', backdropFilter: 'blur(10px)' }}>
               {BRANDS.map((item, index) => (
