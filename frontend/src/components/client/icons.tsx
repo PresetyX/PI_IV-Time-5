@@ -68,6 +68,8 @@ export const PlusIcon = strokeIcon(<path d="M12 5v14M5 12h14" />);
 
 export const CloseIcon = strokeIcon(<path d="M6 6l12 12M18 6L6 18" />);
 
+export const ClocheIcon = strokeIcon(<path d="M3 18h18M5 18a7 7 0 0 1 14 0M12 8V6M10 6h4" />);
+
 export const InfoIcon = strokeIcon(
   <>
     <circle cx="12" cy="12" r="9" />

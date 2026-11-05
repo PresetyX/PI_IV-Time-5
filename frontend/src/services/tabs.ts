@@ -109,3 +109,26 @@ export interface Round {
 export function fetchRound(slug: string): Promise<Round> {
   return api.get<Round>('/api/tabs/mine/round', guest(slug));
 }
+
+export interface TrackedLine {
+  name: string;
+  note?: string;
+  quantity: number;
+  totalCents: number;
+  canceled: boolean;
+}
+
+export interface TrackedOrder {
+  id: string;
+  number: number;
+  status: string;
+  tableNumber: number;
+  createdAt: string;
+  items: TrackedLine[];
+  totalCents: number;
+  timeline: { status: string; at: string }[];
+}
+
+export function fetchOrder(slug: string, orderId: string): Promise<TrackedOrder> {
+  return api.get<TrackedOrder>(`/api/tabs/mine/orders/${orderId}`, guest(slug));
+}
