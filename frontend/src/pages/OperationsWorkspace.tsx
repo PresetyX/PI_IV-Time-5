@@ -28,7 +28,7 @@ const { colors, fontSize, fontWeight, radius } = tokens;
 
 type Item = { nameSnapshot: string; quantity: number; unitPriceCents: number; status: string; note?: string; options?: { label: string }[] };
 type Order = { id: string; tabId: string; tableId?: string; number: number; status: OrderStatus; items: Item[]; totalCents: number; createdAt: string; readyAt?: string; statusHistory?: { to: string; at: string }[] };
-type Call = { id: string; reason: string; createdAt: string; status: string };
+type Call = { id: string; type?: string; reason: string; createdAt: string; status: string };
 type Tab = { id: string; tableId?: string; mode: string; customerName?: string; status: string; totalCents?: number; subtotalCents?: number; serviceFeeCents?: number; openedAt?: string; pickupTicket?: number; waiterCalls?: Call[] };
 type Waiting = { id: string; number: number; name: string; partySize: number; createdAt: string; status: string };
 type Workspace = { store: { name: string; logoUrl?: string; pausedUntil?: string; pausedScopes?: string[] }; role: string; tables: { id: string; number: number; nickname?: string }[]; tabs: Tab[]; orders: Order[]; waitlist: Waiting[]; serverTime: string };
@@ -37,6 +37,18 @@ const COLUMNS = ['RECEIVED', 'PREPARING', 'READY'] as const;
 const REASONS = ['Cliente desistiu', 'Pedido lançado errado', 'Faltou ingrediente', 'Pedido duplicado'];
 const HIDDEN_ITEMS = ['REMOVED', 'CANCELLED'];
 const LATE_MINUTES = 15;
+
+type CallKind = { reason: string; label: string; color: string; tint: string; rank: number };
+// Ordem de urgência: a mesa com mais de um chamado ganha a cor do mais urgente.
+const CALL_KINDS: Record<string, CallKind> = {
+  ORDER_PROBLEM: { reason: 'Problema no pedido', label: 'Problema', color: '#C62828', tint: '#FDECEC', rank: 0 },
+  CLOSE_BILL: { reason: 'Fechar a conta', label: 'Conta', color: '#1D5FD1', tint: '#EAF1FD', rank: 1 },
+  MISSING_ITEM: { reason: 'Faltou algo na mesa', label: 'Falta algo', color: '#7B3FD6', tint: '#F3ECFD', rank: 2 },
+  QUESTION: { reason: 'Tirar uma dúvida', label: 'Dúvida', color: '#9A5B00', tint: '#FFF4E0', rank: 3 },
+};
+const OTHER_CALL: CallKind = { reason: 'Chamado', label: 'Chamando', color: colors.error, tint: '#FDECEC', rank: 4 };
+const callKind = (call: Call) =>
+  CALL_KINDS[call.type ?? ''] ?? Object.values(CALL_KINDS).find((kind) => kind.reason === call.reason) ?? OTHER_CALL;
 const KITCHEN_ROLES = ['OWNER', 'MANAGER', 'KITCHEN'];
 const FLOOR_ROLES = ['OWNER', 'MANAGER', 'WAITER'];
 const COLUMN_DOT: Record<(typeof COLUMNS)[number], string> = { RECEIVED: colors.error, PREPARING: colors.text, READY: colors.success };
@@ -720,18 +732,36 @@ function TablesMap({ ctx }: { ctx: Ctx }) {
   return (
     <>
       {calls.length > 0 && (
-        <Alert severity="error" sx={{ mb: 4 }}>
-          Chamados agora:{' '}
-          {calls.map((call) => `Mesa ${ctx.tableNumber(call.tab.tableId) ?? '—'} · ${call.reason} · há ${ctx.age(call.createdAt)} min`).join(' | ')}
-        </Alert>
+        <Box sx={{ mb: 4, p: 4, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2, borderRadius: `${radius.card}px`, bgcolor: colors.surface }}>
+          <Typography sx={{ mr: 1, fontWeight: fontWeight.extraBold }}>Chamados agora:</Typography>
+          {[...calls]
+            .sort((a, b) => callKind(a).rank - callKind(b).rank || Date.parse(a.createdAt) - Date.parse(b.createdAt))
+            .map((call) => (
+              <CallPill key={call.id} kind={callKind(call)}>
+                Mesa {pad(ctx.tableNumber(call.tab.tableId) ?? 0)} · {call.reason} · há {ctx.age(call.createdAt)} min
+              </CallPill>
+            ))}
+        </Box>
       )}
+      <Box sx={{ mb: 4, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 3, color: colors.textSecondary, fontSize: fontSize.small }}>
+        {Object.values(CALL_KINDS).map((kind) => (
+          <Box key={kind.label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box aria-hidden sx={{ width: 12, height: 12, borderRadius: '4px', bgcolor: kind.color }} />
+            {kind.reason}
+          </Box>
+        ))}
+      </Box>
       {!tables.length ? (
         <EmptyState text="Nenhuma mesa cadastrada" />
       ) : (
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 4 }}>
           {tables.map((table) => {
             const tabs = data.tabs.filter((tab) => tab.tableId === table.id);
-            const calling = calls.find((call) => call.tab.tableId === table.id);
+            const tableCalls = calls
+              .filter((call) => call.tab.tableId === table.id)
+              .sort((a, b) => callKind(a).rank - callKind(b).rank);
+            const calling = tableCalls[0];
+            const kind = calling ? callKind(calling) : null;
             const paying = tabs.some((tab) => tab.status === 'AWAITING_PAYMENT');
             const occupied = tabs.length > 0;
             return (
@@ -746,18 +776,30 @@ function TablesMap({ ctx }: { ctx: Ctx }) {
                   p: 5,
                   textAlign: 'left',
                   fontFamily: 'inherit',
-                  bgcolor: colors.background,
+                  bgcolor: kind ? kind.tint : colors.background,
                   borderRadius: `${radius.card}px`,
-                  border: `${calling || occupied ? 2 : 1}px solid ${calling ? colors.error : paying ? colors.success : occupied ? colors.text : colors.border}`,
+                  border: `${calling || occupied ? 2 : 1}px solid ${kind ? kind.color : paying ? colors.success : occupied ? colors.text : colors.border}`,
                 }}
               >
                 <Typography sx={{ fontSize: fontSize.display, fontWeight: fontWeight.extraBold, lineHeight: 1 }}>{pad(table.number)}</Typography>
-                <Pill tone={calling ? 'red' : paying ? 'green' : occupied ? 'dark' : 'neutral'}>
-                  {calling ? 'Chamando' : paying ? 'Pagando' : occupied ? `${tabs.length} comanda${tabs.length > 1 ? 's' : ''}` : 'Livre'}
-                </Pill>
-                <Typography sx={{ fontSize: fontSize.small, color: colors.textSecondary }}>
-                  {calling ? calling.reason : occupied ? money(tabs.reduce((sum, tab) => sum + (tab.totalCents ?? 0), 0)) : table.nickname ?? 'Sem conta'}
-                </Typography>
+                {kind ? (
+                  <CallPill kind={kind} />
+                ) : (
+                  <Pill tone={paying ? 'green' : occupied ? 'dark' : 'neutral'}>
+                    {paying ? 'Pagando' : occupied ? `${tabs.length} comanda${tabs.length > 1 ? 's' : ''}` : 'Livre'}
+                  </Pill>
+                )}
+                {tableCalls.length > 0 ? (
+                  tableCalls.map((call) => (
+                    <Typography key={call.id} sx={{ fontSize: fontSize.small, fontWeight: fontWeight.bold, color: callKind(call).color }}>
+                      {call.reason} · há {ctx.age(call.createdAt)} min
+                    </Typography>
+                  ))
+                ) : (
+                  <Typography sx={{ fontSize: fontSize.small, color: colors.textSecondary }}>
+                    {occupied ? money(tabs.reduce((sum, tab) => sum + (tab.totalCents ?? 0), 0)) : table.nickname ?? 'Sem conta'}
+                  </Typography>
+                )}
               </ButtonBase>
             );
           })}
@@ -767,7 +809,16 @@ function TablesMap({ ctx }: { ctx: Ctx }) {
   );
 }
 
-function ListRow({ lead, title, detail, side, actions, alert = false }: { lead: ReactNode; title: ReactNode; detail?: ReactNode; side?: ReactNode; actions?: ReactNode; alert?: boolean }) {
+function CallPill({ kind, children }: { kind: CallKind; children?: ReactNode }) {
+  return (
+    <Box component="span" sx={{ bgcolor: kind.color, color: colors.background, px: 3, py: 1, borderRadius: 999, fontSize: fontSize.caption, fontWeight: fontWeight.extraBold, whiteSpace: 'nowrap' }}>
+      {children ?? kind.label}
+    </Box>
+  );
+}
+
+function ListRow({ lead, title, detail, side, actions, alert = false, accent }: { lead: ReactNode; title: ReactNode; detail?: ReactNode; side?: ReactNode; actions?: ReactNode; alert?: boolean; accent?: string }) {
+  const alertColor = accent ?? colors.error;
   return (
     <Box
       sx={{
@@ -777,7 +828,7 @@ function ListRow({ lead, title, detail, side, actions, alert = false }: { lead: 
         gap: 4,
         p: 5,
         bgcolor: colors.background,
-        border: `1px solid ${alert ? colors.error : colors.border}`,
+        border: `1px solid ${alert ? alertColor : colors.border}`,
         borderRadius: `${radius.card}px`,
       }}
     >
@@ -787,7 +838,7 @@ function ListRow({ lead, title, detail, side, actions, alert = false }: { lead: 
           height: 48,
           flexShrink: 0,
           borderRadius: '14px',
-          bgcolor: alert ? colors.error : colors.surface,
+          bgcolor: alert ? alertColor : colors.surface,
           color: alert ? colors.background : colors.text,
           display: 'flex',
           alignItems: 'center',
@@ -839,14 +890,15 @@ function Calls({ ctx }: { ctx: Ctx }) {
   if (!ctx.calls.length) return <EmptyState text="Nenhum chamado aberto" />;
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {ctx.calls.map((call) => (
+      {[...ctx.calls].sort((a, b) => callKind(a).rank - callKind(b).rank || Date.parse(a.createdAt) - Date.parse(b.createdAt)).map((call) => (
         <ListRow
           key={call.id}
           alert
+          accent={callKind(call).color}
           lead={ctx.tableNumber(call.tab.tableId) ?? '—'}
           title={call.reason}
           detail={`${call.tab.customerName ?? 'Comanda'} · ${time(call.createdAt)}`}
-          side={<Pill>{ctx.age(call.createdAt)} min</Pill>}
+          side={<CallPill kind={callKind(call)}>{callKind(call).label} · {ctx.age(call.createdAt)} min</CallPill>}
           actions={
             <Button variant="contained" disabled={ctx.busy} onClick={() => ctx.resolveCall(call.tab.id, call.id)} sx={{ minHeight: 44 }}>
               Atender
