@@ -12,6 +12,7 @@ import TabsPage from './pages/client/TabsPage';
 import JoinTabPage from './pages/client/JoinTabPage';
 import MyTabPage from './pages/client/MyTabPage';
 import BillPage from './pages/client/BillPage';
+import RepeatRoundPage from './pages/client/RepeatRoundPage';
 import LoginPage from './pages/LoginPage';
 import OperationsWorkspace from './pages/OperationsWorkspace';
 import ManagementPage from './pages/ManagementPage';
@@ -36,6 +37,7 @@ export default function App() {
       <Route path="/t/:slug/comandas/minha" element={<MyTabPage />} />
       <Route path="/t/:slug/comandas/:tabId/entrar" element={<JoinTabPage />} />
       <Route path="/t/:slug/conta" element={<BillPage />} />
+      <Route path="/t/:slug/rodada" element={<RepeatRoundPage />} />
       <Route
         path="/t/:slug/pix"
         element={

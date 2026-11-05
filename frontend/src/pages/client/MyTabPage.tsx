@@ -121,6 +121,9 @@ export default function MyTabPage() {
             Ver a conta
           </ActionButton>
         </Box>
+        <ActionButton tone="quiet" sx={{ mt: 2 }} onClick={() => navigate(`/t/${slug}/rodada`)}>
+          Mais uma rodada
+        </ActionButton>
         </>
       }
     >

@@ -23,12 +23,14 @@ public class TabController {
     private final TabService tabService;
     private final BillService billService;
     private final OrderPlacementService orderPlacementService;
+    private final RoundService roundService;
 
     public TabController(TabService tabService, BillService billService,
-            OrderPlacementService orderPlacementService) {
+            OrderPlacementService orderPlacementService, RoundService roundService) {
         this.tabService = tabService;
         this.billService = billService;
         this.orderPlacementService = orderPlacementService;
+        this.roundService = roundService;
     }
 
     @PostMapping("/mine/orders")
@@ -57,6 +59,11 @@ public class TabController {
     @GetMapping("/mine/bill")
     public BillResponse bill(@AuthenticationPrincipal AuthenticatedUser guest) {
         return billService.billOfMyTab(guest);
+    }
+
+    @GetMapping("/mine/round")
+    public RoundResponse round(@AuthenticationPrincipal AuthenticatedUser guest) {
+        return roundService.roundOfMyTab(guest);
     }
 
     @PostMapping("/{tabId}/join")
