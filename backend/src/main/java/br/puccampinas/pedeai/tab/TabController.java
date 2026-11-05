@@ -24,13 +24,16 @@ public class TabController {
     private final BillService billService;
     private final OrderPlacementService orderPlacementService;
     private final RoundService roundService;
+    private final OrderTrackingService orderTrackingService;
 
     public TabController(TabService tabService, BillService billService,
-            OrderPlacementService orderPlacementService, RoundService roundService) {
+            OrderPlacementService orderPlacementService, RoundService roundService,
+            OrderTrackingService orderTrackingService) {
         this.tabService = tabService;
         this.billService = billService;
         this.orderPlacementService = orderPlacementService;
         this.roundService = roundService;
+        this.orderTrackingService = orderTrackingService;
     }
 
     @PostMapping("/mine/orders")
@@ -38,6 +41,12 @@ public class TabController {
     public OrderPlacementService.PlacedOrder placeOrder(@AuthenticationPrincipal AuthenticatedUser guest,
             @Valid @RequestBody PlaceOrderRequest request) {
         return orderPlacementService.place(guest, request);
+    }
+
+    @GetMapping("/mine/orders/{orderId}")
+    public OrderTrackingResponse trackOrder(@AuthenticationPrincipal AuthenticatedUser guest,
+            @PathVariable String orderId) {
+        return orderTrackingService.track(guest, orderId);
     }
 
     @GetMapping

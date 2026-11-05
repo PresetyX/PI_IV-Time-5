@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { Box, Typography } from '@mui/material';
+import { Box, ButtonBase, Typography } from '@mui/material';
 import ActionButton from '../../components/client/ActionButton';
 import ClientScreen from '../../components/client/ClientScreen';
 import ConnectionLostScreen from '../../components/client/ConnectionLostScreen';
@@ -80,14 +80,18 @@ export default function BillPage() {
         )}
         {bill.orders.map((order) => (
           <Box key={order.id} sx={{ mb: 5 }}>
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between' }}>
+            <ButtonBase
+              onClick={() => navigate(`/t/${slug}/pedidos/${order.id}`)}
+              aria-label={`Acompanhar o pedido ${order.number}`}
+              sx={{ width: '100%', mb: 2, display: 'flex', justifyContent: 'space-between', fontFamily: 'inherit' }}
+            >
               <Typography sx={{ fontSize: fontSize.caption, fontWeight: fontWeight.extraBold, letterSpacing: 1 }}>
                 PEDIDO #{order.number}
               </Typography>
-              <Typography sx={{ fontSize: fontSize.caption, color: colors.textMuted }}>
+              <Typography sx={{ fontSize: fontSize.caption, color: colors.textMuted, textDecoration: 'underline' }}>
                 {orderStatusLabel(order.status)}
               </Typography>
-            </Box>
+            </ButtonBase>
             <Box sx={{ border: `1px solid ${colors.border}`, borderRadius: `${radius.card}px`, overflow: 'hidden' }}>
               {order.items.map((item, index) => (
                 <Line key={index} item={item} first={index === 0} />
