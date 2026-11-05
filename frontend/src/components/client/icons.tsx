@@ -66,6 +66,8 @@ export const QrOffIcon = strokeIcon(
 
 export const PlusIcon = strokeIcon(<path d="M12 5v14M5 12h14" />);
 
+export const CloseIcon = strokeIcon(<path d="M6 6l12 12M18 6L6 18" />);
+
 export const InfoIcon = strokeIcon(
   <>
     <circle cx="12" cy="12" r="9" />

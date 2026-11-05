@@ -79,3 +79,33 @@ export interface PlacedOrder {
 export function placeOrder(slug: string, items: OrderItemInput[]): Promise<PlacedOrder> {
   return api.post<PlacedOrder>('/api/tabs/mine/orders', { items }, guest(slug));
 }
+
+export interface RoundItem {
+  productId: string;
+  name: string;
+  note?: string;
+  quantity: number;
+  unitPriceCents: number;
+  available: boolean;
+}
+
+export interface RoundSuggestion {
+  productId: string;
+  name: string;
+  priceCents: number;
+  orderedBy?: string;
+  orderedAt: string;
+}
+
+export interface Round {
+  ownerName: string;
+  tableNumber: number;
+  lastOrderNumber?: number;
+  lastOrderAt?: string;
+  items: RoundItem[];
+  suggestions: RoundSuggestion[];
+}
+
+export function fetchRound(slug: string): Promise<Round> {
+  return api.get<Round>('/api/tabs/mine/round', guest(slug));
+}
