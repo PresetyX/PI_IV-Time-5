@@ -14,6 +14,7 @@ import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import br.puccampinas.pedeai.auth.AuthenticatedUser;
@@ -102,7 +103,7 @@ public class TabService {
         }
         List<Tab.Participant> next = new ArrayList<>(tab.participantsOrEmpty());
         next.add(new Tab.Participant(session.id(), session.name(), clock.instant(), null));
-        return view(tabRepository.save(tab.withParticipants(next)), session);
+        return view(saveParticipants(tab, next), session);
     }
 
     public TabResponse newCode(AuthenticatedUser guest, String tabId) {
@@ -129,7 +130,7 @@ public class TabService {
                         ? new Tab.Participant(p.sessionId(), p.name(), p.joinedAt(), now)
                         : p)
                 .toList();
-        return view(tabRepository.save(tab.withParticipants(next)), session);
+        return view(saveParticipants(tab, next), session);
     }
 
     private GuestSession tableSession(AuthenticatedUser guest) {
@@ -167,7 +168,22 @@ public class TabService {
     }
 
     private Tab rotateCode(Tab tab) {
-        return tabRepository.save(tab.withJoinCode(newCode(), clock.instant().plus(JOIN_CODE_DURATION)));
+        Tab next = tab.withJoinCode(newCode(), clock.instant().plus(JOIN_CODE_DURATION));
+        return change(next, new Update().set("joinCode", next.joinCode()).set("joinCodeExpiresAt", next.joinCodeExpiresAt()));
+    }
+
+    private Tab saveParticipants(Tab tab, List<Tab.Participant> participants) {
+        return change(tab.withParticipants(participants), new Update().set("participants", participants));
+    }
+
+    /**
+     * Grava só os campos que mudaram. Salvar a comanda inteira apagaria o que outras partes gravam nela e o
+     * {@link Tab} não conhece, como os chamados de garçom e a senha do balcão.
+     */
+    private Tab change(Tab next, Update update) {
+        mongo.updateFirst(Query.query(Criteria.where("_id").is(next.id()).and("storeId").is(next.storeId())), update,
+                Tab.class);
+        return next;
     }
 
     private boolean codeExpired(Tab tab) {

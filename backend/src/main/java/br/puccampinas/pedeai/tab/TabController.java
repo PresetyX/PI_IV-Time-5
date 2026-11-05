@@ -25,15 +25,17 @@ public class TabController {
     private final OrderPlacementService orderPlacementService;
     private final RoundService roundService;
     private final OrderTrackingService orderTrackingService;
+    private final WaiterCallService waiterCallService;
 
     public TabController(TabService tabService, BillService billService,
             OrderPlacementService orderPlacementService, RoundService roundService,
-            OrderTrackingService orderTrackingService) {
+            OrderTrackingService orderTrackingService, WaiterCallService waiterCallService) {
         this.tabService = tabService;
         this.billService = billService;
         this.orderPlacementService = orderPlacementService;
         this.roundService = roundService;
         this.orderTrackingService = orderTrackingService;
+        this.waiterCallService = waiterCallService;
     }
 
     @PostMapping("/mine/orders")
@@ -47,6 +49,18 @@ public class TabController {
     public OrderTrackingResponse trackOrder(@AuthenticationPrincipal AuthenticatedUser guest,
             @PathVariable String orderId) {
         return orderTrackingService.track(guest, orderId);
+    }
+
+    @GetMapping("/mine/calls")
+    public List<WaiterCallResponse> calls(@AuthenticationPrincipal AuthenticatedUser guest) {
+        return waiterCallService.callsOfMyTab(guest);
+    }
+
+    @PostMapping("/mine/calls")
+    @ResponseStatus(HttpStatus.CREATED)
+    public WaiterCallResponse callWaiter(@AuthenticationPrincipal AuthenticatedUser guest,
+            @Valid @RequestBody WaiterCallRequest request) {
+        return waiterCallService.call(guest, request.type());
     }
 
     @GetMapping

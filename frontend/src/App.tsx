@@ -14,6 +14,7 @@ import MyTabPage from './pages/client/MyTabPage';
 import BillPage from './pages/client/BillPage';
 import RepeatRoundPage from './pages/client/RepeatRoundPage';
 import OrderStatusPage from './pages/client/OrderStatusPage';
+import WaiterCallPage from './pages/client/WaiterCallPage';
 import LoginPage from './pages/LoginPage';
 import OperationsWorkspace from './pages/OperationsWorkspace';
 import ManagementPage from './pages/ManagementPage';
@@ -49,15 +50,7 @@ export default function App() {
           />
         }
       />
-      <Route
-        path="/t/:slug/garcom"
-        element={
-          <ClientPlaceholderPage
-            title="Chamar o garçom"
-            description="O chamado de garçom entra na próxima parte do projeto."
-          />
-        }
-      />
+      <Route path="/t/:slug/garcom" element={<WaiterCallPage />} />
       <Route
         path="/t/:slug/balcao"
         element={

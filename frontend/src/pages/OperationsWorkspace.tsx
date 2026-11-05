@@ -156,7 +156,21 @@ export default function OperationsWorkspace() {
     }
   }
 
-  const ctx: Ctx = { data, now, age, tabFor, tableNumber, title, late, active, ready, calls, role, busy, synced, advance, navigate, notify: setNotice };
+  async function resolveCall(tabId: string, callId: string) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await api.post(`/api/operations/tabs/${tabId}/calls/${callId}/resolve`);
+      reload();
+    } catch {
+      setError('Não foi possível atender o chamado. Ele pode já ter sido atendido em outra tela.');
+      reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const ctx: Ctx = { data, now, age, tabFor, tableNumber, title, late, active, ready, calls, role, busy, synced, advance, resolveCall, navigate, notify: setNotice };
 
   const kitchen = root === 'producao';
   const counters = data && (
@@ -224,6 +238,7 @@ interface Ctx {
   busy: boolean;
   synced: boolean;
   advance: (order: Order) => Promise<void>;
+  resolveCall: (tabId: string, callId: string) => Promise<void>;
   navigate: ReturnType<typeof useNavigate>;
   notify: (title: string) => void;
 }
@@ -833,7 +848,7 @@ function Calls({ ctx }: { ctx: Ctx }) {
           detail={`${call.tab.customerName ?? 'Comanda'} · ${time(call.createdAt)}`}
           side={<Pill>{ctx.age(call.createdAt)} min</Pill>}
           actions={
-            <Button variant="contained" onClick={() => ctx.notify('Atender chamado')} sx={{ minHeight: 44 }}>
+            <Button variant="contained" disabled={ctx.busy} onClick={() => ctx.resolveCall(call.tab.id, call.id)} sx={{ minHeight: 44 }}>
               Atender
             </Button>
           }

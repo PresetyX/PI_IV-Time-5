@@ -61,7 +61,7 @@ export default function BillPage() {
       footer={
         <>
           <ActionButton onClick={() => navigate(`/t/${slug}/pix`)}>Pagar por Pix</ActionButton>
-          <ActionButton tone="secondary" onClick={() => navigate(`/t/${slug}/garcom`)} sx={{ mt: 2 }}>
+          <ActionButton tone="secondary" onClick={() => navigate(`/t/${slug}/garcom?motivo=CLOSE_BILL`)} sx={{ mt: 2 }}>
             Pagar com garçom
           </ActionButton>
         </>
