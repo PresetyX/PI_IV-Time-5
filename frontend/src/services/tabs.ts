@@ -132,3 +132,22 @@ export interface TrackedOrder {
 export function fetchOrder(slug: string, orderId: string): Promise<TrackedOrder> {
   return api.get<TrackedOrder>(`/api/tabs/mine/orders/${orderId}`, guest(slug));
 }
+
+export type WaiterCallType = 'CLOSE_BILL' | 'QUESTION' | 'MISSING_ITEM' | 'ORDER_PROBLEM';
+
+export interface WaiterCall {
+  id: string;
+  type: WaiterCallType;
+  reason: string;
+  status: 'OPEN' | 'RESOLVED';
+  createdAt: string;
+  resolvedAt?: string;
+}
+
+export function fetchWaiterCalls(slug: string): Promise<WaiterCall[]> {
+  return api.get<WaiterCall[]>('/api/tabs/mine/calls', guest(slug));
+}
+
+export function callWaiter(slug: string, type: WaiterCallType): Promise<WaiterCall> {
+  return api.post<WaiterCall>('/api/tabs/mine/calls', { type }, guest(slug));
+}

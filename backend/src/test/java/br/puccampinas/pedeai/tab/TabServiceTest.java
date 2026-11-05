@@ -22,6 +22,8 @@ import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 import br.puccampinas.pedeai.auth.AuthenticatedUser;
 import br.puccampinas.pedeai.common.ConflictException;
@@ -55,7 +57,10 @@ class TabServiceTest {
         when(tableRepository.findById(tableId))
                 .thenReturn(Optional.of(new Table(tableId, storeId, 5, null, 4, "t05", true, NOW)));
         when(tabRepository.insert(any(Tab.class))).thenAnswer(call -> stored = call.getArgument(0));
-        when(tabRepository.save(any(Tab.class))).thenAnswer(call -> stored = call.getArgument(0));
+        when(mongo.updateFirst(any(Query.class), any(Update.class), eq(Tab.class))).thenAnswer(call -> {
+            applyToStored(call.getArgument(1));
+            return null;
+        });
         when(tabRepository.findByStoreIdAndTableIdAndStatusOrderByOpenedAtAsc(eq(storeId), eq(tableId), eq("OPEN")))
                 .thenAnswer(call -> stored == null ? List.of() : List.of(stored));
         when(tabRepository.findByStoreIdAndId(eq(storeId), any()))
@@ -163,7 +168,7 @@ class TabServiceTest {
                         .append("status", "PREPARING"),
                 new Document("placedBySessionId", ana.id()).append("unitPriceCents", 999).append("quantity", 1)
                         .append("status", "CANCELED")));
-        when(mongo.find(any(org.springframework.data.mongodb.core.query.Query.class), eq(Document.class), eq("order")))
+        when(mongo.find(any(Query.class), eq(Document.class), eq("order")))
                 .thenReturn(List.of(order));
 
         TabResponse before = service.mine(guest(caio));
@@ -192,5 +197,17 @@ class TabServiceTest {
 
     private AuthenticatedUser guest(GuestSession session) {
         return new AuthenticatedUser(session.id(), storeId, "GUEST");
+    }
+
+    /** Faz o papel do Mongo: aplica no {@code stored} os campos que o serviço mandou gravar. */
+    @SuppressWarnings("unchecked")
+    private void applyToStored(Update update) {
+        Document set = (Document) update.getUpdateObject().get("$set");
+        if (set.containsKey("participants")) {
+            stored = stored.withParticipants((List<Tab.Participant>) set.get("participants"));
+        }
+        if (set.containsKey("joinCode")) {
+            stored = stored.withJoinCode(set.getString("joinCode"), (Instant) set.get("joinCodeExpiresAt"));
+        }
     }
 }
