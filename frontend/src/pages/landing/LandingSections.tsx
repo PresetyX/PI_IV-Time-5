@@ -336,13 +336,13 @@ export function ModulesSection() {
               <Box sx={{ position: 'absolute', inset: 140, borderRadius: '50%', bgcolor: white, boxShadow: '0 30px 60px -30px rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <ChefMascot size={150} />
               </Box>
-              <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', '& button': { pointerEvents: 'auto' }, animation: `${turn} 80s linear infinite`, animationPlayState: hold ? 'paused' : 'running', ...motionSafe }}>
+              <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', '& button': { pointerEvents: 'auto' }, animation: `${turn} 80s linear infinite`, ...motionSafe }}>
                 {MODULES.map((item, index) => {
                   const angle = (index / MODULES.length) * Math.PI * 2 - Math.PI / 2;
                   const selected = index === active;
                   return (
                     <Box key={item.name} sx={{ position: 'absolute', left: 250 + Math.cos(angle) * radius - 32, top: 250 + Math.sin(angle) * radius - 32 }}>
-                      <Box sx={{ animation: `${turn} 80s linear infinite reverse`, animationPlayState: hold ? 'paused' : 'running', ...motionSafe }}>
+                      <Box sx={{ animation: `${turn} 80s linear infinite reverse`, ...motionSafe }}>
                         <ButtonBase
                           aria-label={item.name}
                           onClick={() => setActive(index)}
