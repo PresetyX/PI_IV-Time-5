@@ -12,11 +12,13 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  IconButton,
   Radio,
   Switch,
   TextField,
   Typography,
 } from '@mui/material';
+import { CloseIcon } from '../components/client/icons';
 import ManagementLayout, { Card, Segmented } from '../components/management/ManagementLayout';
 import { ApiError, api } from '../services/api';
 import { formatCents } from '../services/format';
@@ -725,22 +727,46 @@ function FloorTabs({ ctx, current }: { ctx: Ctx; current: string }) {
   );
 }
 
+const DISMISSED_CALLS_KEY = 'pedeai.salao.avisosFechados';
+
+function readDismissedCalls(): string[] {
+  try {
+    return JSON.parse(sessionStorage.getItem(DISMISSED_CALLS_KEY) ?? '[]') as string[];
+  } catch {
+    return [];
+  }
+}
+
 function TablesMap({ ctx }: { ctx: Ctx }) {
   const { data, calls } = ctx;
+  const [dismissed, setDismissed] = useState<string[]>(readDismissedCalls);
   if (!data) return null;
+  const unseen = calls.filter((call) => !dismissed.includes(call.id));
+  const dismiss = () => {
+    const next = [...dismissed, ...unseen.map((call) => call.id)];
+    setDismissed(next);
+    try {
+      sessionStorage.setItem(DISMISSED_CALLS_KEY, JSON.stringify(next));
+    } catch {
+      // sem sessionStorage o aviso volta ao recarregar
+    }
+  };
   const tables = [...data.tables].sort((a, b) => a.number - b.number);
   return (
     <>
-      {calls.length > 0 && (
-        <Box sx={{ mb: 4, p: 4, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2, borderRadius: `${radius.card}px`, bgcolor: colors.surface }}>
+      {unseen.length > 0 && (
+        <Box sx={{ mb: 4, p: 4, pr: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2, borderRadius: `${radius.card}px`, bgcolor: colors.surface }}>
           <Typography sx={{ mr: 1, fontWeight: fontWeight.extraBold }}>Chamados agora:</Typography>
-          {[...calls]
+          {[...unseen]
             .sort((a, b) => callKind(a).rank - callKind(b).rank || Date.parse(a.createdAt) - Date.parse(b.createdAt))
             .map((call) => (
               <CallPill key={call.id} kind={callKind(call)}>
                 Mesa {pad(ctx.tableNumber(call.tab.tableId) ?? 0)} · {call.reason} · há {ctx.age(call.createdAt)} min
               </CallPill>
             ))}
+          <IconButton onClick={dismiss} aria-label="Fechar aviso de chamados" sx={{ ml: 'auto' }}>
+            <CloseIcon sx={{ fontSize: 20 }} />
+          </IconButton>
         </Box>
       )}
       <Box sx={{ mb: 4, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 3, color: colors.textSecondary, fontSize: fontSize.small }}>
