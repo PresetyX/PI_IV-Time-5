@@ -121,9 +121,14 @@ export default function MyTabPage() {
             Ver a conta
           </ActionButton>
         </Box>
-        <ActionButton tone="quiet" sx={{ mt: 2 }} onClick={() => navigate(`/t/${slug}/rodada`)}>
-          Mais uma rodada
-        </ActionButton>
+        <Box sx={{ mt: 2, display: 'flex', gap: 3 }}>
+          <ActionButton tone="quiet" onClick={() => navigate(`/t/${slug}/rodada`)}>
+            Mais uma rodada
+          </ActionButton>
+          <ActionButton tone="quiet" onClick={() => navigate(`/t/${slug}/garcom`)}>
+            Chamar o garçom
+          </ActionButton>
+        </Box>
         </>
       }
     >

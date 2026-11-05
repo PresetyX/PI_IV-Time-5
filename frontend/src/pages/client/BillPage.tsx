@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { Box, ButtonBase, Typography } from '@mui/material';
+import { Alert, Box, ButtonBase, CircularProgress, Typography } from '@mui/material';
 import ActionButton from '../../components/client/ActionButton';
 import ClientScreen from '../../components/client/ClientScreen';
 import ConnectionLostScreen from '../../components/client/ConnectionLostScreen';
@@ -13,7 +13,7 @@ import { ApiError } from '../../services/api';
 import { fetchBill, orderStatusLabel } from '../../services/bill';
 import type { Bill, BillLine } from '../../services/bill';
 import { formatCents } from '../../services/format';
-import { formatClock } from '../../services/tabs';
+import { callWaiter, fetchWaiterCalls, formatClock } from '../../services/tabs';
 import { formatTableNumber } from '../../services/tables';
 import { tokens } from '../../theme/theme';
 
@@ -30,10 +30,15 @@ export default function BillPage() {
   const [bill, setBill] = useState<Bill | null>(null);
   const [missing, setMissing] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [waiterComing, setWaiterComing] = useState(false);
+  const [calling, setCalling] = useState(false);
+  const [callError, setCallError] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      setBill(await fetchBill(slug));
+      const [nextBill, calls] = await Promise.all([fetchBill(slug), fetchWaiterCalls(slug).catch(() => [])]);
+      setBill(nextBill);
+      setWaiterComing(calls.some((call) => call.type === 'CLOSE_BILL' && call.status === 'OPEN'));
       setLoadFailed(false);
     } catch (caught) {
       if (handleExpired(caught)) return;
@@ -55,14 +60,38 @@ export default function BillPage() {
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
   if (bill === null) return <ConnectionLostScreen slug={slug} onRetry={load} />;
 
+  async function payWithWaiter() {
+    if (calling || waiterComing) return;
+    setCalling(true);
+    setCallError(false);
+    try {
+      await callWaiter(slug, 'CLOSE_BILL');
+      setWaiterComing(true);
+    } catch (caught) {
+      if (!handleExpired(caught)) setCallError(true);
+    } finally {
+      setCalling(false);
+    }
+  }
+
   return (
     <ClientScreen
       footerDivider
       footer={
         <>
+          {waiterComing && (
+            <Alert severity="success" sx={{ mb: 3, borderRadius: `${radius.button}px` }}>
+              O garçom já foi avisado e vem fechar a conta com você.
+            </Alert>
+          )}
+          {callError && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: `${radius.button}px` }}>
+              Não foi possível chamar o garçom agora. Tente de novo.
+            </Alert>
+          )}
           <ActionButton onClick={() => navigate(`/t/${slug}/pix`)}>Pagar por Pix</ActionButton>
-          <ActionButton tone="secondary" onClick={() => navigate(`/t/${slug}/garcom?motivo=CLOSE_BILL`)} sx={{ mt: 2 }}>
-            Pagar com garçom
+          <ActionButton tone="secondary" onClick={payWithWaiter} disabled={calling || waiterComing} sx={{ mt: 2 }}>
+            {calling ? <CircularProgress size={22} sx={{ color: 'inherit' }} /> : waiterComing ? 'Garçom a caminho' : 'Pagar com garçom'}
           </ActionButton>
         </>
       }
