@@ -116,6 +116,12 @@ public class KitchenController {
                 throw new OperationException(404, "not_found", "Pedido não encontrado.");
             throw new OperationException(409, "status_conflict", "O pedido mudou em outra tela. Atualize a fila.");
         }
+        // [Mateus · Card 4] Alteração: toda mudança de status também vira um documento em orderEvent (histórico só
+        // de inserção, ver docs/modelo.md). O statusHistory acima continua, porque o acompanhamento do cliente lê ele.
+        // Cancelar e entrega parcial ficam em OrderOperationController / OrderOperationService.
+        mongo.insert(new Document("storeId", user.storeId()).append("orderId", orderId).append("type", "STATUS_CHANGED")
+            .append("from", request.expectedStatus()).append("to", request.status())
+            .append("byUserId", user.userId()).append("at", Date.from(now)), "orderEvent");
         return Map.of("id", id, "status", request.status());
     }
 

@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   ButtonBase,
+  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -23,7 +24,7 @@ import ManagementLayout, { Card, Segmented } from '../components/management/Mana
 import { ApiError, api } from '../services/api';
 import { formatCents } from '../services/format';
 import { operations, statusLabels } from '../services/operations';
-import type { KitchenOrder, OrderStatus } from '../services/operations';
+import type { CancelReason, KitchenOrder, OrderStatus } from '../services/operations';
 import { tokens } from '../theme/theme';
 
 const { colors, fontSize, fontWeight, radius } = tokens;
@@ -36,7 +37,13 @@ type Waiting = { id: string; number: number; name: string; partySize: number; cr
 type Workspace = { store: { name: string; logoUrl?: string; pausedUntil?: string; pausedScopes?: string[] }; role: string; tables: { id: string; number: number; nickname?: string }[]; tabs: Tab[]; orders: Order[]; waitlist: Waiting[]; serverTime: string };
 
 const COLUMNS = ['RECEIVED', 'PREPARING', 'READY'] as const;
-const REASONS = ['Cliente desistiu', 'Pedido lançado errado', 'Faltou ingrediente', 'Pedido duplicado'];
+// [Mateus · Card 4] Alteração: cada motivo agora tem o código que o backend grava em order.cancelReason.
+const REASONS: [CancelReason, string][] = [
+  ['GAVE_UP', 'Cliente desistiu'],
+  ['WRONG_ORDER', 'Pedido lançado errado'],
+  ['OUT_OF_STOCK', 'Faltou ingrediente'],
+  ['DUPLICATE', 'Pedido duplicado'],
+];
 const HIDDEN_ITEMS = ['REMOVED', 'CANCELLED'];
 const LATE_MINUTES = 15;
 
@@ -184,7 +191,38 @@ export default function OperationsWorkspace() {
     }
   }
 
-  const ctx: Ctx = { data, now, age, tabFor, tableNumber, title, late, active, ready, calls, role, busy, synced, advance, resolveCall, navigate, notify: setNotice };
+  // [Mateus · Card 4] Alteração: cancelar pedido com motivo (antes o botão ficava desligado).
+  async function cancelOrder(order: Order, reason: CancelReason, note: string) {
+    if (busy || !synced) return;
+    setBusy(true);
+    try {
+      await operations.cancel(order.id, reason, note);
+      reload();
+      navigate('/producao');
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : 'Não foi possível cancelar o pedido agora.');
+      reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // [Mateus · Card 4] Alteração: entrega parcial. itemIndexes são as posições em order.items.
+  async function deliverItems(order: Order, itemIndexes: number[]) {
+    if (busy || !synced || itemIndexes.length === 0) return;
+    setBusy(true);
+    try {
+      await operations.deliver(order.id, itemIndexes);
+      reload();
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : 'Não foi possível registrar a entrega. Atualize a lista.');
+      reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const ctx: Ctx = { data, now, age, tabFor, tableNumber, title, late, active, ready, calls, role, busy, synced, advance, resolveCall, navigate, notify: setNotice, cancelOrder, deliverItems };
 
   const kitchen = root === 'producao';
   const counters = data && (
@@ -255,6 +293,9 @@ interface Ctx {
   resolveCall: (tabId: string, callId: string) => Promise<void>;
   navigate: ReturnType<typeof useNavigate>;
   notify: (title: string) => void;
+  // [Mateus · Card 4] Alteração: cancelar com motivo e entrega parcial, ligados ao OrderOperationController.
+  cancelOrder: (order: Order, reason: CancelReason, note: string) => Promise<void>;
+  deliverItems: (order: Order, itemIndexes: number[]) => Promise<void>;
 }
 
 interface Page {
@@ -421,7 +462,24 @@ function OrderCard({ ctx, order, large = false }: { ctx: Ctx; order: Order; larg
         {tab?.customerName ? ` · ${tab.customerName}` : ''}
       </Typography>
       <ItemList order={order} large={large} />
-      <OrderAction ctx={ctx} order={order} />
+      {/* [Mateus · Card 4] Alteração: "Cancelar pedido" ao lado da ação principal, sem precisar abrir o pedido. */}
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <OrderAction ctx={ctx} order={order} />
+        </Box>
+        {['RECEIVED', 'PREPARING'].includes(order.status) && KITCHEN_ROLES.includes(ctx.role) && (
+          <Button
+            color="error"
+            variant="outlined"
+            component={RouterLink}
+            to={`/producao/cancelar/${order.id}`}
+            disabled={ctx.busy || !ctx.synced}
+            sx={{ minHeight: 48, flexShrink: 0 }}
+          >
+            Cancelar pedido
+          </Button>
+        )}
+      </Box>
     </Box>
   );
 }
@@ -559,9 +617,11 @@ function ConfirmReady({ ctx, order }: { ctx: Ctx; order: Order }) {
   );
 }
 
+// [Mateus · Card 4] Alteração: o botão "Cancelar pedido" agora chama o backend (antes ficava desligado).
 function CancelOrder({ ctx, order }: { ctx: Ctx; order: Order }) {
-  const [reason, setReason] = useState(REASONS[0]);
+  const [reason, setReason] = useState<CancelReason>(REASONS[0][0]);
   const [note, setNote] = useState('');
+  const cancellable = ['RECEIVED', 'PREPARING'].includes(order.status) && KITCHEN_ROLES.includes(ctx.role);
   return (
     <Box sx={{ maxWidth: 560 }}>
       <Typography sx={{ color: colors.textSecondary, mb: 4 }}>
@@ -569,20 +629,26 @@ function CancelOrder({ ctx, order }: { ctx: Ctx; order: Order }) {
       </Typography>
       <Card>
         <Typography sx={{ fontWeight: fontWeight.extraBold, mb: 2 }}>Motivo do cancelamento</Typography>
-        {REASONS.map((value) => (
-          <FormControlLabel key={value} control={<Radio checked={reason === value} onChange={() => setReason(value)} />} label={value} sx={{ display: 'flex' }} />
+        {REASONS.map(([value, label]) => (
+          <FormControlLabel key={value} control={<Radio checked={reason === value} onChange={() => setReason(value)} />} label={label} sx={{ display: 'flex' }} />
         ))}
-        <TextField fullWidth multiline minRows={2} label="Observação para o histórico" value={note} onChange={(event) => setNote(event.target.value)} sx={{ mt: 3 }} />
+        <TextField fullWidth multiline minRows={2} label="Observação para o histórico" value={note} onChange={(event) => setNote(event.target.value.slice(0, 140))} inputProps={{ maxLength: 140 }} sx={{ mt: 3 }} />
       </Card>
       <Alert severity="warning" sx={{ mt: 4 }}>
-        Só é permitido cancelar antes de ficar pronto. O cancelamento ainda não está ligado ao servidor.
+        Só é permitido cancelar antes de ficar pronto. O valor sai da comanda do cliente.
       </Alert>
       <Box sx={{ display: 'flex', gap: 3, mt: 6 }}>
         <Button variant="outlined" component={RouterLink} to={`/producao/pedido/${order.id}`} sx={{ flex: 1, minHeight: 52 }}>
           Manter pedido
         </Button>
-        <Button color="error" variant="contained" disabled sx={{ flex: 1, minHeight: 52 }}>
-          Cancelar pedido
+        <Button
+          color="error"
+          variant="contained"
+          disabled={!cancellable || ctx.busy || !ctx.synced}
+          onClick={() => void ctx.cancelOrder(order, reason, note)}
+          sx={{ flex: 1, minHeight: 52 }}
+        >
+          {ctx.busy ? <CircularProgress size={22} sx={{ color: 'inherit' }} /> : 'Cancelar pedido'}
         </Button>
       </Box>
     </Box>
@@ -898,16 +964,69 @@ function Deliveries({ ctx }: { ctx: Ctx }) {
             alert={waiting >= 5}
             lead={ctx.tableNumber(order.tableId ?? tab?.tableId) ?? tab?.pickupTicket ?? '#'}
             title={`${ctx.title(order)}${tab?.customerName ? ` · ${tab.customerName}` : ''}`}
-            detail={order.items.filter((item) => !HIDDEN_ITEMS.includes(item.status)).map((item) => `${item.quantity}× ${item.nameSnapshot}`).join(', ')}
+            // [Mateus · Card 4] Alteração: o detalhe lista só o que falta entregar; as ações viraram DeliverItems.
+            detail={order.items.filter((item) => !HIDDEN_ITEMS.includes(item.status) && item.status !== 'DELIVERED').map((item) => `${item.quantity}× ${item.nameSnapshot}`).join(', ')}
             side={<Pill tone={waiting >= 5 ? 'red' : 'neutral'}>pronto há {waiting} min</Pill>}
             actions={
-              <Box sx={{ minWidth: 200 }}>
-                <OrderAction ctx={ctx} order={order} />
+              <Box sx={{ minWidth: 240 }}>
+                <DeliverItems ctx={ctx} order={order} />
               </Box>
             }
           />
         );
       })}
+    </Box>
+  );
+}
+
+// [Mateus · Card 4] Novo: entrega parcial. O garçom marca o que levou à mesa; o pedido só sai da lista quando
+// todos os itens forem entregues. Os índices enviados são as posições em order.items.
+function DeliverItems({ ctx, order }: { ctx: Ctx; order: Order }) {
+  const [marked, setMarked] = useState<number[]>([]);
+  const permitted = FLOOR_ROLES.includes(ctx.role);
+  const counter = ctx.tabFor(order)?.mode === 'COUNTER';
+  const lines = order.items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => !HIDDEN_ITEMS.includes(item.status));
+  const pending = lines.filter(({ item }) => item.status !== 'DELIVERED').map(({ index }) => index);
+  const disabled = ctx.busy || !ctx.synced || !permitted;
+
+  function toggle(index: number) {
+    setMarked((current) => (current.includes(index) ? current.filter((value) => value !== index) : [...current, index]));
+  }
+
+  async function deliver(indexes: number[]) {
+    await ctx.deliverItems(order, indexes);
+    setMarked([]);
+  }
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      {lines.length > 1 &&
+        lines.map(({ item, index }) => {
+          const delivered = item.status === 'DELIVERED';
+          return (
+            <FormControlLabel
+              key={index}
+              disabled={delivered || disabled}
+              control={<Checkbox size="small" checked={delivered || marked.includes(index)} onChange={() => toggle(index)} />}
+              label={
+                <Typography sx={{ fontSize: fontSize.small, textDecoration: delivered ? 'line-through' : 'none' }}>
+                  {item.quantity}× {item.nameSnapshot}
+                  {delivered ? ' · entregue' : ''}
+                </Typography>
+              }
+            />
+          );
+        })}
+      {lines.length > 1 && (
+        <Button variant="outlined" disabled={disabled || marked.length === 0} onClick={() => void deliver(marked)} sx={{ minHeight: 44 }}>
+          Entregar marcados{marked.length > 0 ? ` (${marked.length})` : ''}
+        </Button>
+      )}
+      <Button variant="contained" disabled={disabled || pending.length === 0} onClick={() => void deliver(pending)} sx={{ minHeight: 48 }}>
+        {counter ? 'Confirmar retirada' : lines.length > pending.length ? 'Entregar o restante' : 'Entregar tudo'}
+      </Button>
     </Box>
   );
 }

@@ -6,7 +6,7 @@ import ClientScreen from '../../components/client/ClientScreen';
 import ConnectionLostScreen from '../../components/client/ConnectionLostScreen';
 import { ClientError, ClientLoading } from '../../components/client/ClientStates';
 import { ClocheIcon } from '../../components/client/icons';
-import { ScreenHeader, SectionLabel } from '../../components/client/TabParts';
+import { InfoNote, ScreenHeader, SectionLabel } from '../../components/client/TabParts';
 import { guestGatePath, useExpiredSession } from '../../hooks/useGuestSession';
 import { useStore } from '../../hooks/useStore';
 import { useStoreColor } from '../../hooks/useStoreColor';
@@ -69,6 +69,7 @@ export default function OrderStatusPage() {
   if (order === null) return <ConnectionLostScreen slug={slug} onRetry={load} />;
 
   const ready = order.status === 'READY';
+  const cancelled = order.status === 'CANCELLED' || order.status === 'CANCELED';
   const steps = [...order.timeline].reverse();
 
   return (
@@ -115,6 +116,11 @@ export default function OrderStatusPage() {
       )}
 
       <Box sx={{ px: 5, pt: 5, pb: 6 }}>
+        {cancelled && (
+          <Box sx={{ mb: 5 }}>
+            <InfoNote>A casa cancelou este pedido e o valor saiu da sua comanda. Se tiver dúvida, chame o garçom.</InfoNote>
+          </Box>
+        )}
         <Box sx={{ p: 4, border: `1px solid ${colors.border}`, borderRadius: `${radius.card}px` }}>
           <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography sx={{ fontSize: fontSize.caption, fontWeight: fontWeight.extraBold, letterSpacing: 1, color: colors.textSecondary }}>

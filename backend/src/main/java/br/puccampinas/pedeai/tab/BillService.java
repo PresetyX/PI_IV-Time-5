@@ -17,7 +17,6 @@ import br.puccampinas.pedeai.table.TableRepository;
 public class BillService {
 
     static final int SERVICE_FEE_PERCENT = 10;
-    private static final String CANCELED = "CANCELED";
 
     private final TabService tabService;
     private final TableRepository tableRepository;
@@ -37,13 +36,15 @@ public class BillService {
         int consumption = 0;
         List<BillResponse.BillOrder> orders = new ArrayList<>();
         for (Document order : mongo.find(query, Document.class, "order")) {
-            boolean orderCanceled = CANCELED.equals(order.getString("status"));
+            // [Mateus · Card 4] Alteração: o pedido cancelado é gravado como CANCELLED (dois L, ver init-mongo.js e
+            // OrderOperationService); comparar só com "CANCELED" deixava o pedido cancelado somando na conta.
+            boolean orderCanceled = TabTotals.IGNORED_STATUS.contains(order.getString("status"));
             List<BillResponse.BillLine> lines = new ArrayList<>();
             for (Object raw : order.getList("items", Object.class, List.of())) {
                 if (!(raw instanceof Document item)) {
                     continue;
                 }
-                boolean canceled = orderCanceled || CANCELED.equals(item.getString("status"));
+                boolean canceled = orderCanceled || TabTotals.IGNORED_STATUS.contains(item.getString("status"));
                 int quantity = item.get("quantity", Number.class).intValue();
                 int total = item.get("unitPriceCents", Number.class).intValue() * quantity;
                 if (!canceled) {

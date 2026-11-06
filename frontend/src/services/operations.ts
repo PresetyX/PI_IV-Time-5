@@ -29,7 +29,14 @@ export const operations = {
   detail: (id: string) => api.get<KitchenOrder>(`/api/operations/orders/${encodeURIComponent(id)}`),
   changeStatus: (order: KitchenOrder, status: OrderStatus) => api.patch<{ id: string; status: OrderStatus }>(
     `/api/operations/orders/${encodeURIComponent(order.id)}/status`, { expectedStatus: order.status, status }),
+  // [Mateus · Card 4] Alteração: cancelar com motivo e entrega parcial (OrderOperationController no backend).
+  cancel: (id: string, reason: CancelReason, note: string) => api.post<{ id: string; status: OrderStatus }>(
+    `/api/operations/orders/${encodeURIComponent(id)}/cancel`, { reason, note: note.trim() || undefined }),
+  deliver: (id: string, itemIndexes: number[]) => api.post<{ id: string; status: OrderStatus }>(
+    `/api/operations/orders/${encodeURIComponent(id)}/deliver`, { itemIndexes }),
 };
+// [Mateus · Card 4] Motivos aceitos pelo backend em POST /api/operations/orders/{id}/cancel.
+export type CancelReason = 'GAVE_UP' | 'WRONG_ORDER' | 'OUT_OF_STOCK' | 'DUPLICATE';
 export function orderTitle(order: KitchenOrder): string {
   if (order.mode === 'COUNTER') return `Balcão · pedido #${order.number}`;
   if (order.tableNumber !== null) return `Mesa ${String(order.tableNumber).padStart(2, '0')}`;

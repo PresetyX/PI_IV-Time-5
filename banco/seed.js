@@ -96,17 +96,20 @@ categorias.forEach(function (c) {
   }).insertedId;
 });
 
+// [Mateus · Card 3] Todo hambúrguer pergunta o ponto da carne e aceita adicionais (mesmos grupos do Triunfo duplo).
+const PONTO_DA_CARNE = { name: "Ponto da carne", required: true, min: 1, max: 1,
+  options: [{ label: "Ao ponto", deltaCents: 0 }, { label: "Bem passado", deltaCents: 0 }] };
+const ADICIONAIS = { name: "Adicionais", required: false, min: 0, max: 3,
+  options: [{ label: "Bacon extra", deltaCents: 600 }, { label: "Cheddar extra", deltaCents: 500 }, { label: "Ovo", deltaCents: 300 }] };
+
 const produtos = [
-  { cat: "Lanches", name: "X-salada", desc: "Pão, hambúrguer de 150 g, queijo, alface e tomate.", preco: 2800, prep: 12 },
-  { cat: "Lanches", name: "X-bacon", desc: "Hambúrguer de 150 g, bacon crocante e queijo cheddar.", preco: 3200, prep: 12 },
+  { cat: "Lanches", name: "X-salada", desc: "Pão, hambúrguer de 150 g, queijo, alface e tomate.", preco: 2800, prep: 12,
+    opcoes: [PONTO_DA_CARNE, ADICIONAIS] },
+  { cat: "Lanches", name: "X-bacon", desc: "Hambúrguer de 150 g, bacon crocante e queijo cheddar.", preco: 3200, prep: 12,
+    opcoes: [PONTO_DA_CARNE, ADICIONAIS] },
   { cat: "Lanches", name: "Sanduíche de pernil", desc: "Pernil desfiado no pão francês, com vinagrete.", preco: 2600, prep: 10 },
   { cat: "Lanches", name: "Triunfo duplo", desc: "Dois hambúrgueres, queijo duplo e molho da casa.", preco: 3900, prep: 15,
-    opcoes: [
-      { name: "Ponto da carne", required: true, min: 1, max: 1,
-        options: [{ label: "Ao ponto", deltaCents: 0 }, { label: "Bem passado", deltaCents: 0 }] },
-      { name: "Adicionais", required: false, min: 0, max: 3,
-        options: [{ label: "Bacon extra", deltaCents: 600 }, { label: "Cheddar extra", deltaCents: 500 }, { label: "Ovo", deltaCents: 300 }] }
-    ] },
+    opcoes: [PONTO_DA_CARNE, ADICIONAIS] },
   { cat: "Porções", name: "Batata frita", desc: "500 g de batata rústica com sal grosso.", preco: 3200, prep: 15,
     opcoes: [
       { name: "Tamanho", required: true, min: 1, max: 1,

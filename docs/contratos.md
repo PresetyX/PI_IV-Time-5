@@ -159,3 +159,43 @@ Resposta `201`:
 ```json
 { "id": "...", "number": 7, "status": "RECEIVED", "totalCents": 6000 }
 ```
+
+## Operação do pedido (equipe)
+
+Todas exigem o token da equipe. Toda mudança grava um documento em `orderEvent` (só inserção) e um passo em `order.statusHistory`, que é o que o acompanhamento do cliente lê.
+
+### PATCH /api/operations/orders/{id}/status
+
+Já existia (`KitchenController`). Agora também grava `orderEvent` `STATUS_CHANGED` com `from`, `to`, `byUserId` e `at`.
+
+### POST /api/operations/orders/{id}/cancel
+
+Perfis: `OWNER`, `MANAGER`, `KITCHEN`. Cancela o pedido inteiro.
+
+```json
+{ "reason": "OUT_OF_STOCK", "note": "acabou o pão" }
+```
+
+- `reason`: `GAVE_UP` (cliente desistiu), `WRONG_ORDER` (lançado errado), `OUT_OF_STOCK` (faltou ingrediente) ou `DUPLICATE` (duplicado). Outro valor: 400 `validation`.
+- `note`: opcional, até 140 caracteres.
+- Só pedido `RECEIVED` ou `PREPARING`. Pronto, entregue ou já cancelado: 409 `conflict`. Pedido de outra loja ou inexistente: 404.
+- Grava no pedido `status: CANCELLED`, `cancelReason`, `cancelledByUserId`, `cancelledAt` e `cancelNote`; os itens ativos viram `CANCELLED`. Grava `orderEvent` `CANCELLED` com `reason` e recalcula a comanda, que deixa de cobrar o pedido.
+
+Resposta `200`: `{ "id": "...", "status": "CANCELLED" }`
+
+### POST /api/operations/orders/{id}/deliver
+
+Perfis: `OWNER`, `MANAGER`, `WAITER`. Entrega parcial ou total de um pedido pronto.
+
+```json
+{ "itemIndexes": [0, 2] }
+```
+
+- `itemIndexes`: posições dos itens em `order.items` (o pedido não tem id por item).
+- Só pedido `READY`; item já entregue ou cancelado, ou pedido alterado em outra tela entre a leitura e a gravação: 409 `conflict`.
+- Os itens escolhidos viram `DELIVERED` com `deliveredAt`. Grava `orderEvent` `ITEMS_DELIVERED` com `itemIndexes`.
+- Se não sobrar item ativo por entregar, o pedido vira `DELIVERED` (com `deliveredAt`) e ganha também um `orderEvent` `STATUS_CHANGED` de `READY` para `DELIVERED`.
+
+Resposta `200`: `{ "id": "...", "status": "READY" }` (ainda falta item) ou `"DELIVERED"`.
+
+> O tipo `ITEMS_DELIVERED` foi acrescentado ao validador de `orderEvent` em `banco/init-mongo.js`. Banco criado antes disso precisa rodar o `init-mongo.js` de novo (só atualiza validadores e índices).

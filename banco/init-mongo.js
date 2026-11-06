@@ -243,7 +243,8 @@ criar("order", {
         properties: {
           productId: oid,
           nameSnapshot: { bsonType: "string", description: "cópia do nome no envio" },
-          unitPriceCents: { bsonType: "int", description: "cópia do preço no envio" },
+          unitPriceCents: { bsonType: "int", description: "cópia do preço no envio, já com as opções" },
+          basePriceCents: { bsonType: "int", description: "preço do produto sem as opções" },
           quantity: { bsonType: "int", minimum: 1 },
           note: { bsonType: "string", maxLength: 140 },
           options: {
@@ -259,6 +260,7 @@ criar("order", {
           placedByUserId: oid,
           placedBySessionId: oid,
           removedAt: data,
+          deliveredAt: data,
           removedByUserId: oid
         }
       }
@@ -266,6 +268,8 @@ criar("order", {
     totalCents: inteiro,
     cancelReason: { enum: ["GAVE_UP", "WRONG_ORDER", "OUT_OF_STOCK", "DUPLICATE", null] },
     cancelledByUserId: oid,
+    cancelledAt: data,
+    cancelNote: texto,
     createdAt: data,
     readyAt: data,
     deliveredAt: data
@@ -342,11 +346,14 @@ criar("orderEvent", {
   properties: {
     storeId: storeId,
     orderId: oid,
-    type: { enum: ["CREATED", "STATUS_CHANGED", "ITEM_REMOVED", "CANCELLED", "PRINTED"] },
+    // [Mateus · Card 4] ITEMS_DELIVERED: entrega parcial; itemIndexes diz quais itens do pedido foram entregues.
+    type: { enum: ["CREATED", "STATUS_CHANGED", "ITEM_REMOVED", "CANCELLED", "PRINTED", "ITEMS_DELIVERED"] },
     from: texto,
     to: texto,
     byUserId: oid,
     note: texto,
+    reason: { enum: ["GAVE_UP", "WRONG_ORDER", "OUT_OF_STOCK", "DUPLICATE"] },
+    itemIndexes: { bsonType: "array", items: inteiro },
     at: data
   }
 });

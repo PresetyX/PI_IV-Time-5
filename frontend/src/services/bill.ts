@@ -34,6 +34,8 @@ const ORDER_STATUS_LABEL: Record<string, string> = {
   READY: 'Pronto',
   DELIVERED: 'Entregue',
   CANCELED: 'Cancelado',
+  // [Mateus · Card 4] Alteração: o backend grava CANCELLED (com dois L) ao cancelar o pedido.
+  CANCELLED: 'Cancelado',
 };
 
 export function fetchBill(slug: string): Promise<Bill> {
