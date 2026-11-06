@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Alert, Box, ButtonBase, CircularProgress, IconButton, Typography } from '@mui/material';
 import ActionButton from '../../components/client/ActionButton';
+import AgeConfirmationScreen from '../../components/client/AgeConfirmationScreen';
 import ClientScreen from '../../components/client/ClientScreen';
 import ConnectionLostScreen from '../../components/client/ConnectionLostScreen';
 import { ClientError, ClientLoading } from '../../components/client/ClientStates';
@@ -12,7 +13,8 @@ import { useStore } from '../../hooks/useStore';
 import { useStoreColor } from '../../hooks/useStoreColor';
 import { ApiError } from '../../services/api';
 import { formatCents } from '../../services/format';
-import { fetchRound, orderErrorMessage, placeOrder } from '../../services/tabs';
+import { fetchRound, needsAgeConfirmation, orderErrorMessage, placeOrder } from '../../services/tabs';
+import { confirmAge, isAgeConfirmed } from '../../services/visit';
 import type { Round, RoundItem, RoundSuggestion } from '../../services/tabs';
 import { formatTableNumber } from '../../services/tables';
 import { tokens } from '../../theme/theme';
@@ -40,6 +42,7 @@ export default function RepeatRoundPage() {
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [askingAge, setAskingAge] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -93,7 +96,8 @@ export default function RepeatRoundPage() {
     });
   }
 
-  async function send() {
+  // A rodada não sabe quais itens são alcoólicos: a confirmação aparece quando o backend pede.
+  async function send(ageConfirmed = isAgeConfirmed(slug)) {
     if (sending || total === 0) return;
     setSending(true);
     setError(null);
@@ -101,15 +105,37 @@ export default function RepeatRoundPage() {
       await placeOrder(slug, [
         ...repeated.map((item) => ({ productId: item.productId, quantity: item.quantity, note: item.note || undefined })),
         ...extras.map((suggestion) => ({ productId: suggestion.productId, quantity: 1 })),
-      ], total);
+      ], total, ageConfirmed);
+      setAskingAge(false);
       navigate(`/t/${slug}/conta`);
     } catch (caught) {
       if (handleExpired(caught)) return;
+      if (needsAgeConfirmation(caught)) {
+        setAskingAge(true);
+        return;
+      }
+      setAskingAge(false);
       setError(orderErrorMessage(caught));
       if (caught instanceof ApiError && caught.status === 409) load();
     } finally {
       setSending(false);
     }
+  }
+
+  function confirmAgeAndSend() {
+    confirmAge(slug);
+    send(true);
+  }
+
+  if (askingAge) {
+    return (
+      <AgeConfirmationScreen
+        storeName={state.store.name}
+        sending={sending}
+        onConfirm={confirmAgeAndSend}
+        onBack={() => setAskingAge(false)}
+      />
+    );
   }
 
   return (
@@ -122,7 +148,7 @@ export default function RepeatRoundPage() {
               {error}
             </Alert>
           )}
-          <ActionButton onClick={send} disabled={sending || total === 0} sx={{ justifyContent: 'space-between', px: 5 }}>
+          <ActionButton onClick={() => send()} disabled={sending || total === 0} sx={{ justifyContent: 'space-between', px: 5 }}>
             {sending ? (
               <CircularProgress size={22} sx={{ mx: 'auto', color: 'inherit' }} />
             ) : (

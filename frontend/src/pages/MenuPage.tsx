@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ActionButton from '../components/client/ActionButton';
-import { orderErrorMessage, placeOrder } from '../services/tabs';
-import { readVisit } from '../services/visit';
+import AgeConfirmationScreen from '../components/client/AgeConfirmationScreen';
+import { needsAgeConfirmation, orderErrorMessage, placeOrder } from '../services/tabs';
+import { confirmAge, isAgeConfirmed, readVisit } from '../services/visit';
 import { Box, Button, CircularProgress, Skeleton, Tab, Tabs, Typography } from '@mui/material';
 import StatusMessage from '../components/StatusMessage';
 import { ApiError } from '../services/api';
@@ -29,6 +30,7 @@ export default function MenuPage() {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [askingAge, setAskingAge] = useState(false);
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -64,8 +66,16 @@ export default function MenuPage() {
   const cartCount = cartItems.reduce((sum, product) => sum + quantities[product.id], 0);
   const cartTotal = cartItems.reduce((sum, product) => sum + product.priceCents * quantities[product.id], 0);
 
-  async function sendOrder() {
+  const alcoholicItems = cartItems
+    .filter((product) => product.isAlcoholic)
+    .map((product) => ({ name: product.name, quantity: quantities[product.id] }));
+
+  async function sendOrder(ageConfirmed = isAgeConfirmed(slug)) {
     if (sending || cartItems.length === 0) return;
+    if (alcoholicItems.length > 0 && !ageConfirmed) {
+      setAskingAge(true);
+      return;
+    }
     setSending(true);
     setSendError(null);
     try {
@@ -73,14 +83,38 @@ export default function MenuPage() {
         slug,
         cartItems.map((product) => ({ productId: product.id, quantity: quantities[product.id] })),
         cartTotal,
+        ageConfirmed,
       );
       setQuantities({});
+      setAskingAge(false);
       navigate(`/t/${slug}/conta`);
     } catch (caught) {
-      setSendError(orderErrorMessage(caught));
+      if (needsAgeConfirmation(caught)) {
+        setAskingAge(true);
+      } else {
+        setAskingAge(false);
+        setSendError(orderErrorMessage(caught));
+      }
     } finally {
       setSending(false);
     }
+  }
+
+  function confirmAgeAndSend() {
+    confirmAge(slug);
+    sendOrder(true);
+  }
+
+  if (askingAge && state.status === 'ready') {
+    return (
+      <AgeConfirmationScreen
+        storeName={state.menu.store.name}
+        items={alcoholicItems}
+        sending={sending}
+        onConfirm={confirmAgeAndSend}
+        onBack={() => setAskingAge(false)}
+      />
+    );
   }
 
   return (
@@ -137,7 +171,7 @@ export default function MenuPage() {
           )}
           {hasTab && cartCount > 0 ? (
             <>
-              <ActionButton onClick={sendOrder} disabled={sending}>
+              <ActionButton onClick={() => sendOrder()} disabled={sending}>
                 {sending ? (
                   <CircularProgress size={22} sx={{ color: 'inherit' }} />
                 ) : (

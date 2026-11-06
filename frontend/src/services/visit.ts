@@ -6,6 +6,8 @@ export interface Visit {
   sessionId?: string;
   guestToken?: string;
   customerName?: string;
+  /** Sessão em que o cliente confirmou ter 18 anos ou mais; vale só enquanto for a mesma sessão. */
+  ageConfirmedSessionId?: string;
 }
 
 function storageKey(slug: string): string {
@@ -19,6 +21,17 @@ export function readVisit(slug: string): Visit {
   } catch {
     return {};
   }
+}
+
+/** A maioridade já foi confirmada nesta visita (mesma sessão de convidado). */
+export function isAgeConfirmed(slug: string): boolean {
+  const visit = readVisit(slug);
+  return Boolean(visit.sessionId && visit.ageConfirmedSessionId === visit.sessionId);
+}
+
+export function confirmAge(slug: string): void {
+  const visit = readVisit(slug);
+  if (visit.sessionId) updateVisit(slug, { ageConfirmedSessionId: visit.sessionId });
 }
 
 export function updateVisit(slug: string, changes: Partial<Visit>): Visit {

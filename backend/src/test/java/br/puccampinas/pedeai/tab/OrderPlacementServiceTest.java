@@ -154,6 +154,42 @@ class OrderPlacementServiceTest {
         assertNothingSaved();
     }
 
+    @Test
+    void alcoholWithoutAgeConfirmationIsRejectedBeforeTheSocket() {
+        Product chopp = product("Chopp 500 ml", 1400, true, true);
+        when(productRepository.findAllById(any())).thenReturn(List.of(fries, chopp));
+
+        OrderRejectedException e = assertThrows(OrderRejectedException.class,
+                () -> service.place(guest, request(4600, item(fries, 1, null), item(chopp, 1, null))));
+
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, e.getStatus());
+        assertEquals(OrderRejectedException.AGE_CONFIRMATION_REQUIRED, e.getCode());
+        verifyNoInteractions(validation);
+        assertNothingSaved();
+    }
+
+    @Test
+    void alcoholWithAgeConfirmationIsSavedAsConfirmed() {
+        Product chopp = product("Chopp 500 ml", 1400, true, true);
+        when(productRepository.findAllById(any())).thenReturn(List.of(chopp));
+
+        service.place(guest, new PlaceOrderRequest(List.of(item(chopp, 2, null)), 2800, true));
+
+        verify(validation).validate(any());
+        ArgumentCaptor<Document> saved = ArgumentCaptor.forClass(Document.class);
+        verify(mongo).insert(saved.capture(), eq("order"));
+        assertEquals(true, saved.getValue().getBoolean("ageConfirmed"));
+    }
+
+    @Test
+    void orderWithoutAlcoholIsNotMarkedAsAgeConfirmed() {
+        service.place(guest, new PlaceOrderRequest(List.of(item(fries, 1, null)), 3200, true));
+
+        ArgumentCaptor<Document> saved = ArgumentCaptor.forClass(Document.class);
+        verify(mongo).insert(saved.capture(), eq("order"));
+        assertEquals(false, saved.getValue().getBoolean("ageConfirmed"));
+    }
+
     private void assertNothingSaved() {
         verify(mongo, never()).insert(any(Document.class), anyString());
         verify(mongo, never()).findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
@@ -161,8 +197,12 @@ class OrderPlacementServiceTest {
     }
 
     private Product product(String name, int priceCents, boolean available) {
+        return product(name, priceCents, available, false);
+    }
+
+    private Product product(String name, int priceCents, boolean available, boolean alcoholic) {
         return new Product(new ObjectId(), storeId, new ObjectId(), name, null, priceCents, null, null, available, null,
-                false, 0, List.of());
+                alcoholic, 0, List.of());
     }
 
     private static PlaceOrderRequest.Item item(Product product, int quantity, String note) {

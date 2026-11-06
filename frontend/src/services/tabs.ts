@@ -78,14 +78,24 @@ export interface PlacedOrder {
 
 /**
  * Envia o pedido. `expectedTotalCents` é o total que o cliente viu na tela: o backend confere com os preços
- * do banco pelo server e recusa com `price_changed` se forem diferentes.
+ * do banco pelo server e recusa com `price_changed` se forem diferentes. Pedido com bebida alcoólica exige
+ * `ageConfirmed`; sem ele o backend recusa com `age_confirmation_required` (422).
  */
 export function placeOrder(
   slug: string,
   items: OrderItemInput[],
   expectedTotalCents: number,
+  ageConfirmed = false,
 ): Promise<PlacedOrder> {
-  return api.post<PlacedOrder>('/api/tabs/mine/orders', { items, expectedTotalCents }, guest(slug));
+  return api.post<PlacedOrder>(
+    '/api/tabs/mine/orders',
+    { items, expectedTotalCents, ageConfirmed },
+    guest(slug),
+  );
+}
+
+export function needsAgeConfirmation(caught: unknown): boolean {
+  return caught instanceof ApiError && caught.code === 'age_confirmation_required';
 }
 
 /** Texto para a tela quando o envio do pedido falha. Em nenhum desses casos o pedido foi gravado. */
