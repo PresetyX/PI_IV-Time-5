@@ -45,7 +45,16 @@ export default function JoinTabPage() {
   useEffect(() => {
     if (gate) return;
     fetchTabs(slug)
-      .then((tabs) => setTab(tabs.find((found) => found.id === tabId) ?? null))
+      .then((tabs) => {
+        const found = tabs.find((item) => item.id === tabId);
+        // [Mateus · Card 5] Alteração: no balcão não há mesa para listar a comanda de quem convidou; quem chegou
+        // pelo link de convite tenta entrar direto com o código (o backend confere loja, modo e código).
+        if (!found && readVisit(slug).counter) {
+          setTab({ id: tabId, ownerName: 'Comanda de balcão', peopleCount: 0, totalCents: 0, openedAt: '', mine: false });
+          return;
+        }
+        setTab(found ?? null);
+      })
       .catch((caught: unknown) => {
         if (!handleExpired(caught)) setTab(null);
       });

@@ -34,6 +34,8 @@ const ORDER_STATUS_LABEL: Record<string, string> = {
   READY: 'Pronto',
   DELIVERED: 'Entregue',
   CANCELED: 'Cancelado',
+  // [Mateus · Card 5] Alteração: pedido de balcão esperando o pagamento no caixa.
+  AWAITING_PAYMENT: 'Aguardando pagamento',
   // [Mateus · Card 4] Alteração: o backend grava CANCELLED (com dois L) ao cancelar o pedido.
   CANCELLED: 'Cancelado',
 };

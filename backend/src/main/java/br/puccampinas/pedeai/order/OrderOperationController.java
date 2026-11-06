@@ -47,4 +47,15 @@ public class OrderOperationController {
             @PathVariable String id, @Valid @RequestBody DeliverRequest request) {
         return service.deliver(user, id, request.itemIndexes());
     }
+
+    /** [Mateus · Card 5] {@code method}: PIX_MANUAL, CASH, CARD_DEBIT ou CARD_CREDIT. */
+    public record PayRequest(@NotBlank String method) {
+    }
+
+    /** [Mateus · Card 5] Pagamento no caixa de um pedido de balcão; solta o pedido para a cozinha. */
+    @PostMapping("/{id}/pay")
+    public OrderOperationService.Result pay(@AuthenticationPrincipal AuthenticatedUser user,
+            @PathVariable String id, @Valid @RequestBody PayRequest request) {
+        return service.pay(user, id, request.method());
+    }
 }

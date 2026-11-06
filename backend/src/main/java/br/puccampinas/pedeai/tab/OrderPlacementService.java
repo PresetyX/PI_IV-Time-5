@@ -34,6 +34,9 @@ import br.puccampinas.pedeai.store.StoreService;
 @Service
 public class OrderPlacementService {
 
+    /** [Mateus · Card 5] Pedido de balcão enviado, esperando o pagamento no caixa; não aparece na cozinha. */
+    public static final String AWAITING_PAYMENT = "AWAITING_PAYMENT";
+
     private final TabService tabService;
     private final ProductRepository productRepository;
     private final StoreService storeService;
@@ -78,6 +81,9 @@ public class OrderPlacementService {
 
         Instant now = clock.instant();
         ObjectId sessionId = guest.userId();
+        // Balcão: o pedido espera o pagamento no caixa antes de entrar na fila da cozinha.
+        boolean counter = TabService.MODE_COUNTER.equals(tab.mode());
+        String initialStatus = counter ? AWAITING_PAYMENT : "RECEIVED";
         int total = 0;
         List<Document> items = new ArrayList<>();
         List<OrderValidationClient.Item> toValidate = new ArrayList<>();
@@ -105,7 +111,7 @@ public class OrderPlacementService {
                     .append("quantity", item.quantity())
                     .append("note", note)
                     .append("options", options.documents())
-                    .append("status", "RECEIVED")
+                    .append("status", initialStatus)
                     .append("placedByType", "CUSTOMER")
                     .append("placedBySessionId", sessionId));
             toValidate.add(new OrderValidationClient.Item(product.priceCents(), item.quantity(), note,
@@ -126,26 +132,57 @@ public class OrderPlacementService {
                 LocalTime.now(clock.withZone(OpeningStatusCalculator.STORE_ZONE))));
 
         ObjectId orderId = new ObjectId();
-        int number = nextNumber(tab.storeId());
-        mongo.insert(new Document("_id", orderId)
+        int number = nextNumber(tab.storeId(), "ORDER");
+        Integer pickupTicket = counter ? pickupTicket(tab) : null;
+        Document order = new Document("_id", orderId)
                 .append("storeId", tab.storeId())
                 .append("tabId", tab.id())
-                .append("tableId", tab.tableId())
                 .append("number", number)
-                .append("status", "RECEIVED")
+                .append("status", initialStatus)
                 .append("ageConfirmed", hasAlcohol)
                 .append("items", items)
                 .append("totalCents", total)
-                .append("createdAt", Date.from(now)), "order");
+                .append("createdAt", Date.from(now));
+        // O validador de order aceita tableId ausente, mas não null: pedido de balcão (sem mesa) vai sem o campo.
+        if (tab.tableId() != null) {
+            order.append("tableId", tab.tableId());
+        }
+        if (pickupTicket != null) {
+            order.append("pickupTicket", pickupTicket);
+        }
+        mongo.insert(order, "order");
         mongo.insert(new Document("storeId", tab.storeId()).append("orderId", orderId)
-                .append("type", "CREATED").append("at", Date.from(now)), "orderEvent");
+                .append("type", "CREATED").append("to", initialStatus).append("at", Date.from(now)), "orderEvent");
         tabTotals.recalculate(tab.storeId(), tab.id());
-        return new PlacedOrder(orderId.toHexString(), number, "RECEIVED", total);
+        return new PlacedOrder(orderId.toHexString(), number, initialStatus, total, pickupTicket);
     }
 
-    private int nextNumber(ObjectId storeId) {
+    /**
+     * Senha do balcão: a da comanda, se já tiver; senão a próxima do dia, gravada na comanda só se ninguém gravou
+     * antes (dois pedidos ao mesmo tempo ficam com a mesma senha).
+     */
+    private int pickupTicket(Tab tab) {
+        Query ofTab = Query.query(Criteria.where("_id").is(tab.id()).and("storeId").is(tab.storeId()));
+        Document current = mongo.findOne(ofTab, Document.class, "tab");
+        if (current != null && current.get("pickupTicket") instanceof Number existing) {
+            return existing.intValue();
+        }
+        int next = nextNumber(tab.storeId(), "PICKUP");
+        Document updated = mongo.findAndModify(
+                Query.query(Criteria.where("_id").is(tab.id()).and("storeId").is(tab.storeId())
+                        .and("pickupTicket").exists(false)),
+                new Update().set("pickupTicket", next), FindAndModifyOptions.options().returnNew(true),
+                Document.class, "tab");
+        if (updated != null) {
+            return next;
+        }
+        Document winner = mongo.findOne(ofTab, Document.class, "tab");
+        return winner != null && winner.get("pickupTicket") instanceof Number number ? number.intValue() : next;
+    }
+
+    private int nextNumber(ObjectId storeId, String type) {
         LocalDate today = LocalDate.now(clock.withZone(OpeningStatusCalculator.STORE_ZONE));
-        String key = storeId.toHexString() + ":" + today + ":ORDER";
+        String key = storeId.toHexString() + ":" + today + ":" + type;
         Document counter = mongo.findAndModify(Query.query(Criteria.where("_id").is(key)),
                 new Update().inc("seq", 1), FindAndModifyOptions.options().upsert(true).returnNew(true),
                 Document.class, "sequence");
@@ -159,6 +196,7 @@ public class OrderPlacementService {
         return new ObjectId(value);
     }
 
-    public record PlacedOrder(String id, int number, String status, int totalCents) {
+    /** {@code pickupTicket}: senha do balcão; ausente no pedido de mesa. */
+    public record PlacedOrder(String id, int number, String status, int totalCents, Integer pickupTicket) {
     }
 }

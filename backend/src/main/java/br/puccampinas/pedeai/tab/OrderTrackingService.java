@@ -55,14 +55,18 @@ public class OrderTrackingService {
         }
 
         List<OrderTrackingResponse.Step> timeline = new ArrayList<>();
-        timeline.add(new OrderTrackingResponse.Step("RECEIVED", order.getDate("createdAt").toInstant()));
+        // [Mateus · Card 5] Alteração: pedido de balcão (tem pickupTicket) nasce esperando o pagamento no caixa.
+        String firstStep = order.get("pickupTicket") != null ? "AWAITING_PAYMENT" : "RECEIVED";
+        timeline.add(new OrderTrackingResponse.Step(firstStep, order.getDate("createdAt").toInstant()));
         for (Document event : order.getList("statusHistory", Document.class, List.of())) {
             if (event.get("at") instanceof Date at) {
                 timeline.add(new OrderTrackingResponse.Step(event.getString("to"), at.toInstant()));
             }
         }
 
-        int tableNumber = tableRepository.findById(tab.tableId()).map(table -> table.number()).orElse(0);
+        // [Mateus · Card 5] Alteração: comanda de balcão não tem mesa; findById(null) dava erro.
+        int tableNumber = tab.tableId() == null ? 0
+                : tableRepository.findById(tab.tableId()).map(table -> table.number()).orElse(0);
         return new OrderTrackingResponse(order.getObjectId("_id").toHexString(), TabTotals.number(order, "number"),
                 order.getString("status"), tableNumber, order.getDate("createdAt").toInstant(), lines, total,
                 timeline);

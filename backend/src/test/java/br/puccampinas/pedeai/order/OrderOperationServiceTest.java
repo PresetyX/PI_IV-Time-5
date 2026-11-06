@@ -144,6 +144,80 @@ class OrderOperationServiceTest {
         assertThrows(ForbiddenException.class, () -> service.deliver(kitchen, orderId.toHexString(), List.of(0)));
     }
 
+    // [Mateus · Card 5] Pagamento no caixa do balcão.
+    @Test
+    void payingACounterOrderSendsItToTheKitchen() {
+        when(mongo.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                eq(Document.class), eq("order"))).thenReturn(order("AWAITING_PAYMENT", "AWAITING_PAYMENT").append("totalCents", 3800));
+        when(mongo.findOne(any(Query.class), eq(Document.class), eq("tab")))
+                .thenReturn(new Document("_id", tabId).append("customerName", "Bia"));
+
+        OrderOperationService.Result result = service.pay(waiter, orderId.toHexString(), "PIX_MANUAL");
+
+        assertEquals("RECEIVED", result.status());
+        ArgumentCaptor<Document> payment = ArgumentCaptor.forClass(Document.class);
+        verify(mongo).insert(payment.capture(), eq("payment"));
+        assertEquals(3800, payment.getValue().get("amountCents"));
+        assertEquals("PIX_MANUAL", payment.getValue().getString("method"));
+        assertEquals(true, payment.getValue().getBoolean("isPartial"));
+        verify(mongo).updateFirst(any(Query.class), any(Update.class), eq("tab"));
+        Document event = savedEvents(1).get(0);
+        assertEquals("AWAITING_PAYMENT", event.getString("from"));
+        assertEquals("RECEIVED", event.getString("to"));
+    }
+
+    @Test
+    void orderNotAwaitingPaymentCannotBePaid() {
+        when(mongo.exists(any(Query.class), eq("order"))).thenReturn(true);
+
+        assertThrows(ConflictException.class, () -> service.pay(waiter, orderId.toHexString(), "CASH"));
+        verify(mongo, never()).insert(any(Document.class), eq("payment"));
+    }
+
+    @Test
+    void unknownPaymentMethodIsRejected() {
+        assertThrows(InvalidRequestException.class, () -> service.pay(waiter, orderId.toHexString(), "BITCOIN"));
+    }
+
+    @Test
+    void kitchenCannotRegisterPayment() {
+        assertThrows(ForbiddenException.class, () -> service.pay(kitchen, orderId.toHexString(), "CASH"));
+    }
+
+    @Test
+    void lastPickupClosesThePaidCounterTab() {
+        when(mongo.findOne(any(Query.class), eq(Document.class), eq("order"))).thenReturn(order("READY", "READY"));
+        when(mongo.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                eq(Document.class), eq("order"))).thenReturn(new Document());
+        when(mongo.exists(any(Query.class), eq("tab"))).thenReturn(true);
+        when(mongo.exists(any(Query.class), eq("order"))).thenReturn(false);
+        when(tabTotals.recalculate(storeId, tabId)).thenReturn(new TabTotals.Totals(3800, 0, 0, 3800));
+        when(mongo.findOne(any(Query.class), eq(Document.class), eq("tab")))
+                .thenReturn(new Document("_id", tabId).append("paidCents", 3800));
+
+        service.deliver(waiter, orderId.toHexString(), List.of(0));
+
+        ArgumentCaptor<Update> update = ArgumentCaptor.forClass(Update.class);
+        verify(mongo).updateFirst(any(Query.class), update.capture(), eq("tab"));
+        assertEquals("CLOSED", update.getValue().getUpdateObject().get("$set", Document.class).getString("status"));
+    }
+
+    @Test
+    void unpaidCounterTabStaysOpen() {
+        when(mongo.findOne(any(Query.class), eq(Document.class), eq("order"))).thenReturn(order("READY", "READY"));
+        when(mongo.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                eq(Document.class), eq("order"))).thenReturn(new Document());
+        when(mongo.exists(any(Query.class), eq("tab"))).thenReturn(true);
+        when(mongo.exists(any(Query.class), eq("order"))).thenReturn(false);
+        when(tabTotals.recalculate(storeId, tabId)).thenReturn(new TabTotals.Totals(3800, 0, 0, 3800));
+        when(mongo.findOne(any(Query.class), eq(Document.class), eq("tab")))
+                .thenReturn(new Document("_id", tabId).append("paidCents", 0));
+
+        service.deliver(waiter, orderId.toHexString(), List.of(0));
+
+        verify(mongo, never()).updateFirst(any(Query.class), any(Update.class), eq("tab"));
+    }
+
     private Document order(String status, String... itemStatuses) {
         List<Document> items = java.util.Arrays.stream(itemStatuses)
                 .map(itemStatus -> new Document("nameSnapshot", "X-salada").append("quantity", 1).append("status", itemStatus))

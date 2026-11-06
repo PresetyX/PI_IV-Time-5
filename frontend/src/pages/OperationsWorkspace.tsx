@@ -222,7 +222,26 @@ export default function OperationsWorkspace() {
     }
   }
 
-  const ctx: Ctx = { data, now, age, tabFor, tableNumber, title, late, active, ready, calls, role, busy, synced, advance, resolveCall, navigate, notify: setNotice, cancelOrder, deliverItems };
+  // [Mateus · Card 5] Alteração: pagamento no caixa de pedido de balcão; depois dele o pedido entra na cozinha.
+  const awaitingPayment = (data?.orders ?? [])
+    .filter((order) => order.status === 'AWAITING_PAYMENT')
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+
+  async function payOrder(order: Order, method: string) {
+    if (busy || !synced) return;
+    setBusy(true);
+    try {
+      await operations.pay(order.id, method);
+      reload();
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : 'Não foi possível registrar o pagamento agora.');
+      reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const ctx: Ctx = { data, now, age, tabFor, tableNumber, title, late, active, ready, calls, role, busy, synced, advance, resolveCall, navigate, notify: setNotice, cancelOrder, deliverItems, awaitingPayment, payOrder };
 
   const kitchen = root === 'producao';
   const counters = data && (
@@ -296,6 +315,9 @@ interface Ctx {
   // [Mateus · Card 4] Alteração: cancelar com motivo e entrega parcial, ligados ao OrderOperationController.
   cancelOrder: (order: Order, reason: CancelReason, note: string) => Promise<void>;
   deliverItems: (order: Order, itemIndexes: number[]) => Promise<void>;
+  // [Mateus · Card 5] Alteração: pedidos de balcão esperando pagamento no caixa e o registro do pagamento.
+  awaitingPayment: Order[];
+  payOrder: (order: Order, method: string) => Promise<void>;
 }
 
 interface Page {
@@ -324,6 +346,8 @@ function resolvePage(root: string, view: string, pieces: string[], ctx: Ctx, clo
     const tabs = <FloorTabs ctx={ctx} current={view} />;
     if (view === 'entregas') return { title: 'Entregas pendentes', body: <>{tabs}<Deliveries ctx={ctx} /></> };
     if (view === 'chamados') return { title: 'Chamados', body: <>{tabs}<Calls ctx={ctx} /></> };
+    // [Mateus · Card 5] Alteração: caixa do balcão.
+    if (view === 'balcao') return { title: 'Balcão · aguardando pagamento', body: <>{tabs}<CounterPayments ctx={ctx} /></> };
     return { title: 'Salão', body: <>{tabs}<TablesMap ctx={ctx} /></> };
   }
   if (root === 'fila-espera') return { title: 'Fila de espera', body: <Waitlist ctx={ctx} /> };
@@ -621,7 +645,8 @@ function ConfirmReady({ ctx, order }: { ctx: Ctx; order: Order }) {
 function CancelOrder({ ctx, order }: { ctx: Ctx; order: Order }) {
   const [reason, setReason] = useState<CancelReason>(REASONS[0][0]);
   const [note, setNote] = useState('');
-  const cancellable = ['RECEIVED', 'PREPARING'].includes(order.status) && KITCHEN_ROLES.includes(ctx.role);
+  // [Mateus · Card 5] Alteração: pedido de balcão que ainda não foi pago também pode ser cancelado.
+  const cancellable = ['AWAITING_PAYMENT', 'RECEIVED', 'PREPARING'].includes(order.status) && KITCHEN_ROLES.includes(ctx.role);
   return (
     <Box sx={{ maxWidth: 560 }}>
       <Typography sx={{ color: colors.textSecondary, mb: 4 }}>
@@ -782,6 +807,8 @@ function FloorTabs({ ctx, current }: { ctx: Ctx; current: string }) {
         options={[
           { value: 'mesas', label: 'Mesas' },
           { value: 'entregas', label: `Entregas (${ctx.ready.length})` },
+          // [Mateus · Card 5] Alteração: caixa do balcão.
+          { value: 'balcao', label: `Balcão (${ctx.awaitingPayment.length})` },
           { value: 'chamados', label: `Chamados (${ctx.calls.length})` },
         ]}
       />
@@ -1028,6 +1055,69 @@ function DeliverItems({ ctx, order }: { ctx: Ctx; order: Order }) {
         {counter ? 'Confirmar retirada' : lines.length > pending.length ? 'Entregar o restante' : 'Entregar tudo'}
       </Button>
     </Box>
+  );
+}
+
+// [Mateus · Card 5] Novo: caixa do balcão. O pedido de balcão só entra na fila da cozinha depois que o pagamento
+// é registrado aqui (POST /api/operations/orders/{id}/pay).
+function CounterPayments({ ctx }: { ctx: Ctx }) {
+  if (!ctx.awaitingPayment.length) return <EmptyState text="Nenhum pedido de balcão esperando pagamento" />;
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Typography sx={{ color: colors.textSecondary }}>
+        Confira a senha com o cliente, receba o valor e registre a forma de pagamento. O pedido entra na cozinha na hora.
+      </Typography>
+      {ctx.awaitingPayment.map((order) => (
+        <CounterPaymentRow key={order.id} ctx={ctx} order={order} />
+      ))}
+    </Box>
+  );
+}
+
+function CounterPaymentRow({ ctx, order }: { ctx: Ctx; order: Order }) {
+  const [method, setMethod] = useState(METHODS[0][0]);
+  const tab = ctx.tabFor(order);
+  const ticket = tab?.pickupTicket;
+  const permitted = FLOOR_ROLES.includes(ctx.role);
+  return (
+    <ListRow
+      lead={ticket ?? '#'}
+      title={`${ticket ? `Senha ${ticket}` : `Pedido #${order.number}`}${tab?.customerName ? ` · ${tab.customerName}` : ''}`}
+      detail={order.items.filter((item) => !HIDDEN_ITEMS.includes(item.status)).map((item) => `${item.quantity}× ${item.nameSnapshot}`).join(', ')}
+      side={<Pill tone="dark">{money(order.totalCents)}</Pill>}
+      actions={
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 220 }}>
+          <TextField
+            select
+            size="small"
+            label="Forma de pagamento"
+            value={method}
+            onChange={(event) => setMethod(event.target.value)}
+            SelectProps={{ native: true }}
+            disabled={!permitted}
+          >
+            {METHODS.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </TextField>
+          <Button
+            variant="contained"
+            disabled={ctx.busy || !ctx.synced || !permitted}
+            onClick={() => void ctx.payOrder(order, method)}
+            sx={{ minHeight: 48 }}
+          >
+            Registrar pagamento
+          </Button>
+          {KITCHEN_ROLES.includes(ctx.role) && (
+            <Button color="error" variant="outlined" component={RouterLink} to={`/producao/cancelar/${order.id}`} sx={{ minHeight: 40 }}>
+              Cancelar pedido
+            </Button>
+          )}
+        </Box>
+      }
+    />
   );
 }
 

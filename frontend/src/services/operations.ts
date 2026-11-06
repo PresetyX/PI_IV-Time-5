@@ -1,6 +1,7 @@
 import { api } from './api';
 
-export type OrderStatus = 'RECEIVED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED';
+// [Mateus · Card 5] Alteração: AWAITING_PAYMENT é o pedido de balcão esperando o pagamento no caixa.
+export type OrderStatus = 'AWAITING_PAYMENT' | 'RECEIVED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED';
 export type QueueStatus = 'ALL' | 'RECEIVED' | 'PREPARING' | 'READY';
 export type QueueMode = 'ALL' | 'TABLE' | 'COUNTER';
 export interface KitchenOrder {
@@ -16,7 +17,7 @@ export interface KitchenOrder {
   items: { name: string; quantity: number; note: string | null; unitPriceCents: number; options: string[] }[];
 }
 export const statusLabels: Record<OrderStatus, string> = {
-  RECEIVED: 'Recebido', PREPARING: 'Em preparo', READY: 'Pronto', DELIVERED: 'Entregue', CANCELLED: 'Cancelado',
+  AWAITING_PAYMENT: 'Aguardando pagamento', RECEIVED: 'Recebido', PREPARING: 'Em preparo', READY: 'Pronto', DELIVERED: 'Entregue', CANCELLED: 'Cancelado',
 };
 export const nextStatus: Partial<Record<OrderStatus, OrderStatus>> = {
   RECEIVED: 'PREPARING', PREPARING: 'READY', READY: 'DELIVERED',
@@ -34,6 +35,9 @@ export const operations = {
     `/api/operations/orders/${encodeURIComponent(id)}/cancel`, { reason, note: note.trim() || undefined }),
   deliver: (id: string, itemIndexes: number[]) => api.post<{ id: string; status: OrderStatus }>(
     `/api/operations/orders/${encodeURIComponent(id)}/deliver`, { itemIndexes }),
+  // [Mateus · Card 5] Pagamento no caixa de um pedido de balcão; solta o pedido para a cozinha.
+  pay: (id: string, method: string) => api.post<{ id: string; status: OrderStatus }>(
+    `/api/operations/orders/${encodeURIComponent(id)}/pay`, { method }),
 };
 // [Mateus · Card 4] Motivos aceitos pelo backend em POST /api/operations/orders/{id}/cancel.
 export type CancelReason = 'GAVE_UP' | 'WRONG_ORDER' | 'OUT_OF_STOCK' | 'DUPLICATE';

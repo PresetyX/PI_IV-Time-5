@@ -20,7 +20,12 @@ export interface TabMember {
 
 export interface Tab {
   id: string;
+  /** 0 na comanda de balcão. */
   tableNumber: number;
+  /** [Mateus · Card 5] TABLE ou COUNTER. */
+  mode?: 'TABLE' | 'COUNTER';
+  /** [Mateus · Card 5] Senha do balcão, depois do primeiro pedido. */
+  pickupTicket?: number | null;
   ownerName: string;
   owner: boolean;
   joinCode?: string;
@@ -81,6 +86,8 @@ export interface PlacedOrder {
   number: number;
   status: string;
   totalCents: number;
+  /** Senha do balcão; ausente no pedido de mesa. */
+  pickupTicket?: number | null;
 }
 
 /**
@@ -200,4 +207,36 @@ export function fetchWaiterCalls(slug: string): Promise<WaiterCall[]> {
 
 export function callWaiter(slug: string, type: WaiterCallType): Promise<WaiterCall> {
   return api.post<WaiterCall>('/api/tabs/mine/calls', { type }, guest(slug));
+}
+
+// [Mateus · Card 5] Senha do balcão vista pelo cliente; continua respondendo depois de a comanda fechar.
+export interface PickupLine {
+  name: string;
+  quantity: number;
+  options: string[];
+  status: string;
+}
+
+export interface PickupOrder {
+  id: string;
+  number: number;
+  status: string;
+  totalCents: number;
+  createdAt: string;
+  items: PickupLine[];
+}
+
+export interface PickupInfo {
+  tabId: string;
+  pickupTicket: number | null;
+  /** CLOSED quer dizer retirada confirmada. */
+  tabStatus: string;
+  customerName: string;
+  totalCents: number;
+  paidCents: number;
+  orders: PickupOrder[];
+}
+
+export function fetchPickup(slug: string): Promise<PickupInfo> {
+  return api.get<PickupInfo>('/api/tabs/mine/pickup', guest(slug));
 }

@@ -57,8 +57,11 @@ public class BillService {
                     order.get("number", Number.class).intValue(), order.getString("status"), lines));
         }
 
-        int serviceFee = Math.round(consumption * SERVICE_FEE_PERCENT / 100f);
-        int tableNumber = tableRepository.findById(tab.tableId()).map(table -> table.number()).orElse(0);
+        // [Mateus · Card 5] Alteração: no balcão não há taxa de serviço (o cliente paga só o pedido, antes do preparo).
+        int serviceFee = "COUNTER".equals(tab.mode()) ? 0 : Math.round(consumption * SERVICE_FEE_PERCENT / 100f);
+        // [Mateus · Card 5] Alteração: comanda de balcão não tem mesa; findById(null) dava erro.
+        int tableNumber = tab.tableId() == null ? 0
+                : tableRepository.findById(tab.tableId()).map(table -> table.number()).orElse(0);
         return new BillResponse(tab.id().toHexString(), tab.customerName(), tableNumber, tab.openedAt(), orders,
                 consumption, serviceFee, consumption + serviceFee);
     }

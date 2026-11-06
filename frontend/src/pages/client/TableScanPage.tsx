@@ -18,7 +18,7 @@ import { formatStreet } from '../../services/store';
 import type { Store } from '../../services/store';
 import { fetchTableByToken, formatTableNumber } from '../../services/tables';
 import type { TableInfo } from '../../services/tables';
-import { updateVisit } from '../../services/visit';
+import { readVisit, updateVisit } from '../../services/visit';
 import { tokens } from '../../theme/theme';
 
 type TableState =
@@ -42,7 +42,14 @@ export default function TableScanPage() {
     fetchTableByToken(slug, tableToken)
       .then((table) => {
         if (cancelled) return;
-        updateVisit(slug, { table, scannedToken: tableToken });
+        // [Mateus · Card 5] Alteração: ler o QR da mesa deixa de ser visita de balcão (e descarta a sessão de balcão).
+        const fromCounter = readVisit(slug).counter;
+        updateVisit(slug, {
+          table,
+          scannedToken: tableToken,
+          counter: false,
+          ...(fromCounter ? { sessionId: undefined, guestToken: undefined } : {}),
+        });
         setTableState({ status: 'ready', table });
       })
       .catch((error: unknown) => {

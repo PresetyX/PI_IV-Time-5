@@ -31,7 +31,9 @@ public class OrderOperationService {
 
     static final Set<String> CANCEL_ROLES = Set.of("OWNER", "MANAGER", "KITCHEN");
     static final Set<String> DELIVERY_ROLES = Set.of("OWNER", "MANAGER", "WAITER");
-    static final Set<String> CANCELLABLE = Set.of("RECEIVED", "PREPARING");
+    static final Set<String> CANCELLABLE = Set.of("AWAITING_PAYMENT", "RECEIVED", "PREPARING");
+    static final Set<String> PAYMENT_ROLES = Set.of("OWNER", "MANAGER", "WAITER");
+    static final Set<String> PAYMENT_METHODS = Set.of("PIX_MANUAL", "CASH", "CARD_DEBIT", "CARD_CREDIT");
     static final Set<String> CANCEL_REASONS = Set.of("GAVE_UP", "WRONG_ORDER", "OUT_OF_STOCK", "DUPLICATE");
     private static final Set<String> INACTIVE_ITEMS = Set.of("REMOVED", "CANCELLED", "CANCELED");
 
@@ -160,8 +162,86 @@ public class OrderOperationService {
             mongo.insert(new Document("storeId", user.storeId()).append("orderId", id).append("type", "STATUS_CHANGED")
                     .append("from", "READY").append("to", "DELIVERED").append("byUserId", user.userId())
                     .append("at", now), "orderEvent");
+            if (order.get("tabId") instanceof ObjectId tabId) {
+                closeCounterTabWhenDone(user, tabId, now);
+            }
         }
         return new Result(orderId, allDelivered ? "DELIVERED" : "READY");
+    }
+
+    /**
+     * [Mateus · Card 5] Pagamento no caixa de um pedido de balcão: grava o pagamento, soma em {@code tab.paidCents} e
+     * solta o pedido para a cozinha ({@code AWAITING_PAYMENT} vira {@code RECEIVED}).
+     */
+    public Result pay(AuthenticatedUser user, String orderId, String method) {
+        requireRole(user, PAYMENT_ROLES);
+        if (!PAYMENT_METHODS.contains(method)) {
+            throw new InvalidRequestException("Forma de pagamento inválida");
+        }
+        ObjectId id = objectId(orderId);
+        Date now = Date.from(clock.instant());
+        Query query = scoped(user, id).addCriteria(Criteria.where("status").is("AWAITING_PAYMENT"));
+        Update update = new Update()
+                .set("status", "RECEIVED")
+                .set("paidAt", now)
+                .set("updatedAt", now)
+                .set("items.$[waiting].status", "RECEIVED")
+                .filterArray(Criteria.where("waiting.status").is("AWAITING_PAYMENT"))
+                .push("statusHistory", new Document("from", "AWAITING_PAYMENT").append("to", "RECEIVED")
+                        .append("byUserId", user.userId()).append("at", now));
+        Document before = mongo.findAndModify(query, update, FindAndModifyOptions.options().returnNew(false),
+                Document.class, "order");
+        if (before == null) {
+            if (!mongo.exists(scoped(user, id), "order")) {
+                throw new ResourceNotFoundException("Pedido não encontrado.");
+            }
+            throw new ConflictException("Este pedido não está esperando pagamento. Atualize a tela.");
+        }
+
+        int amount = before.get("totalCents") instanceof Number number ? number.intValue() : 0;
+        ObjectId tabId = before.get("tabId") instanceof ObjectId found ? found : null;
+        if (amount > 0 && tabId != null) {
+            Document tab = mongo.findOne(Query.query(Criteria.where("_id").is(tabId).and("storeId").is(user.storeId())),
+                    Document.class, "tab");
+            Document payment = new Document("storeId", user.storeId()).append("tabId", tabId).append("orderId", id)
+                    .append("method", method).append("amountCents", amount).append("isPartial", true)
+                    .append("registeredByUserId", user.userId()).append("createdAt", now);
+            if (tab != null && tab.getString("customerName") != null) {
+                payment.append("payerName", tab.getString("customerName"));
+            }
+            mongo.insert(payment, "payment");
+            mongo.updateFirst(Query.query(Criteria.where("_id").is(tabId).and("storeId").is(user.storeId())),
+                    new Update().inc("paidCents", amount), "tab");
+        }
+        mongo.insert(new Document("storeId", user.storeId()).append("orderId", id).append("type", "STATUS_CHANGED")
+                .append("from", "AWAITING_PAYMENT").append("to", "RECEIVED").append("byUserId", user.userId())
+                .append("note", "Pago no caixa: " + method).append("at", now), "orderEvent");
+        return new Result(orderId, "RECEIVED");
+    }
+
+    /**
+     * [Mateus · Card 5] Comanda de balcão fecha sozinha quando não sobra pedido por entregar e tudo foi pago. A de
+     * mesa continua sendo fechada pela equipe em /contas.
+     */
+    private void closeCounterTabWhenDone(AuthenticatedUser user, ObjectId tabId, Date now) {
+        Query ofTab = Query.query(Criteria.where("_id").is(tabId).and("storeId").is(user.storeId())
+                .and("mode").is("COUNTER").and("status").is("OPEN"));
+        if (!mongo.exists(ofTab, "tab")) {
+            return;
+        }
+        boolean pending = mongo.exists(Query.query(Criteria.where("storeId").is(user.storeId()).and("tabId").is(tabId)
+                .and("status").nin("DELIVERED", "CANCELLED", "CANCELED")), "order");
+        if (pending) {
+            return;
+        }
+        TabTotals.Totals totals = tabTotals.recalculate(user.storeId(), tabId);
+        Document tab = mongo.findOne(ofTab, Document.class, "tab");
+        int paid = tab != null && tab.get("paidCents") instanceof Number number ? number.intValue() : 0;
+        if (paid < totals.totalCents()) {
+            return;
+        }
+        mongo.updateFirst(ofTab, new Update().set("status", "CLOSED").set("closedAt", now)
+                .set("closedByUserId", user.userId()), "tab");
     }
 
     private static void requireRole(AuthenticatedUser user, Set<String> roles) {

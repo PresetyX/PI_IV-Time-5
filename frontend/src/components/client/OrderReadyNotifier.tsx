@@ -203,14 +203,16 @@ export default function OrderReadyNotifier() {
               Ficou pronto!
             </Typography>
             <Typography sx={{ mt: 3, fontSize: fontSize.body, lineHeight: 1.45, opacity: 0.92 }}>
-              O Biggas caprichou. O garçom já está levando
-              {ready.tableNumber > 0 ? ` à mesa ${formatTableNumber(ready.tableNumber)}` : ''}.
+              {/* [Mateus · Card 5] Alteração: no balcão (sem mesa) o cliente retira, ninguém leva. */}
+              {ready.tableNumber > 0
+                ? `O Biggas caprichou. O garçom já está levando à mesa ${formatTableNumber(ready.tableNumber)}.`
+                : 'O Biggas caprichou. Retire no balcão e diga a sua senha.'}
             </Typography>
 
             <ActionButton
               onClick={() => {
                 close();
-                navigate(`/t/${slug}/pedidos/${ready.id}`);
+                navigate(ready.tableNumber > 0 ? `/t/${slug}/pedidos/${ready.id}` : `/t/${slug}/balcao/senha`);
               }}
               sx={{ mt: 7, bgcolor: '#FFFFFF', color: colors.text, '&:hover': { bgcolor: '#F4F4F4' } }}
             >

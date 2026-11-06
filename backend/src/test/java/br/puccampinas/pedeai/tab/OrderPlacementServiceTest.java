@@ -259,6 +259,52 @@ class OrderPlacementServiceTest {
         assertEquals(false, saved.getValue().getBoolean("ageConfirmed"));
     }
 
+    // [Mateus · Card 5] Balcão: pedido espera o pagamento e o primeiro pedido ganha a senha do dia.
+    @Test
+    void counterOrderAwaitsPaymentAndGetsThePickupTicket() {
+        Tab counterTab = new Tab(new ObjectId(), storeId, null, "COUNTER", "Bia", guest.userId(), "CUSTOMER", null,
+                null, List.of(), "OPEN", 0, 0, 0, 0, 0, NOW);
+        when(tabService.requireMyTab(guest)).thenReturn(counterTab);
+        when(mongo.findOne(any(Query.class), eq(Document.class), eq("tab"))).thenReturn(new Document("_id", counterTab.id()));
+        when(mongo.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                eq(Document.class), eq("tab"))).thenReturn(new Document("pickupTicket", 7));
+
+        OrderPlacementService.PlacedOrder placed = service.place(guest, request(3200, item(fries, 1, null)));
+
+        assertEquals("AWAITING_PAYMENT", placed.status());
+        assertEquals(7, placed.pickupTicket());
+        ArgumentCaptor<Document> saved = ArgumentCaptor.forClass(Document.class);
+        verify(mongo).insert(saved.capture(), eq("order"));
+        assertEquals("AWAITING_PAYMENT", saved.getValue().getString("status"));
+        assertEquals(7, saved.getValue().get("pickupTicket"));
+        // O validador do banco recusa tableId null; sem mesa o campo nem vai.
+        assertEquals(false, saved.getValue().containsKey("tableId"));
+        assertEquals("AWAITING_PAYMENT", saved.getValue().getList("items", Document.class).get(0).getString("status"));
+    }
+
+    @Test
+    void secondCounterOrderKeepsTheSameTicket() {
+        Tab counterTab = new Tab(new ObjectId(), storeId, null, "COUNTER", "Bia", guest.userId(), "CUSTOMER", null,
+                null, List.of(), "OPEN", 0, 0, 0, 0, 0, NOW);
+        when(tabService.requireMyTab(guest)).thenReturn(counterTab);
+        when(mongo.findOne(any(Query.class), eq(Document.class), eq("tab")))
+                .thenReturn(new Document("_id", counterTab.id()).append("pickupTicket", 3));
+
+        OrderPlacementService.PlacedOrder placed = service.place(guest, request(3200, item(fries, 1, null)));
+
+        assertEquals(3, placed.pickupTicket());
+        verify(mongo, never()).findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
+                eq(Document.class), eq("tab"));
+    }
+
+    @Test
+    void tableOrderHasNoTicket() {
+        OrderPlacementService.PlacedOrder placed = service.place(guest, request(3200, item(fries, 1, null)));
+
+        assertEquals("RECEIVED", placed.status());
+        assertEquals(null, placed.pickupTicket());
+    }
+
     private void assertNothingSaved() {
         verify(mongo, never()).insert(any(Document.class), anyString());
         verify(mongo, never()).findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
