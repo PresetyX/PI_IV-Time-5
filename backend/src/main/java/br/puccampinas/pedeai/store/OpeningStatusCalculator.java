@@ -32,7 +32,8 @@ public class OpeningStatusCalculator {
         if (current.isPresent()) {
             Window window = current.get();
             boolean accepting = !paused && now.isBefore(window.lastOrder());
-            return new OpeningStatus(true, accepting, paused, window.closesAt(), window.lastOrderAt(), null);
+            return new OpeningStatus(true, accepting, paused, window.closesAt(), window.lastOrderAt(), null,
+                    window.opensAt());
         }
         return new OpeningStatus(false, false, paused, null, null, nextOpening(hours, now).orElse(null));
     }
@@ -73,8 +74,8 @@ public class OpeningStatusCalculator {
         return day.getDayOfWeek().getValue() % DAYS_IN_WEEK;
     }
 
-    private record Window(LocalDateTime start, LocalDateTime end, LocalDateTime lastOrder, String closesAt,
-            String lastOrderAt) {
+    private record Window(LocalDateTime start, LocalDateTime end, LocalDateTime lastOrder, String opensAt,
+            String closesAt, String lastOrderAt) {
 
         static Window of(LocalDate day, OpeningHours entry) {
             LocalTime opens = LocalTime.parse(entry.opensAt());
@@ -87,7 +88,7 @@ public class OpeningStatusCalculator {
                 lastOrder = last.isBefore(opens) ? day.plusDays(1).atTime(last) : day.atTime(last);
             }
             String lastOrderAt = entry.lastOrderAt() != null ? entry.lastOrderAt() : entry.closesAt();
-            return new Window(start, end, lastOrder, entry.closesAt(), lastOrderAt);
+            return new Window(start, end, lastOrder, entry.opensAt(), entry.closesAt(), lastOrderAt);
         }
     }
 }

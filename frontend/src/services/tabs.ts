@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, ApiError } from './api';
 import { readVisit } from './visit';
 
 export interface TabSummary {
@@ -63,10 +63,17 @@ export function formatClock(iso: string): string {
   return `${date.getHours()}h${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+/** Opção escolhida, pelo nome do grupo e da opção. O preço vem sempre do cadastro no backend. */
+export interface SelectedOption {
+  group: string;
+  label: string;
+}
+
 export interface OrderItemInput {
   productId: string;
   quantity: number;
   note?: string;
+  options?: SelectedOption[];
 }
 
 export interface PlacedOrder {
@@ -76,8 +83,46 @@ export interface PlacedOrder {
   totalCents: number;
 }
 
-export function placeOrder(slug: string, items: OrderItemInput[]): Promise<PlacedOrder> {
-  return api.post<PlacedOrder>('/api/tabs/mine/orders', { items }, guest(slug));
+/**
+ * Envia o pedido. `expectedTotalCents` é o total que o cliente viu na tela: o backend confere com os preços
+ * do banco pelo server e recusa com `price_changed` se forem diferentes. Pedido com bebida alcoólica exige
+ * `ageConfirmed`; sem ele o backend recusa com `age_confirmation_required` (422).
+ */
+export function placeOrder(
+  slug: string,
+  items: OrderItemInput[],
+  expectedTotalCents: number,
+  ageConfirmed = false,
+): Promise<PlacedOrder> {
+  return api.post<PlacedOrder>(
+    '/api/tabs/mine/orders',
+    { items, expectedTotalCents, ageConfirmed },
+    guest(slug),
+  );
+}
+
+export function needsAgeConfirmation(caught: unknown): boolean {
+  return caught instanceof ApiError && caught.code === 'age_confirmation_required';
+}
+
+/** Texto para a tela quando o envio do pedido falha. Em nenhum desses casos o pedido foi gravado. */
+export function orderErrorMessage(caught: unknown): string {
+  if (caught instanceof ApiError) {
+    switch (caught.code) {
+      case 'price_changed':
+        return 'O preço de algum item mudou. Confira o carrinho e envie de novo.';
+      case 'store_closed':
+        return 'A casa não está aceitando pedidos agora.';
+      case 'item_unavailable':
+        return 'Algum item do carrinho acabou. Confira e tente de novo.';
+      case 'validation_unavailable':
+        return 'Não conseguimos conferir seu pedido agora. Nada foi enviado. Tente de novo em instantes.';
+    }
+    if (caught.status === 409) {
+      return 'Algum item acabou ou a casa parou de aceitar pedidos. Confira e tente de novo.';
+    }
+  }
+  return 'Não foi possível enviar o pedido agora. Tente de novo.';
 }
 
 export interface RoundItem {
@@ -85,16 +130,20 @@ export interface RoundItem {
   name: string;
   note?: string;
   quantity: number;
+  /** Já inclui as opções. */
   unitPriceCents: number;
   available: boolean;
+  options?: SelectedOption[];
 }
 
 export interface RoundSuggestion {
   productId: string;
   name: string;
+  /** Já inclui as opções. */
   priceCents: number;
   orderedBy?: string;
   orderedAt: string;
+  options?: SelectedOption[];
 }
 
 export interface Round {
@@ -116,6 +165,7 @@ export interface TrackedLine {
   quantity: number;
   totalCents: number;
   canceled: boolean;
+  options?: string[];
 }
 
 export interface TrackedOrder {

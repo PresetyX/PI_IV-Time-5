@@ -60,6 +60,8 @@ Parâmetros:
 | `openAt`, `closeAt` | Horário de abertura e de fechamento da loja, `HH:mm` |
 | `now` | Hora atual no fuso da loja, `HH:mm` |
 
+Uso pelo backend: o `OrderValidationClient` chama este comando em todo `POST /api/tabs/mine/orders`, **antes** de gravar o pedido. `totalCents` é o `expectedTotalCents` enviado pelo cliente. `openAt` e `closeAt` são o horário de abertura e o último horário de pedido da janela atual da loja. O `SocketClient` dá 3 segundos para a chamada inteira (conectar, enviar e ler). Sem `OK` com `"valid":true` nesse prazo, o pedido é recusado e não é gravado.
+
 Regras, nesta ordem:
 
 1. Todos os parâmetros presentes e no formato certo; `items` com ao menos um item; `quantity` entre 1 e 20; `note` com até 140 caracteres; valores em centavos inteiros e não negativos. Se falhar: `INVALID_PARAMS`.

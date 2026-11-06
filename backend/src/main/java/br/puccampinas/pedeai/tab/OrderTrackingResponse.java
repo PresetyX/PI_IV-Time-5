@@ -14,7 +14,9 @@ public record OrderTrackingResponse(
         int totalCents,
         List<Step> timeline) {
 
-    public record Line(String name, String note, int quantity, int totalCents, boolean canceled) {
+    /** {@code options} traz os nomes das opções escolhidas ("Ao ponto", "Bacon extra"). */
+    public record Line(String name, String note, int quantity, int totalCents, boolean canceled,
+            List<String> options) {
     }
 
     /** Do mais antigo para o mais novo; o primeiro é sempre a chegada na cozinha. */

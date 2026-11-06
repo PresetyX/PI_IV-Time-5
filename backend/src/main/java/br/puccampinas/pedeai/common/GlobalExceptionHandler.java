@@ -50,6 +50,14 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.CONFLICT, "conflict", e.getMessage());
     }
 
+    @ExceptionHandler(OrderRejectedException.class)
+    public ResponseEntity<ErrorResponse> handleOrderRejected(OrderRejectedException e) {
+        if (e.getCause() != null) {
+            LOGGER.warn("Order rejected ({}): {}", e.getCode(), e.getCause().getMessage());
+        }
+        return response(e.getStatus(), e.getCode(), e.getMessage());
+    }
+
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException e) {
         return response(HttpStatus.UNAUTHORIZED, "invalid_credentials", e.getMessage());

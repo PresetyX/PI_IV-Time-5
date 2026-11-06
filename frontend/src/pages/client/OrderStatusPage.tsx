@@ -183,7 +183,10 @@ function Line({ item }: { item: TrackedLine }) {
         <Typography sx={{ fontSize: fontSize.small, color, textDecoration: strike }}>
           {item.quantity}x {item.name}
         </Typography>
-        {item.note && <Typography sx={{ fontSize: fontSize.caption, color: colors.textMuted }}>{item.note}</Typography>}
+        {item.options && item.options.length > 0 && (
+          <Typography sx={{ fontSize: fontSize.caption, color: colors.textSecondary }}>{item.options.join(' · ')}</Typography>
+        )}
+        {item.note &&<Typography sx={{ fontSize: fontSize.caption, color: colors.textMuted }}>{item.note}</Typography>}
       </Box>
       <Typography sx={{ flexShrink: 0, fontSize: fontSize.small, fontWeight: fontWeight.extraBold, color, textDecoration: strike }}>
         {formatCents(item.totalCents)}

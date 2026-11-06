@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Alert, Box, ButtonBase, CircularProgress, IconButton, Typography } from '@mui/material';
 import ActionButton from '../../components/client/ActionButton';
+import { optionsText } from '../../components/client/CartParts';
+import AgeConfirmationScreen from '../../components/client/AgeConfirmationScreen';
 import ClientScreen from '../../components/client/ClientScreen';
 import ConnectionLostScreen from '../../components/client/ConnectionLostScreen';
 import { ClientError, ClientLoading } from '../../components/client/ClientStates';
@@ -12,7 +14,8 @@ import { useStore } from '../../hooks/useStore';
 import { useStoreColor } from '../../hooks/useStoreColor';
 import { ApiError } from '../../services/api';
 import { formatCents } from '../../services/format';
-import { fetchRound, placeOrder } from '../../services/tabs';
+import { fetchRound, needsAgeConfirmation, orderErrorMessage, placeOrder } from '../../services/tabs';
+import { confirmAge, isAgeConfirmed } from '../../services/visit';
 import type { Round, RoundItem, RoundSuggestion } from '../../services/tabs';
 import { formatTableNumber } from '../../services/tables';
 import { tokens } from '../../theme/theme';
@@ -40,6 +43,7 @@ export default function RepeatRoundPage() {
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [askingAge, setAskingAge] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -93,27 +97,51 @@ export default function RepeatRoundPage() {
     });
   }
 
-  async function send() {
+  // A rodada não sabe quais itens são alcoólicos: a confirmação aparece quando o backend pede.
+  async function send(ageConfirmed = isAgeConfirmed(slug)) {
     if (sending || total === 0) return;
     setSending(true);
     setError(null);
     try {
-      await placeOrder(slug, [
-        ...repeated.map((item) => ({ productId: item.productId, quantity: item.quantity, note: item.note || undefined })),
-        ...extras.map((suggestion) => ({ productId: suggestion.productId, quantity: 1 })),
-      ]);
-      navigate(`/t/${slug}/conta`);
+      const placed = await placeOrder(slug, [
+        ...repeated.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          note: item.note || undefined,
+          options: item.options,
+        })),
+        ...extras.map((suggestion) => ({ productId: suggestion.productId, quantity: 1, options: suggestion.options })),
+      ], total, ageConfirmed);
+      setAskingAge(false);
+      navigate(`/t/${slug}/pedidos/${placed.id}/enviado`);
     } catch (caught) {
       if (handleExpired(caught)) return;
-      if (caught instanceof ApiError && caught.status === 409) {
-        setError('Algum item acabou ou a casa parou de aceitar pedidos. Confira e tente de novo.');
-        load();
-      } else {
-        setError('Não foi possível enviar o pedido agora. Tente de novo.');
+      if (needsAgeConfirmation(caught)) {
+        setAskingAge(true);
+        return;
       }
+      setAskingAge(false);
+      setError(orderErrorMessage(caught));
+      if (caught instanceof ApiError && caught.status === 409) load();
     } finally {
       setSending(false);
     }
+  }
+
+  function confirmAgeAndSend() {
+    confirmAge(slug);
+    send(true);
+  }
+
+  if (askingAge) {
+    return (
+      <AgeConfirmationScreen
+        storeName={state.store.name}
+        sending={sending}
+        onConfirm={confirmAgeAndSend}
+        onBack={() => setAskingAge(false)}
+      />
+    );
   }
 
   return (
@@ -126,7 +154,7 @@ export default function RepeatRoundPage() {
               {error}
             </Alert>
           )}
-          <ActionButton onClick={send} disabled={sending || total === 0} sx={{ justifyContent: 'space-between', px: 5 }}>
+          <ActionButton onClick={() => send()} disabled={sending || total === 0} sx={{ justifyContent: 'space-between', px: 5 }}>
             {sending ? (
               <CircularProgress size={22} sx={{ mx: 'auto', color: 'inherit' }} />
             ) : (
@@ -261,6 +289,9 @@ function RoundRow({ item, checked, onToggle }: { item: RoundItem; checked: boole
         >
           {item.quantity}x {item.name}
         </Typography>
+        {item.options && item.options.length > 0 && (
+          <Typography sx={{ fontSize: fontSize.caption, color: colors.textSecondary }}>{optionsText(item.options)}</Typography>
+        )}
         {(item.note || !item.available) && (
           <Typography sx={{ fontSize: fontSize.caption, color: item.available ? colors.textMuted : colors.error }}>
             {item.available ? item.note : 'Esgotado agora'}
@@ -299,6 +330,9 @@ function SuggestionRow({
     >
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{ fontSize: fontSize.small, fontWeight: fontWeight.extraBold }}>{suggestion.name}</Typography>
+        {suggestion.options && suggestion.options.length > 0 && (
+          <Typography sx={{ fontSize: fontSize.caption, color: colors.textSecondary }}>{optionsText(suggestion.options)}</Typography>
+        )}
         <Typography sx={{ fontSize: fontSize.caption, color: colors.textMuted }}>
           {who} {minutesAgo(suggestion.orderedAt)}
         </Typography>

@@ -3,6 +3,7 @@ package br.puccampinas.pedeai.tab;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -17,13 +18,16 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import br.puccampinas.pedeai.auth.AuthenticatedUser;
-import br.puccampinas.pedeai.common.ConflictException;
 import br.puccampinas.pedeai.common.InvalidRequestException;
+import br.puccampinas.pedeai.common.OrderRejectedException;
 import br.puccampinas.pedeai.menu.Product;
 import br.puccampinas.pedeai.menu.ProductRepository;
+import br.puccampinas.pedeai.socket.OrderValidationClient;
+import br.puccampinas.pedeai.store.OpeningStatus;
 import br.puccampinas.pedeai.store.OpeningStatusCalculator;
 import br.puccampinas.pedeai.store.StoreService;
 
@@ -36,22 +40,36 @@ public class OrderPlacementService {
     private final MongoTemplate mongo;
     private final Clock clock;
     private final TabTotals tabTotals;
+    private final OrderValidationClient orderValidationClient;
 
     public OrderPlacementService(TabService tabService, ProductRepository productRepository,
-            StoreService storeService, MongoTemplate mongo, Clock clock, TabTotals tabTotals) {
+            StoreService storeService, MongoTemplate mongo, Clock clock, TabTotals tabTotals,
+            OrderValidationClient orderValidationClient) {
         this.tabService = tabService;
         this.productRepository = productRepository;
         this.storeService = storeService;
         this.mongo = mongo;
         this.clock = clock;
         this.tabTotals = tabTotals;
+        this.orderValidationClient = orderValidationClient;
     }
 
+    /**
+     * Cria o pedido na comanda do cliente. Ordem: comanda, loja aceitando pedidos, produtos e disponibilidade,
+     * opções, total, maioridade (se houver bebida alcoólica), validação no server pelo socket e só então número
+     * do dia e gravação. Se o server recusar ou não responder em 3 segundos, nada é gravado e nenhum número é
+     * consumido.
+     *
+     * <p>Cada item grava {@code unitPriceCents} já com as opções somadas (o preço que o cliente paga por unidade),
+     * {@code basePriceCents} com o preço do produto sem opções e {@code options} com o acréscimo de cada uma.
+     * {@code ageConfirmed} fica {@code true} no pedido quando ele passou pela confirmação de idade.
+     */
     public PlacedOrder place(AuthenticatedUser guest, PlaceOrderRequest request) {
         Tab tab = tabService.requireMyTab(guest);
-        if (!storeService.isAcceptingOrders(tab.storeId())) {
-            throw new ConflictException("Store is not accepting orders now");
-        }
+        OpeningStatus status = storeService.statusOf(tab.storeId())
+                .filter(OpeningStatus::acceptingOrders)
+                .orElseThrow(() -> new OrderRejectedException(HttpStatus.CONFLICT,
+                        OrderRejectedException.STORE_CLOSED, "A casa não está aceitando pedidos agora."));
 
         List<ObjectId> ids = request.items().stream().map(item -> objectId(item.productId())).toList();
         Map<ObjectId, Product> products = productRepository.findAllById(ids).stream()
@@ -62,25 +80,50 @@ public class OrderPlacementService {
         ObjectId sessionId = guest.userId();
         int total = 0;
         List<Document> items = new ArrayList<>();
+        List<OrderValidationClient.Item> toValidate = new ArrayList<>();
         for (PlaceOrderRequest.Item item : request.items()) {
             Product product = products.get(new ObjectId(item.productId()));
             if (product == null) {
-                throw new InvalidRequestException("Product not found: " + item.productId());
+                throw new OrderRejectedException(HttpStatus.CONFLICT, OrderRejectedException.ITEM_UNAVAILABLE,
+                        "Um item do carrinho saiu do cardápio.");
             }
             if (!product.available()) {
-                throw new ConflictException(product.name() + " is not available now");
+                throw new OrderRejectedException(HttpStatus.CONFLICT, OrderRejectedException.ITEM_UNAVAILABLE,
+                        product.name() + " acabou.");
             }
-            total += product.priceCents() * item.quantity();
+            OrderOptions.Resolved options = OrderOptions.resolve(product, item.optionsOrEmpty());
+            int unitPrice = product.priceCents() + options.deltaSumCents();
+            if (unitPrice < 0) {
+                throw new InvalidRequestException(product.name() + " ficou com preço negativo com essas opções");
+            }
+            String note = item.note() == null ? "" : item.note().trim();
+            total += unitPrice * item.quantity();
             items.add(new Document("productId", product.id())
                     .append("nameSnapshot", product.name())
-                    .append("unitPriceCents", product.priceCents())
+                    .append("unitPriceCents", unitPrice)
+                    .append("basePriceCents", product.priceCents())
                     .append("quantity", item.quantity())
-                    .append("note", item.note() == null ? "" : item.note().trim())
-                    .append("options", List.of())
+                    .append("note", note)
+                    .append("options", options.documents())
                     .append("status", "RECEIVED")
                     .append("placedByType", "CUSTOMER")
                     .append("placedBySessionId", sessionId));
+            toValidate.add(new OrderValidationClient.Item(product.priceCents(), item.quantity(), note,
+                    options.deltasCents()));
         }
+
+        boolean hasAlcohol = request.items().stream()
+                .map(item -> products.get(new ObjectId(item.productId())))
+                .anyMatch(product -> Boolean.TRUE.equals(product.isAlcoholic()));
+        if (hasAlcohol && !request.isAgeConfirmed()) {
+            throw new OrderRejectedException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    OrderRejectedException.AGE_CONFIRMATION_REQUIRED,
+                    "Seu pedido tem bebida alcoólica. Confirme que você tem 18 anos ou mais.");
+        }
+
+        orderValidationClient.validate(new OrderValidationClient.OrderValidation(toValidate,
+                request.expectedTotalCents(), total, status.opensAt(), status.lastOrderAt(),
+                LocalTime.now(clock.withZone(OpeningStatusCalculator.STORE_ZONE))));
 
         ObjectId orderId = new ObjectId();
         int number = nextNumber(tab.storeId());
@@ -90,7 +133,7 @@ public class OrderPlacementService {
                 .append("tableId", tab.tableId())
                 .append("number", number)
                 .append("status", "RECEIVED")
-                .append("ageConfirmed", false)
+                .append("ageConfirmed", hasAlcohol)
                 .append("items", items)
                 .append("totalCents", total)
                 .append("createdAt", Date.from(now)), "order");
