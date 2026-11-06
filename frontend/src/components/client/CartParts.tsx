@@ -118,7 +118,8 @@ export function SummaryLine({
   name: string;
   options?: string;
   note?: string;
-  totalCents: number;
+  /** Sem valor, a linha não mostra preço. */
+  totalCents?: number;
   muted?: boolean;
 }) {
   const color = muted ? colors.textMuted : colors.text;
@@ -131,9 +132,11 @@ export function SummaryLine({
         {options && <Typography sx={{ fontSize: fontSize.caption, color: colors.textSecondary }}>{options}</Typography>}
         {note && <Typography sx={{ fontSize: fontSize.caption, color: colors.textMuted }}>{note}</Typography>}
       </Box>
-      <Typography sx={{ flexShrink: 0, fontSize: fontSize.small, fontWeight: fontWeight.extraBold, color }}>
-        {formatCents(totalCents)}
-      </Typography>
+      {totalCents !== undefined && (
+        <Typography sx={{ flexShrink: 0, fontSize: fontSize.small, fontWeight: fontWeight.extraBold, color }}>
+          {formatCents(totalCents)}
+        </Typography>
+      )}
     </Box>
   );
 }

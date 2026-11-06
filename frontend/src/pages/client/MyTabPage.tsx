@@ -15,6 +15,7 @@ import { formatCents } from '../../services/format';
 import { fetchMyTab, formatClock, removeTabMember, renewTabCode } from '../../services/tabs';
 import type { Tab, TabMember } from '../../services/tabs';
 import { formatTableNumber } from '../../services/tables';
+import { readVisit } from '../../services/visit';
 import { tokens } from '../../theme/theme';
 
 const REFRESH_MS = 5000;
@@ -70,7 +71,8 @@ export default function MyTabPage() {
   }, [codeExpired, load]);
 
   if (gate) return <Navigate to={gate} replace />;
-  if (missing) return <Navigate to={`/t/${slug}/comandas`} replace />;
+  // [Mateus · Card 5] Alteração: no balcão, sem comanda aberta (já retirou) a senha mostra a retirada confirmada.
+  if (missing) return <Navigate to={readVisit(slug).counter ? `/t/${slug}/balcao/senha` : `/t/${slug}/comandas`} replace />;
   if (state.status === 'loading' || (tab === null && !loadFailed)) return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
   if (tab === null) return <ConnectionLostScreen slug={slug} onRetry={load} />;
@@ -95,9 +97,15 @@ export default function MyTabPage() {
     run(() => removeTabMember(slug, current.id, member.sessionId), 'Não foi possível remover agora. Tente de novo.');
   }
 
+  // [Mateus · Card 5] Alteração: comanda de balcão não tem mesa; mostra a senha quando já tiver.
+  const counter = current.mode === 'COUNTER';
+  const place = counter
+    ? `Balcão${current.pickupTicket ? ` · senha ${current.pickupTicket}` : ''}`
+    : `Mesa ${formatTableNumber(current.tableNumber)}`;
   const subtitle = current.owner
-    ? `Mesa ${formatTableNumber(current.tableNumber)} · você abriu às ${formatClock(current.openedAt)}`
-    : `Mesa ${formatTableNumber(current.tableNumber)} · comanda de ${current.ownerName}`;
+    ? `${place} · você abriu às ${formatClock(current.openedAt)}`
+    : `${place} · comanda de ${current.ownerName}`;
+  const inviteLink = `${window.location.origin}/t/${slug}/balcao?entrar=${current.id}`;
 
   return (
     <ClientScreen
@@ -121,18 +129,29 @@ export default function MyTabPage() {
             Ver a conta
           </ActionButton>
         </Box>
-        <Box sx={{ mt: 2, display: 'flex', gap: 3 }}>
-          <ActionButton tone="quiet" onClick={() => navigate(`/t/${slug}/rodada`)}>
-            Mais uma rodada
+        {/* [Mateus · Card 5] Alteração: no balcão não há garçom nem rodada da mesa; entra "Minha senha". */}
+        {counter ? (
+          <ActionButton tone="quiet" sx={{ mt: 2 }} onClick={() => navigate(`/t/${slug}/balcao/senha`)}>
+            Minha senha
           </ActionButton>
-          <ActionButton tone="quiet" onClick={() => navigate(`/t/${slug}/garcom`)}>
-            Chamar o garçom
-          </ActionButton>
-        </Box>
+        ) : (
+          <Box sx={{ mt: 2, display: 'flex', gap: 3 }}>
+            <ActionButton tone="quiet" onClick={() => navigate(`/t/${slug}/rodada`)}>
+              Mais uma rodada
+            </ActionButton>
+            <ActionButton tone="quiet" onClick={() => navigate(`/t/${slug}/garcom`)}>
+              Chamar o garçom
+            </ActionButton>
+          </Box>
+        )}
         </>
       }
     >
-      <ScreenHeader title="Minha comanda" subtitle={subtitle} onBack={() => navigate(`/t/${slug}/comandas`)} />
+      <ScreenHeader
+        title="Minha comanda"
+        subtitle={subtitle}
+        onBack={() => navigate(counter ? `/t/${slug}/cardapio` : `/t/${slug}/comandas`)}
+      />
       <Box sx={{ px: 5, pt: 5, pb: 6 }}>
         {current.owner && current.joinCode && (
           <>
@@ -158,9 +177,29 @@ export default function MyTabPage() {
                 Muda em {formatRemaining((expiresAt ?? now) - now)}
               </Typography>
             </Box>
-            <Typography sx={{ mt: 3, fontSize: fontSize.small, color: colors.textSecondary }}>
-              Passe o código para quem está na mesa. Quem entrar pede na mesma comanda, e tudo cai nesta conta.
-            </Typography>
+            {counter ? (
+              // [Mateus · Card 5] Alteração: no balcão não há mesa para achar a comanda; vai o link de convite.
+              <>
+                <Typography sx={{ mt: 3, fontSize: fontSize.small, color: colors.textSecondary }}>
+                  Para alguém pedir junto com você, mande este link e passe o código. Tudo cai nesta comanda e na
+                  mesma senha.
+                </Typography>
+                <Typography sx={{ mt: 2, fontSize: fontSize.caption, wordBreak: 'break-all', color: colors.text }}>
+                  {inviteLink}
+                </Typography>
+                <ActionButton
+                  tone="secondary"
+                  sx={{ mt: 2 }}
+                  onClick={() => void navigator.clipboard?.writeText(inviteLink).catch(() => undefined)}
+                >
+                  Copiar link
+                </ActionButton>
+              </>
+            ) : (
+              <Typography sx={{ mt: 3, fontSize: fontSize.small, color: colors.textSecondary }}>
+                Passe o código para quem está na mesa. Quem entrar pede na mesma comanda, e tudo cai nesta conta.
+              </Typography>
+            )}
           </>
         )}
 

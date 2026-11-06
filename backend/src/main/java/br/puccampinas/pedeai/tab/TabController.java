@@ -26,16 +26,19 @@ public class TabController {
     private final RoundService roundService;
     private final OrderTrackingService orderTrackingService;
     private final WaiterCallService waiterCallService;
+    private final PickupService pickupService;
 
     public TabController(TabService tabService, BillService billService,
             OrderPlacementService orderPlacementService, RoundService roundService,
-            OrderTrackingService orderTrackingService, WaiterCallService waiterCallService) {
+            OrderTrackingService orderTrackingService, WaiterCallService waiterCallService,
+            PickupService pickupService) {
         this.tabService = tabService;
         this.billService = billService;
         this.orderPlacementService = orderPlacementService;
         this.roundService = roundService;
         this.orderTrackingService = orderTrackingService;
         this.waiterCallService = waiterCallService;
+        this.pickupService = pickupService;
     }
 
     @PostMapping("/mine/orders")
@@ -49,6 +52,12 @@ public class TabController {
     public OrderTrackingResponse trackOrder(@AuthenticationPrincipal AuthenticatedUser guest,
             @PathVariable String orderId) {
         return orderTrackingService.track(guest, orderId);
+    }
+
+    // [Mateus · Card 5] Alteração: senha do balcão (funciona também depois de a comanda fechar).
+    @GetMapping("/mine/pickup")
+    public PickupResponse pickup(@AuthenticationPrincipal AuthenticatedUser guest) {
+        return pickupService.mine(guest);
     }
 
     @GetMapping("/mine/calls")

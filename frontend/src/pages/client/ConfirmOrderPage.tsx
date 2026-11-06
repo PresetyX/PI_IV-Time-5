@@ -277,7 +277,10 @@ export default function ConfirmOrderPage() {
           </Box>
         </Box>
         <InfoNote>
-          Ao enviar, o pedido vai direto para a cozinha e entra na sua comanda. Para mudar depois, chame o garçom.
+          {/* [Mateus · Card 5] No balcão, o pedido só vai para a cozinha depois do pagamento no caixa. */}
+          {visit.counter
+            ? 'Depois de enviar, você recebe a senha. Pague no caixa e o pedido entra na cozinha. Não há taxa de serviço.'
+            : 'Ao enviar, o pedido vai direto para a cozinha e entra na sua comanda. Para mudar depois, chame o garçom.'}
         </InfoNote>
       </Box>
     </ClientScreen>

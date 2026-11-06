@@ -67,6 +67,33 @@ class TabServiceTest {
                 .thenAnswer(call -> Optional.ofNullable(stored).filter(tab -> tab.id().equals(call.getArgument(1))));
     }
 
+    // [Mateus · Card 5] Comanda de balcão: sessão sem mesa abre comanda COUNTER e a encontra sem precisar de mesa.
+    @Test
+    void counterSessionOpensACounterTabWithoutTable() {
+        GuestSession bia = new GuestSession(new ObjectId(), storeId, null, "COUNTER", "Bia", null, null, NOW,
+                NOW.plusSeconds(3600));
+        when(sessionRepository.findById(bia.id())).thenReturn(Optional.of(bia));
+        when(mongo.find(any(Query.class), eq(Tab.class))).thenAnswer(call -> stored == null ? List.of() : List.of(stored));
+
+        TabResponse tab = service.open(guest(bia));
+
+        assertEquals("COUNTER", stored.mode());
+        assertNull(stored.tableId());
+        assertEquals(0, tab.tableNumber());
+        assertEquals("COUNTER", tab.mode());
+        assertEquals(stored.id(), service.requireMyTab(guest(bia)).id());
+        assertThrows(ConflictException.class, () -> service.open(guest(bia)));
+    }
+
+    @Test
+    void sessionWithoutTableThatIsNotCounterIsRejected() {
+        GuestSession delivery = new GuestSession(new ObjectId(), storeId, null, "DELIVERY", "Leo", null, null, NOW,
+                NOW.plusSeconds(3600));
+        when(sessionRepository.findById(delivery.id())).thenReturn(Optional.of(delivery));
+
+        assertThrows(InvalidRequestException.class, () -> service.open(guest(delivery)));
+    }
+
     @Test
     void opensTabInTheNameOfTheSessionWithAFourDigitCodeThatExpiresInFiveMinutes() {
         TabResponse tab = service.open(guest(caio));

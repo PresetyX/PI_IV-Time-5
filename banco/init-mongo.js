@@ -206,6 +206,8 @@ criar("tab", {
       }
     },
     status: { enum: ["OPEN", "AWAITING_PAYMENT", "CLOSED"] },
+    // [Mateus · Card 5] senha de retirada do dia, só na comanda de balcão; vem de sequence <storeId>:<data>:PICKUP
+    pickupTicket: inteiro,
     subtotalCents: inteiro,
     serviceFeeCents: inteiro,
     discountCents: inteiro,
@@ -232,7 +234,10 @@ criar("order", {
     tabId: oid,
     tableId: oid,
     number: { bsonType: "int", description: "número do dia, vem de counter" },
-    status: { enum: ["RECEIVED", "PREPARING", "READY", "DELIVERED", "CANCELLED"] },
+    // [Mateus · Card 5] AWAITING_PAYMENT: pedido de balcão enviado, esperando o pagamento no caixa; não aparece na
+    // cozinha até a equipe registrar o pagamento (aí vira RECEIVED).
+    status: { enum: ["AWAITING_PAYMENT", "RECEIVED", "PREPARING", "READY", "DELIVERED", "CANCELLED"] },
+    pickupTicket: { bsonType: "int", description: "cópia de tab.pickupTicket no pedido de balcão" },
     ageConfirmed: bool,
     items: {
       bsonType: "array",
@@ -255,7 +260,7 @@ criar("order", {
               properties: { group: texto, label: texto, deltaCents: inteiro }
             }
           },
-          status: { enum: ["RECEIVED", "PREPARING", "READY", "DELIVERED", "CANCELLED", "REMOVED"] },
+          status: { enum: ["AWAITING_PAYMENT", "RECEIVED", "PREPARING", "READY", "DELIVERED", "CANCELLED", "REMOVED"] },
           placedByType: { enum: ["CUSTOMER", "PARTICIPANT", "STAFF"] },
           placedByUserId: oid,
           placedBySessionId: oid,

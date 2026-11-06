@@ -78,6 +78,7 @@ function IdentificationForm({ store, table }: { store: Store; table: TableInfo }
         guestToken: session.token,
         customerName: session.name,
         table: session.table ?? table,
+        counter: false, // [Mateus · Card 5] Alteração: identificação de mesa deixa de ser visita de balcão.
       });
       navigate(`/t/${store.slug}/mesa`);
     } catch (caught) {

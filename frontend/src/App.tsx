@@ -17,6 +17,9 @@ import OrderStatusPage from './pages/client/OrderStatusPage';
 import CartPage from './pages/client/CartPage';
 import ConfirmOrderPage from './pages/client/ConfirmOrderPage';
 import OrderSentPage from './pages/client/OrderSentPage';
+import CounterEntryPage from './pages/client/CounterEntryPage';
+import PickupPage from './pages/client/PickupPage';
+import PickupBoardPage from './pages/client/PickupBoardPage';
 import WaiterCallPage from './pages/client/WaiterCallPage';
 import LoginPage from './pages/LoginPage';
 import OperationsWorkspace from './pages/OperationsWorkspace';
@@ -57,15 +60,10 @@ export default function App() {
         }
       />
       <Route path="/t/:slug/garcom" element={<WaiterCallPage />} />
-      <Route
-        path="/t/:slug/balcao"
-        element={
-          <ClientPlaceholderPage
-            title="Retirar no balcão"
-            description="O pedido para retirada com senha entra na próxima parte do projeto."
-          />
-        }
-      />
+      {/* [Mateus · Card 5] Alteração: balcão (entrada, senha e painel para TV) no lugar do placeholder. */}
+      <Route path="/t/:slug/balcao" element={<CounterEntryPage />} />
+      <Route path="/t/:slug/balcao/senha" element={<PickupPage />} />
+      <Route path="/t/:slug/painel" element={<PickupBoardPage />} />
       <Route
         path="/t/:slug/entrega"
         element={

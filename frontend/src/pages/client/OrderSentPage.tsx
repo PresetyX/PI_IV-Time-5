@@ -13,7 +13,8 @@ import { useStore } from '../../hooks/useStore';
 import { useStoreColor } from '../../hooks/useStoreColor';
 import { ApiError } from '../../services/api';
 import { formatCents } from '../../services/format';
-import { fetchOrder } from '../../services/tabs';
+import { fetchOrder, fetchPickup } from '../../services/tabs';
+import { readVisit } from '../../services/visit';
 import type { TrackedOrder } from '../../services/tabs';
 import { formatTableNumber } from '../../services/tables';
 import { tokens } from '../../theme/theme';
@@ -30,17 +31,21 @@ export default function OrderSentPage() {
   const [order, setOrder] = useState<TrackedOrder | null>(null);
   const [missing, setMissing] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+  // [Mateus · Card 5] No balcão a tela mostra a senha e manda pagar no caixa.
+  const counter = Boolean(readVisit(slug).counter);
+  const [ticket, setTicket] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
       setOrder(await fetchOrder(slug, orderId));
+      if (counter) setTicket((await fetchPickup(slug)).pickupTicket);
       setLoadFailed(false);
     } catch (caught) {
       if (handleExpired(caught)) return;
       if (caught instanceof ApiError && caught.status === 404) setMissing(true);
       else setLoadFailed(true);
     }
-  }, [slug, orderId, handleExpired]);
+  }, [slug, orderId, handleExpired, counter]);
 
   useEffect(() => {
     if (!gate) load();
@@ -57,9 +62,13 @@ export default function OrderSentPage() {
       footerDivider
       footer={
         <>
-          <ActionButton onClick={() => navigate(`/t/${slug}/pedidos/${order.id}`, { replace: true })}>
-            Acompanhar pedido
-          </ActionButton>
+          {counter ? (
+            <ActionButton onClick={() => navigate(`/t/${slug}/balcao/senha`, { replace: true })}>Ver minha senha</ActionButton>
+          ) : (
+            <ActionButton onClick={() => navigate(`/t/${slug}/pedidos/${order.id}`, { replace: true })}>
+              Acompanhar pedido
+            </ActionButton>
+          )}
           <ActionButton tone="quiet" sx={{ mt: 2 }} onClick={() => navigate(`/t/${slug}/comandas/minha`)}>
             Voltar para minha comanda
           </ActionButton>
@@ -85,7 +94,9 @@ export default function OrderSentPage() {
           Pedido enviado
         </Typography>
         <Typography sx={{ mt: 1, fontSize: fontSize.small, opacity: 0.9 }}>
-          Pedido #{order.number} · mesa {formatTableNumber(order.tableNumber)}. A cozinha já recebeu.
+          {counter
+            ? `Pedido #${order.number}${ticket ? ` · senha ${ticket}` : ''}. Pague no caixa para ele entrar na cozinha.`
+            : `Pedido #${order.number} · mesa ${formatTableNumber(order.tableNumber)}. A cozinha já recebeu.`}
         </Typography>
       </Box>
 
@@ -121,7 +132,11 @@ export default function OrderSentPage() {
             </Typography>
           </Box>
         </Box>
-        <InfoNote>Avisamos aqui no celular quando ficar pronto. O valor já entrou na sua comanda.</InfoNote>
+        <InfoNote>
+          {counter
+            ? `Vá ao caixa, diga a senha${ticket ? ` ${ticket}` : ''} e pague ${formatCents(order.totalCents)}. Avisamos aqui quando ficar pronto para retirar.`
+            : 'Avisamos aqui no celular quando ficar pronto. O valor já entrou na sua comanda.'}
+        </InfoNote>
       </Box>
     </ClientScreen>
   );

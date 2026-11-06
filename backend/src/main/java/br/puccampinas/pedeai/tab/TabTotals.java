@@ -33,8 +33,12 @@ public class TabTotals {
         }
         Document store = mongo.findById(storeId, Document.class, "store");
         int feeBasisPoints = store == null ? 0 : number(store, "serviceFeeBasisPoints");
-        int serviceFee = Math.round(subtotal * feeBasisPoints / 10000f);
         Document tab = mongo.findById(tabId, Document.class, "tab");
+        // [Mateus · Card 5] Alteração: comanda de balcão não cobra taxa de serviço.
+        if (tab != null && "COUNTER".equals(tab.getString("mode"))) {
+            feeBasisPoints = 0;
+        }
+        int serviceFee = Math.round(subtotal * feeBasisPoints / 10000f);
         int discount = tab == null ? 0 : number(tab, "discountCents");
         int total = Math.max(0, subtotal + serviceFee - discount);
         mongo.updateFirst(Query.query(Criteria.where("_id").is(tabId).and("storeId").is(storeId)),

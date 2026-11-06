@@ -22,6 +22,7 @@ const REFRESH_MS = 5000;
 const { colors, fontSize, fontWeight, radius } = tokens;
 
 const STEP_LABEL: Record<string, string> = {
+  AWAITING_PAYMENT: 'Esperando o pagamento no caixa', // [Mateus · Card 5]
   RECEIVED: 'Recebido pela cozinha',
   PREPARING: 'Entrou em preparo',
   READY: 'Pronto para entrega',
@@ -104,13 +105,16 @@ export default function OrderStatusPage() {
             Seu pedido ficou pronto
           </Typography>
           <Typography sx={{ mt: 1, fontSize: fontSize.small, opacity: 0.9 }}>
-            O garçom já está levando à mesa {formatTableNumber(order.tableNumber)}.
+            {order.tableNumber > 0
+              ? `O garçom já está levando à mesa ${formatTableNumber(order.tableNumber)}.`
+              : 'Retire no balcão e diga a sua senha.'}
           </Typography>
         </Box>
       ) : (
         <ScreenHeader
           title={`Pedido #${order.number}`}
-          subtitle={`Mesa ${formatTableNumber(order.tableNumber)} · ${orderStatusLabel(order.status)}`}
+          // [Mateus · Card 5] Alteração: pedido de balcão não tem mesa.
+          subtitle={`${order.tableNumber > 0 ? `Mesa ${formatTableNumber(order.tableNumber)}` : 'Balcão'} · ${orderStatusLabel(order.status)}`}
           onBack={() => navigate(`/t/${slug}/conta`)}
         />
       )}

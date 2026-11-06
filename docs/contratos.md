@@ -199,3 +199,50 @@ Perfis: `OWNER`, `MANAGER`, `WAITER`. Entrega parcial ou total de um pedido pron
 Resposta `200`: `{ "id": "...", "status": "READY" }` (ainda falta item) ou `"DELIVERED"`.
 
 > O tipo `ITEMS_DELIVERED` foi acrescentado ao validador de `orderEvent` em `banco/init-mongo.js`. Banco criado antes disso precisa rodar o `init-mongo.js` de novo (só atualiza validadores e índices).
+
+## Balcão
+
+Fluxo: o cliente entra em `/t/:slug/balcao` (sessão `mode: COUNTER`, sem mesa), abre a comanda de balcão (`POST /api/tabs`) e pede pelas mesmas rotas da mesa. O pedido nasce `AWAITING_PAYMENT` e **não aparece na cozinha** até a equipe registrar o pagamento no caixa; aí vira `RECEIVED`. Quando tudo foi retirado e pago, a comanda fecha sozinha.
+
+- Comanda de balcão: `mode: COUNTER`, sem `tableId`, sem taxa de serviço. As rotas `/api/tabs/**` aceitam a sessão de balcão; `tableNumber` vem `0`. `TabResponse` ganhou `mode` e `pickupTicket`.
+- Outras pessoas entram pelo link de convite `/t/:slug/balcao?entrar=<tabId>` mais o código de 4 dígitos (não há mesa para listar as comandas).
+- Senha (`pickupTicket`): gerada no primeiro pedido da comanda, a partir de `sequence` com `_id` `<storeId>:<AAAA-MM-DD>:PICKUP` (recomeça em 1 a cada dia). Fica em `tab.pickupTicket` e é copiada em cada `order.pickupTicket`. A resposta de `POST /api/tabs/mine/orders` traz `pickupTicket` (nulo no pedido de mesa) e `status` `AWAITING_PAYMENT`.
+
+### GET /api/tabs/mine/pickup
+
+Token de convidado. A comanda de balcão mais recente da sessão, aberta ou fechada (para mostrar "retirada confirmada").
+
+```json
+{
+  "tabId": "...", "pickupTicket": 12, "tabStatus": "OPEN", "customerName": "Bia",
+  "totalCents": 3800, "paidCents": 0,
+  "orders": [{ "id": "...", "number": 41, "status": "AWAITING_PAYMENT", "totalCents": 3800, "createdAt": "...",
+               "items": [{ "name": "X-bacon", "quantity": 1, "options": ["Ao ponto"], "status": "AWAITING_PAYMENT" }] }]
+}
+```
+
+Sem comanda de balcão: 404.
+
+### POST /api/operations/orders/{id}/pay
+
+Perfis: `OWNER`, `MANAGER`, `WAITER`. Corpo: `{ "method": "PIX_MANUAL" }` (`PIX_MANUAL`, `CASH`, `CARD_DEBIT` ou `CARD_CREDIT`).
+
+- Só pedido `AWAITING_PAYMENT`; outro status: 409 `conflict`.
+- Pedido e itens viram `RECEIVED` (entra na fila da cozinha), com passo em `statusHistory` e `orderEvent` `STATUS_CHANGED`.
+- Grava `payment` com `amountCents` igual ao total do pedido, `orderId` e `isPartial: true`, e soma em `tab.paidCents`.
+
+Resposta `200`: `{ "id": "...", "status": "RECEIVED" }`
+
+Cancelar (`POST /api/operations/orders/{id}/cancel`) também aceita pedido `AWAITING_PAYMENT`. Na entrega (`/deliver`), quando o último pedido da comanda de balcão é retirado e `paidCents` cobre o total, a comanda vira `CLOSED`.
+
+### GET /api/public/stores/{slug}/pickup-board
+
+Público, para o painel de TV em `/t/:slug/painel`. Só números das senhas de hoje, já pagas:
+
+```json
+{ "storeName": "Triunfo Lanches", "preparing": [10, 12], "ready": [9] }
+```
+
+Senha com algum pedido pronto aparece só em `ready`.
+
+> O status `AWAITING_PAYMENT` e o campo `pickupTicket` foram acrescentados ao validador em `banco/init-mongo.js`. Banco criado antes precisa rodar o `init-mongo.js` de novo.

@@ -6,6 +6,8 @@ export interface Visit {
   sessionId?: string;
   guestToken?: string;
   customerName?: string;
+  /** [Mateus · Card 5] Visita de balcão: sessão sem mesa, com senha de retirada. */
+  counter?: boolean;
   /** Sessão em que o cliente confirmou ter 18 anos ou mais; vale só enquanto for a mesma sessão. */
   ageConfirmedSessionId?: string;
 }
