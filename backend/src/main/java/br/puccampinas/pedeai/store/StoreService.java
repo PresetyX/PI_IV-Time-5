@@ -1,6 +1,7 @@
 package br.puccampinas.pedeai.store;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,13 @@ public class StoreService {
 
     public OpeningStatus getStatus(Store store) {
         return openingStatusCalculator.calculate(store);
+    }
+
+    /** Status de agora da loja ativa; vazio se a loja não existe ou está inativa. */
+    public Optional<OpeningStatus> statusOf(ObjectId storeId) {
+        return storeRepository.findById(storeId)
+                .filter(Store::active)
+                .map(this::getStatus);
     }
 
     public boolean isAcceptingOrders(ObjectId storeId) {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ActionButton from '../components/client/ActionButton';
-import { placeOrder } from '../services/tabs';
+import { orderErrorMessage, placeOrder } from '../services/tabs';
 import { readVisit } from '../services/visit';
 import { Box, Button, CircularProgress, Skeleton, Tab, Tabs, Typography } from '@mui/material';
 import StatusMessage from '../components/StatusMessage';
@@ -72,15 +72,12 @@ export default function MenuPage() {
       await placeOrder(
         slug,
         cartItems.map((product) => ({ productId: product.id, quantity: quantities[product.id] })),
+        cartTotal,
       );
       setQuantities({});
       navigate(`/t/${slug}/conta`);
     } catch (caught) {
-      setSendError(
-        caught instanceof ApiError && caught.status === 409
-          ? 'Algum item acabou ou a casa parou de aceitar pedidos. Confira e tente de novo.'
-          : 'Não foi possível enviar o pedido agora. Tente de novo.',
-      );
+      setSendError(orderErrorMessage(caught));
     } finally {
       setSending(false);
     }

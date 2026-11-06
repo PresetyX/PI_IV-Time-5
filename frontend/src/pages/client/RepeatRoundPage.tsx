@@ -12,7 +12,7 @@ import { useStore } from '../../hooks/useStore';
 import { useStoreColor } from '../../hooks/useStoreColor';
 import { ApiError } from '../../services/api';
 import { formatCents } from '../../services/format';
-import { fetchRound, placeOrder } from '../../services/tabs';
+import { fetchRound, orderErrorMessage, placeOrder } from '../../services/tabs';
 import type { Round, RoundItem, RoundSuggestion } from '../../services/tabs';
 import { formatTableNumber } from '../../services/tables';
 import { tokens } from '../../theme/theme';
@@ -101,16 +101,12 @@ export default function RepeatRoundPage() {
       await placeOrder(slug, [
         ...repeated.map((item) => ({ productId: item.productId, quantity: item.quantity, note: item.note || undefined })),
         ...extras.map((suggestion) => ({ productId: suggestion.productId, quantity: 1 })),
-      ]);
+      ], total);
       navigate(`/t/${slug}/conta`);
     } catch (caught) {
       if (handleExpired(caught)) return;
-      if (caught instanceof ApiError && caught.status === 409) {
-        setError('Algum item acabou ou a casa parou de aceitar pedidos. Confira e tente de novo.');
-        load();
-      } else {
-        setError('Não foi possível enviar o pedido agora. Tente de novo.');
-      }
+      setError(orderErrorMessage(caught));
+      if (caught instanceof ApiError && caught.status === 409) load();
     } finally {
       setSending(false);
     }

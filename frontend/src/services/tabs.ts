@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, ApiError } from './api';
 import { readVisit } from './visit';
 
 export interface TabSummary {
@@ -76,8 +76,34 @@ export interface PlacedOrder {
   totalCents: number;
 }
 
-export function placeOrder(slug: string, items: OrderItemInput[]): Promise<PlacedOrder> {
-  return api.post<PlacedOrder>('/api/tabs/mine/orders', { items }, guest(slug));
+/**
+ * Envia o pedido. `expectedTotalCents` é o total que o cliente viu na tela: o backend confere com os preços
+ * do banco pelo server e recusa com `price_changed` se forem diferentes.
+ */
+export function placeOrder(
+  slug: string,
+  items: OrderItemInput[],
+  expectedTotalCents: number,
+): Promise<PlacedOrder> {
+  return api.post<PlacedOrder>('/api/tabs/mine/orders', { items, expectedTotalCents }, guest(slug));
+}
+
+/** Texto para a tela quando o envio do pedido falha. Em nenhum desses casos o pedido foi gravado. */
+export function orderErrorMessage(caught: unknown): string {
+  if (caught instanceof ApiError) {
+    switch (caught.code) {
+      case 'price_changed':
+        return 'O preço de algum item mudou. Confira o carrinho e envie de novo.';
+      case 'store_closed':
+        return 'A casa não está aceitando pedidos agora.';
+      case 'validation_unavailable':
+        return 'Não conseguimos conferir seu pedido agora. Nada foi enviado. Tente de novo em instantes.';
+    }
+    if (caught.status === 409) {
+      return 'Algum item acabou ou a casa parou de aceitar pedidos. Confira e tente de novo.';
+    }
+  }
+  return 'Não foi possível enviar o pedido agora. Tente de novo.';
 }
 
 export interface RoundItem {
