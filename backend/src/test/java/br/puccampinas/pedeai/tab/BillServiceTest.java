@@ -65,6 +65,20 @@ class BillServiceTest {
         assertEquals(3200, bill.consumptionCents());
     }
 
+    // [Mateus · Card 4] O cancelamento da equipe grava CANCELLED (dois L); a conta não pode cobrar esse pedido.
+    @Test
+    void orderCancelledByTheStaffLeavesTheTotal() {
+        givenTab();
+        givenOrders(
+                order(42, "PREPARING", item("Batata", 3200, 1, "PREPARING")),
+                order(43, "CANCELLED", item("Torresmo", 2600, 1, "CANCELLED")));
+
+        BillResponse bill = billService.billOfMyTab(guest);
+
+        assertTrue(bill.orders().get(1).items().get(0).canceled());
+        assertEquals(3200, bill.consumptionCents());
+    }
+
     @Test
     void emptyTabHasZeroTotals() {
         givenTab();

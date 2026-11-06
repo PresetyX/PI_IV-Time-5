@@ -32,7 +32,6 @@ public class TabService {
     public static final Duration JOIN_CODE_DURATION = Duration.ofMinutes(5);
     private static final String MODE_TABLE = "TABLE";
     private static final String STATUS_OPEN = "OPEN";
-    private static final String CANCELED = "CANCELED";
 
     private final TabRepository tabRepository;
     private final GuestSessionRepository sessionRepository;
@@ -233,14 +232,15 @@ public class TabService {
     private Map<ObjectId, Integer> totalsBySession(Tab tab) {
         Map<ObjectId, Integer> totals = new HashMap<>();
         Query query = Query.query(Criteria.where("storeId").is(tab.storeId()).and("tabId").is(tab.id())
-                .and("status").ne(CANCELED));
+                // [Mateus · Card 4] Alteração: ignora CANCELLED (dois L, como o pedido é gravado) além de CANCELED.
+                .and("status").nin(TabTotals.IGNORED_STATUS));
         for (Document order : mongo.find(query, Document.class, "order")) {
             List<?> items = order.get("items", List.class);
             if (items == null) {
                 continue;
             }
             for (Object raw : items) {
-                if (!(raw instanceof Document item) || CANCELED.equals(item.getString("status"))
+                if (!(raw instanceof Document item) || TabTotals.IGNORED_STATUS.contains(item.getString("status"))
                         || !(item.get("placedBySessionId") instanceof ObjectId placedBy)) {
                     continue;
                 }
