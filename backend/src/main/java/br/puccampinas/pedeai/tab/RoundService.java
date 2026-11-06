@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -64,11 +65,15 @@ public class RoundService {
         List<RoundResponse.RoundItem> items = new ArrayList<>();
         for (Document item : lastItems) {
             Product product = products.get(item.getObjectId("productId"));
+            List<PlaceOrderRequest.SelectedOption> options = OrderOptions.fromItem(item);
+            Optional<OrderOptions.Resolved> current = product == null ? Optional.empty()
+                    : OrderOptions.tryResolve(product, options);
             items.add(new RoundResponse.RoundItem(item.getObjectId("productId").toHexString(),
                     product == null ? item.getString("nameSnapshot") : product.name(), item.getString("note"),
                     TabTotals.number(item, "quantity"),
-                    product == null ? TabTotals.number(item, "unitPriceCents") : product.priceCents(),
-                    product != null && product.available()));
+                    current.isPresent() ? product.priceCents() + current.get().deltaSumCents()
+                            : TabTotals.number(item, "unitPriceCents"),
+                    product != null && product.available() && current.isPresent(), options));
         }
 
         Set<ObjectId> repeated = lastItems.stream().map(item -> item.getObjectId("productId"))
@@ -101,7 +106,9 @@ public class RoundService {
                 ObjectId productId = item.getObjectId("productId");
                 Product product = products.get(productId);
                 if (picked.size() == MAX_SUGGESTIONS || me.equals(item.getObjectId("placedBySessionId"))
-                        || product == null || !product.available() || !seen.add(productId)) {
+                        || product == null || !product.available()
+                        || OrderOptions.tryResolve(product, OrderOptions.fromItem(item)).isEmpty()
+                        || !seen.add(productId)) {
                     continue;
                 }
                 picked.add(item);
@@ -119,9 +126,11 @@ public class RoundService {
         for (int i = 0; i < picked.size(); i++) {
             Document item = picked.get(i);
             Product product = products.get(item.getObjectId("productId"));
+            List<PlaceOrderRequest.SelectedOption> options = OrderOptions.fromItem(item);
+            int delta = OrderOptions.resolve(product, options).deltaSumCents();
             suggestions.add(new RoundResponse.Suggestion(product.id().toHexString(), product.name(),
-                    product.priceCents(), names.get(item.getObjectId("placedBySessionId")),
-                    pickedOrders.get(i).getDate("createdAt").toInstant()));
+                    product.priceCents() + delta, names.get(item.getObjectId("placedBySessionId")),
+                    pickedOrders.get(i).getDate("createdAt").toInstant(), options));
         }
         return suggestions;
     }

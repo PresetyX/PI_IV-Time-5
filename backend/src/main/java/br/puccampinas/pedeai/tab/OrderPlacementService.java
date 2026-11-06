@@ -22,7 +22,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import br.puccampinas.pedeai.auth.AuthenticatedUser;
-import br.puccampinas.pedeai.common.ConflictException;
 import br.puccampinas.pedeai.common.InvalidRequestException;
 import br.puccampinas.pedeai.common.OrderRejectedException;
 import br.puccampinas.pedeai.menu.Product;
@@ -57,9 +56,13 @@ public class OrderPlacementService {
 
     /**
      * Cria o pedido na comanda do cliente. Ordem: comanda, loja aceitando pedidos, produtos e disponibilidade,
-     * total, maioridade (se houver bebida alcoólica), validação no server pelo socket e só então número do dia e
-     * gravação. {@code ageConfirmed} fica {@code true} no pedido quando ele passou pela confirmação de idade. Se o server recusar ou não
-     * responder em 3 segundos, nada é gravado e nenhum número é consumido.
+     * opções, total, maioridade (se houver bebida alcoólica), validação no server pelo socket e só então número
+     * do dia e gravação. Se o server recusar ou não responder em 3 segundos, nada é gravado e nenhum número é
+     * consumido.
+     *
+     * <p>Cada item grava {@code unitPriceCents} já com as opções somadas (o preço que o cliente paga por unidade),
+     * {@code basePriceCents} com o preço do produto sem opções e {@code options} com o acréscimo de cada uma.
+     * {@code ageConfirmed} fica {@code true} no pedido quando ele passou pela confirmação de idade.
      */
     public PlacedOrder place(AuthenticatedUser guest, PlaceOrderRequest request) {
         Tab tab = tabService.requireMyTab(guest);
@@ -81,23 +84,32 @@ public class OrderPlacementService {
         for (PlaceOrderRequest.Item item : request.items()) {
             Product product = products.get(new ObjectId(item.productId()));
             if (product == null) {
-                throw new InvalidRequestException("Product not found: " + item.productId());
+                throw new OrderRejectedException(HttpStatus.CONFLICT, OrderRejectedException.ITEM_UNAVAILABLE,
+                        "Um item do carrinho saiu do cardápio.");
             }
             if (!product.available()) {
-                throw new ConflictException(product.name() + " is not available now");
+                throw new OrderRejectedException(HttpStatus.CONFLICT, OrderRejectedException.ITEM_UNAVAILABLE,
+                        product.name() + " acabou.");
+            }
+            OrderOptions.Resolved options = OrderOptions.resolve(product, item.optionsOrEmpty());
+            int unitPrice = product.priceCents() + options.deltaSumCents();
+            if (unitPrice < 0) {
+                throw new InvalidRequestException(product.name() + " ficou com preço negativo com essas opções");
             }
             String note = item.note() == null ? "" : item.note().trim();
-            total += product.priceCents() * item.quantity();
+            total += unitPrice * item.quantity();
             items.add(new Document("productId", product.id())
                     .append("nameSnapshot", product.name())
-                    .append("unitPriceCents", product.priceCents())
+                    .append("unitPriceCents", unitPrice)
+                    .append("basePriceCents", product.priceCents())
                     .append("quantity", item.quantity())
                     .append("note", note)
-                    .append("options", List.of())
+                    .append("options", options.documents())
                     .append("status", "RECEIVED")
                     .append("placedByType", "CUSTOMER")
                     .append("placedBySessionId", sessionId));
-            toValidate.add(new OrderValidationClient.Item(product.priceCents(), item.quantity(), note, List.of()));
+            toValidate.add(new OrderValidationClient.Item(product.priceCents(), item.quantity(), note,
+                    options.deltasCents()));
         }
 
         boolean hasAlcohol = request.items().stream()

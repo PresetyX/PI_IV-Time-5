@@ -63,10 +63,17 @@ export function formatClock(iso: string): string {
   return `${date.getHours()}h${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+/** Opção escolhida, pelo nome do grupo e da opção. O preço vem sempre do cadastro no backend. */
+export interface SelectedOption {
+  group: string;
+  label: string;
+}
+
 export interface OrderItemInput {
   productId: string;
   quantity: number;
   note?: string;
+  options?: SelectedOption[];
 }
 
 export interface PlacedOrder {
@@ -106,6 +113,8 @@ export function orderErrorMessage(caught: unknown): string {
         return 'O preço de algum item mudou. Confira o carrinho e envie de novo.';
       case 'store_closed':
         return 'A casa não está aceitando pedidos agora.';
+      case 'item_unavailable':
+        return 'Algum item do carrinho acabou. Confira e tente de novo.';
       case 'validation_unavailable':
         return 'Não conseguimos conferir seu pedido agora. Nada foi enviado. Tente de novo em instantes.';
     }
@@ -121,16 +130,20 @@ export interface RoundItem {
   name: string;
   note?: string;
   quantity: number;
+  /** Já inclui as opções. */
   unitPriceCents: number;
   available: boolean;
+  options?: SelectedOption[];
 }
 
 export interface RoundSuggestion {
   productId: string;
   name: string;
+  /** Já inclui as opções. */
   priceCents: number;
   orderedBy?: string;
   orderedAt: string;
+  options?: SelectedOption[];
 }
 
 export interface Round {
@@ -152,6 +165,7 @@ export interface TrackedLine {
   quantity: number;
   totalCents: number;
   canceled: boolean;
+  options?: string[];
 }
 
 export interface TrackedOrder {

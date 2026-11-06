@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Alert, Box, ButtonBase, CircularProgress, IconButton, Typography } from '@mui/material';
 import ActionButton from '../../components/client/ActionButton';
+import { optionsText } from '../../components/client/CartParts';
 import AgeConfirmationScreen from '../../components/client/AgeConfirmationScreen';
 import ClientScreen from '../../components/client/ClientScreen';
 import ConnectionLostScreen from '../../components/client/ConnectionLostScreen';
@@ -102,12 +103,17 @@ export default function RepeatRoundPage() {
     setSending(true);
     setError(null);
     try {
-      await placeOrder(slug, [
-        ...repeated.map((item) => ({ productId: item.productId, quantity: item.quantity, note: item.note || undefined })),
-        ...extras.map((suggestion) => ({ productId: suggestion.productId, quantity: 1 })),
+      const placed = await placeOrder(slug, [
+        ...repeated.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          note: item.note || undefined,
+          options: item.options,
+        })),
+        ...extras.map((suggestion) => ({ productId: suggestion.productId, quantity: 1, options: suggestion.options })),
       ], total, ageConfirmed);
       setAskingAge(false);
-      navigate(`/t/${slug}/conta`);
+      navigate(`/t/${slug}/pedidos/${placed.id}/enviado`);
     } catch (caught) {
       if (handleExpired(caught)) return;
       if (needsAgeConfirmation(caught)) {
@@ -283,6 +289,9 @@ function RoundRow({ item, checked, onToggle }: { item: RoundItem; checked: boole
         >
           {item.quantity}x {item.name}
         </Typography>
+        {item.options && item.options.length > 0 && (
+          <Typography sx={{ fontSize: fontSize.caption, color: colors.textSecondary }}>{optionsText(item.options)}</Typography>
+        )}
         {(item.note || !item.available) && (
           <Typography sx={{ fontSize: fontSize.caption, color: item.available ? colors.textMuted : colors.error }}>
             {item.available ? item.note : 'Esgotado agora'}
@@ -321,6 +330,9 @@ function SuggestionRow({
     >
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{ fontSize: fontSize.small, fontWeight: fontWeight.extraBold }}>{suggestion.name}</Typography>
+        {suggestion.options && suggestion.options.length > 0 && (
+          <Typography sx={{ fontSize: fontSize.caption, color: colors.textSecondary }}>{optionsText(suggestion.options)}</Typography>
+        )}
         <Typography sx={{ fontSize: fontSize.caption, color: colors.textMuted }}>
           {who} {minutesAgo(suggestion.orderedAt)}
         </Typography>

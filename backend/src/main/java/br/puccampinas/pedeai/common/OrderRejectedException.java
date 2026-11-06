@@ -12,6 +12,7 @@ public class OrderRejectedException extends RuntimeException {
     public static final String STORE_CLOSED = "store_closed";
     public static final String VALIDATION_UNAVAILABLE = "validation_unavailable";
     public static final String AGE_CONFIRMATION_REQUIRED = "age_confirmation_required";
+    public static final String ITEM_UNAVAILABLE = "item_unavailable";
 
     private final HttpStatus status;
     private final String code;

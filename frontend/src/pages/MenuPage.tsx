@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ActionButton from '../components/client/ActionButton';
-import AgeConfirmationScreen from '../components/client/AgeConfirmationScreen';
-import { needsAgeConfirmation, orderErrorMessage, placeOrder } from '../services/tabs';
-import { confirmAge, isAgeConfirmed, readVisit } from '../services/visit';
-import { Box, Button, CircularProgress, Skeleton, Tab, Tabs, Typography } from '@mui/material';
+import ProductOptionsScreen from '../components/client/ProductOptionsScreen';
+import { readVisit } from '../services/visit';
+import { Box, Button, Skeleton, Tab, Tabs, Typography } from '@mui/material';
 import StatusMessage from '../components/StatusMessage';
+import { useCart } from '../hooks/useCart';
 import { ApiError } from '../services/api';
+import { addLine, cartCount, cartTotal } from '../services/cart';
+import type { CartOption } from '../services/cart';
 import { formatCents } from '../services/format';
 import { fetchMenu } from '../services/menu';
 import type { Menu, MenuProduct } from '../services/menu';
@@ -27,10 +29,8 @@ export default function MenuPage() {
   const hasTab = Boolean(visit.sessionId && visit.guestToken);
   const [state, setState] = useState<MenuState>({ status: 'loading' });
   const [selectedCategory, setSelectedCategory] = useState(0);
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [sending, setSending] = useState(false);
-  const [sendError, setSendError] = useState<string | null>(null);
-  const [askingAge, setAskingAge] = useState(false);
+  const [cart, setCart] = useCart(slug);
+  const [choosing, setChoosing] = useState<MenuProduct | null>(null);
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -56,65 +56,28 @@ export default function MenuPage() {
   useStoreColor(storeColor);
 
   function addProduct(product: MenuProduct) {
-    setSendError(null);
-    setQuantities((current) => ({ ...current, [product.id]: (current[product.id] ?? 0) + 1 }));
-  }
-
-  const products =
-    state.status === 'ready' ? state.menu.categories.flatMap((category) => category.products) : [];
-  const cartItems = products.filter((product) => (quantities[product.id] ?? 0) > 0);
-  const cartCount = cartItems.reduce((sum, product) => sum + quantities[product.id], 0);
-  const cartTotal = cartItems.reduce((sum, product) => sum + product.priceCents * quantities[product.id], 0);
-
-  const alcoholicItems = cartItems
-    .filter((product) => product.isAlcoholic)
-    .map((product) => ({ name: product.name, quantity: quantities[product.id] }));
-
-  async function sendOrder(ageConfirmed = isAgeConfirmed(slug)) {
-    if (sending || cartItems.length === 0) return;
-    if (alcoholicItems.length > 0 && !ageConfirmed) {
-      setAskingAge(true);
+    if ((product.optionGroups ?? []).length > 0) {
+      setChoosing(product);
       return;
     }
-    setSending(true);
-    setSendError(null);
-    try {
-      await placeOrder(
-        slug,
-        cartItems.map((product) => ({ productId: product.id, quantity: quantities[product.id] })),
-        cartTotal,
-        ageConfirmed,
-      );
-      setQuantities({});
-      setAskingAge(false);
-      navigate(`/t/${slug}/conta`);
-    } catch (caught) {
-      if (needsAgeConfirmation(caught)) {
-        setAskingAge(true);
-      } else {
-        setAskingAge(false);
-        setSendError(orderErrorMessage(caught));
-      }
-    } finally {
-      setSending(false);
-    }
+    setCart((current) => addLine(current, product));
   }
 
-  function confirmAgeAndSend() {
-    confirmAge(slug);
-    sendOrder(true);
+  function addWithOptions(options: CartOption[], quantity: number, note: string) {
+    if (!choosing) return;
+    const product = choosing;
+    setCart((current) => addLine(current, product, options, quantity, note));
+    setChoosing(null);
   }
 
-  if (askingAge && state.status === 'ready') {
-    return (
-      <AgeConfirmationScreen
-        storeName={state.menu.store.name}
-        items={alcoholicItems}
-        sending={sending}
-        onConfirm={confirmAgeAndSend}
-        onBack={() => setAskingAge(false)}
-      />
-    );
+  const quantities: Record<string, number> = {};
+  cart.forEach((line) => {
+    quantities[line.productId] = (quantities[line.productId] ?? 0) + line.quantity;
+  });
+  const count = cartCount(cart);
+
+  if (choosing) {
+    return <ProductOptionsScreen product={choosing} onAdd={addWithOptions} onBack={() => setChoosing(null)} />;
   }
 
   return (
@@ -164,24 +127,14 @@ export default function MenuPage() {
             borderTop: `1px solid ${colors.border}`,
           }}
         >
-          {sendError && (
-            <Typography role="alert" sx={{ mb: 2, fontSize: 13, color: colors.error }}>
-              {sendError}
-            </Typography>
-          )}
-          {hasTab && cartCount > 0 ? (
-            <>
-              <ActionButton onClick={() => sendOrder()} disabled={sending}>
-                {sending ? (
-                  <CircularProgress size={22} sx={{ color: 'inherit' }} />
-                ) : (
-                  `Enviar para a cozinha · ${cartCount} ${cartCount === 1 ? 'item' : 'itens'} · ${formatCents(cartTotal)}`
-                )}
-              </ActionButton>
-              <ActionButton tone="quiet" sx={{ mt: 2 }} disabled={sending} onClick={() => setQuantities({})}>
-                Limpar carrinho
-              </ActionButton>
-            </>
+          {hasTab && count > 0 ? (
+            <ActionButton
+              onClick={() => navigate(`/t/${slug}/carrinho`)}
+              sx={{ justifyContent: 'space-between', px: 5 }}
+            >
+              <span>Ver carrinho · {count} {count === 1 ? 'item' : 'itens'}</span>
+              <span>{formatCents(cartTotal(cart))}</span>
+            </ActionButton>
           ) : hasTab ? (
             <ActionButton onClick={() => navigate(`/t/${slug}/comandas/minha`)}>Voltar para minha comanda</ActionButton>
           ) : (

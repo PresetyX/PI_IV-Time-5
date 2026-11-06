@@ -14,6 +14,9 @@ import MyTabPage from './pages/client/MyTabPage';
 import BillPage from './pages/client/BillPage';
 import RepeatRoundPage from './pages/client/RepeatRoundPage';
 import OrderStatusPage from './pages/client/OrderStatusPage';
+import CartPage from './pages/client/CartPage';
+import ConfirmOrderPage from './pages/client/ConfirmOrderPage';
+import OrderSentPage from './pages/client/OrderSentPage';
 import WaiterCallPage from './pages/client/WaiterCallPage';
 import LoginPage from './pages/LoginPage';
 import OperationsWorkspace from './pages/OperationsWorkspace';
@@ -40,7 +43,10 @@ export default function App() {
       <Route path="/t/:slug/comandas/:tabId/entrar" element={<JoinTabPage />} />
       <Route path="/t/:slug/conta" element={<BillPage />} />
       <Route path="/t/:slug/rodada" element={<RepeatRoundPage />} />
+      <Route path="/t/:slug/carrinho" element={<CartPage />} />
+      <Route path="/t/:slug/carrinho/confirmar" element={<ConfirmOrderPage />} />
       <Route path="/t/:slug/pedidos/:orderId" element={<OrderStatusPage />} />
+      <Route path="/t/:slug/pedidos/:orderId/enviado" element={<OrderSentPage />} />
       <Route
         path="/t/:slug/pix"
         element={

@@ -50,7 +50,8 @@ public class OrderTrackingService {
                 total += lineTotal;
             }
             lines.add(new OrderTrackingResponse.Line(item.getString("nameSnapshot"), item.getString("note"), quantity,
-                    lineTotal, canceled));
+                    lineTotal, canceled, OrderOptions.fromItem(item).stream()
+                            .map(PlaceOrderRequest.SelectedOption::label).toList()));
         }
 
         List<OrderTrackingResponse.Step> timeline = new ArrayList<>();

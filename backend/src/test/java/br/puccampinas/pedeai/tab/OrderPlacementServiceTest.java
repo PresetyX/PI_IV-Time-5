@@ -31,8 +31,10 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 
 import br.puccampinas.pedeai.auth.AuthenticatedUser;
-import br.puccampinas.pedeai.common.ConflictException;
+import br.puccampinas.pedeai.common.InvalidRequestException;
 import br.puccampinas.pedeai.common.OrderRejectedException;
+import br.puccampinas.pedeai.menu.Option;
+import br.puccampinas.pedeai.menu.OptionGroup;
 import br.puccampinas.pedeai.menu.Product;
 import br.puccampinas.pedeai.menu.ProductRepository;
 import br.puccampinas.pedeai.socket.OrderValidationClient;
@@ -148,10 +150,77 @@ class OrderPlacementServiceTest {
         Product soldOut = product("Pudim", 1300, false);
         when(productRepository.findAllById(any())).thenReturn(List.of(soldOut));
 
-        assertThrows(ConflictException.class, () -> service.place(guest, request(1300, item(soldOut, 1, null))));
+        OrderRejectedException e = assertThrows(OrderRejectedException.class,
+                () -> service.place(guest, request(1300, item(soldOut, 1, null))));
+
+        assertEquals(HttpStatus.CONFLICT, e.getStatus());
+        assertEquals(OrderRejectedException.ITEM_UNAVAILABLE, e.getCode());
+        verifyNoInteractions(validation);
+        assertNothingSaved();
+    }
+
+    @Test
+    void productThatLeftTheMenuIsUnavailable() {
+        Product gone = product("Pudim", 1300, true);
+        when(productRepository.findAllById(any())).thenReturn(List.of());
+
+        OrderRejectedException e = assertThrows(OrderRejectedException.class,
+                () -> service.place(guest, request(1300, item(gone, 1, null))));
+
+        assertEquals(OrderRejectedException.ITEM_UNAVAILABLE, e.getCode());
+        assertNothingSaved();
+    }
+
+    @Test
+    void optionsComeFromTheCatalogAndAreSavedInTheUnitPrice() {
+        Product burger = burger();
+        when(productRepository.findAllById(any())).thenReturn(List.of(burger));
+        PlaceOrderRequest.Item ordered = new PlaceOrderRequest.Item(burger.id().toHexString(), 2, null,
+                List.of(option("Ponto da carne", "Ao ponto"), option("Adicionais", "Bacon extra")));
+
+        service.place(guest, new PlaceOrderRequest(List.of(ordered), 7600));
+
+        ArgumentCaptor<OrderValidationClient.OrderValidation> sent =
+                ArgumentCaptor.forClass(OrderValidationClient.OrderValidation.class);
+        verify(validation).validate(sent.capture());
+        assertEquals(List.of(new OrderValidationClient.Item(3200, 2, "", List.of(0, 600))), sent.getValue().items());
+        assertEquals(7600, sent.getValue().computedCents());
+
+        ArgumentCaptor<Document> saved = ArgumentCaptor.forClass(Document.class);
+        verify(mongo).insert(saved.capture(), eq("order"));
+        Document line = saved.getValue().getList("items", Document.class).get(0);
+        assertEquals(3800, line.get("unitPriceCents"));
+        assertEquals(3200, line.get("basePriceCents"));
+        assertEquals(List.of("Ao ponto", "Bacon extra"),
+                line.getList("options", Document.class).stream().map(o -> o.getString("label")).toList());
+        assertEquals(7600, saved.getValue().get("totalCents"));
+    }
+
+    @Test
+    void missingRequiredOptionIsRejectedBeforeTheSocket() {
+        Product burger = burger();
+        when(productRepository.findAllById(any())).thenReturn(List.of(burger));
+        PlaceOrderRequest.Item ordered = new PlaceOrderRequest.Item(burger.id().toHexString(), 1, null,
+                List.of(option("Adicionais", "Bacon extra")));
+
+        assertThrows(InvalidRequestException.class,
+                () -> service.place(guest, new PlaceOrderRequest(List.of(ordered), 3800)));
 
         verifyNoInteractions(validation);
         assertNothingSaved();
+    }
+
+    private Product burger() {
+        return new Product(new ObjectId(), storeId, new ObjectId(), "Triunfo duplo", null, 3200, null, null, true,
+                null, false, 0, List.of(
+                        new OptionGroup("Ponto da carne", true, 1, 1,
+                                List.of(new Option("Ao ponto", 0), new Option("Bem passado", 0))),
+                        new OptionGroup("Adicionais", false, 0, 3,
+                                List.of(new Option("Bacon extra", 600), new Option("Ovo", 300)))));
+    }
+
+    private static PlaceOrderRequest.SelectedOption option(String group, String label) {
+        return new PlaceOrderRequest.SelectedOption(group, label);
     }
 
     @Test

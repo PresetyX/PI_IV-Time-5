@@ -12,11 +12,17 @@ public record RoundResponse(
         List<RoundItem> items,
         List<Suggestion> suggestions) {
 
-    /** Preço e disponibilidade são os de agora, porque é por eles que o pedido repetido vai ser cobrado. */
+    /**
+     * Preço e disponibilidade são os de agora, porque é por eles que o pedido repetido vai ser cobrado.
+     * {@code unitPriceCents} já inclui as opções. Se as opções do pedido antigo não valem mais para o produto, o item
+     * vem como indisponível.
+     */
     public record RoundItem(String productId, String name, String note, int quantity, int unitPriceCents,
-            boolean available) {
+            boolean available, List<PlaceOrderRequest.SelectedOption> options) {
     }
 
-    public record Suggestion(String productId, String name, int priceCents, String orderedBy, Instant orderedAt) {
+    /** {@code priceCents} já inclui as opções que a outra pessoa escolheu, repetidas em {@code options}. */
+    public record Suggestion(String productId, String name, int priceCents, String orderedBy, Instant orderedAt,
+            List<PlaceOrderRequest.SelectedOption> options) {
     }
 }

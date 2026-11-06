@@ -29,6 +29,25 @@ public record PlaceOrderRequest(
         return Boolean.TRUE.equals(ageConfirmed);
     }
 
-    public record Item(@NotBlank String productId, @Min(1) @Max(20) int quantity, @Size(max = 140) String note) {
+    /**
+     * @param options opções escolhidas, pelo nome do grupo e da opção. O preço de cada uma vem do banco, nunca do
+     *                cliente.
+     */
+    public record Item(
+            @NotBlank String productId,
+            @Min(1) @Max(20) int quantity,
+            @Size(max = 140) String note,
+            @Size(max = 20) List<@Valid SelectedOption> options) {
+
+        public Item(String productId, int quantity, String note) {
+            this(productId, quantity, note, null);
+        }
+
+        public List<SelectedOption> optionsOrEmpty() {
+            return options == null ? List.of() : options;
+        }
+    }
+
+    public record SelectedOption(@NotBlank String group, @NotBlank String label) {
     }
 }
