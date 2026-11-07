@@ -5,7 +5,7 @@ import ActionButton from '../../components/client/ActionButton';
 import ClientScreen from '../../components/client/ClientScreen';
 import ConnectionLostScreen from '../../components/client/ConnectionLostScreen';
 import { ClientError, ClientLoading } from '../../components/client/ClientStates';
-import { ClocheIcon } from '../../components/client/icons';
+import { CheckIcon, ClocheIcon, ClockIcon } from '../../components/client/icons';
 import { InfoNote, ScreenHeader, SectionLabel } from '../../components/client/TabParts';
 import { guestGatePath, useExpiredSession } from '../../hooks/useGuestSession';
 import { useStore } from '../../hooks/useStore';
@@ -13,7 +13,7 @@ import { useStoreColor } from '../../hooks/useStoreColor';
 import { ApiError } from '../../services/api';
 import { orderStatusLabel } from '../../services/bill';
 import { formatCents } from '../../services/format';
-import { fetchOrder } from '../../services/tabs';
+import { fetchOrder, formatClock } from '../../services/tabs';
 import type { TrackedLine, TrackedOrder } from '../../services/tabs';
 import { formatTableNumber } from '../../services/tables';
 import { tokens } from '../../theme/theme';
@@ -72,6 +72,21 @@ export default function OrderStatusPage() {
   const ready = order.status === 'READY';
   const cancelled = order.status === 'CANCELLED' || order.status === 'CANCELED';
   const steps = [...order.timeline].reverse();
+
+  const active = order.items.filter((item) => !item.canceled);
+  const delivered = active.filter((item) => item.status === 'DELIVERED').length;
+  if (ready && delivered > 0 && delivered < active.length) {
+    return (
+      <PartialDelivery
+        order={order}
+        delivered={delivered}
+        total={active.length}
+        onBack={() => navigate(`/t/${slug}/conta`)}
+        onCallWaiter={() => navigate(`/t/${slug}/garcom`)}
+        onOrderMore={() => navigate(`/t/${slug}/cardapio`)}
+      />
+    );
+  }
 
   return (
     <ClientScreen
@@ -199,6 +214,165 @@ function Line({ item }: { item: TrackedLine }) {
         {item.note &&<Typography sx={{ fontSize: fontSize.caption, color: colors.textMuted }}>{item.note}</Typography>}
       </Box>
       <Typography sx={{ flexShrink: 0, fontSize: fontSize.small, fontWeight: fontWeight.extraBold, color, textDecoration: strike }}>
+        {formatCents(item.totalCents)}
+      </Typography>
+    </Box>
+  );
+}
+
+const ITEM_STATUS_LABEL: Record<string, string> = {
+  RECEIVED: 'Na fila da cozinha',
+  PREPARING: 'Em preparo',
+  READY: 'Pronto, o garçom já vai levar',
+};
+
+interface PartialDeliveryProps {
+  order: TrackedOrder;
+  delivered: number;
+  total: number;
+  onBack: () => void;
+  onCallWaiter: () => void;
+  onOrderMore: () => void;
+}
+
+function PartialDelivery({ order, delivered, total, onBack, onCallWaiter, onOrderMore }: PartialDeliveryProps) {
+  const place = order.tableNumber > 0 ? `Mesa ${formatTableNumber(order.tableNumber)}` : 'Balcão';
+  const firstPending = order.items.findIndex((item) => !item.canceled && item.status !== 'DELIVERED');
+
+  return (
+    <ClientScreen
+      footerDivider
+      footer={
+        <Box sx={{ display: 'flex', gap: 3 }}>
+          <ActionButton tone="secondary" onClick={onCallWaiter}>
+            Chamar garçom
+          </ActionButton>
+          <ActionButton onClick={onOrderMore}>Pedir mais</ActionButton>
+        </Box>
+      }
+    >
+      <ScreenHeader
+        title={`Pedido #${order.number}`}
+        subtitle={`${place} · enviado às ${formatClock(order.createdAt)}`}
+        onBack={onBack}
+        action={
+          <Box
+            sx={{
+              px: 3,
+              py: 1,
+              borderRadius: 999,
+              bgcolor: colors.surface,
+              fontSize: fontSize.caption,
+              fontWeight: fontWeight.extraBold,
+            }}
+          >
+            {delivered} de {total} entregues
+          </Box>
+        }
+      />
+
+      <Box sx={{ px: 5, pt: 5, pb: 6 }}>
+        <Box sx={{ p: 4, borderRadius: `${radius.card}px`, bgcolor: colors.surface }}>
+          <Typography component="h1" sx={{ fontSize: fontSize.base, fontWeight: fontWeight.extraBold }}>
+            Parte do pedido já está na mesa
+          </Typography>
+          <Typography sx={{ mt: 1, fontSize: fontSize.small, color: colors.textSecondary }}>
+            O resto já está pronto e o garçom leva em seguida. Itens do mesmo pedido podem chegar em horas diferentes.
+          </Typography>
+          <Box
+            role="progressbar"
+            aria-label="Itens entregues"
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuenow={delivered}
+            sx={{ mt: 3, height: 6, borderRadius: 999, bgcolor: colors.border, overflow: 'hidden' }}
+          >
+            <Box sx={{ width: `${(delivered / total) * 100}%`, height: '100%', bgcolor: colors.text }} />
+          </Box>
+        </Box>
+
+        <SectionLabel>Itens do pedido</SectionLabel>
+        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {order.items.map((item, index) => (
+            <PartialLine key={index} item={item} highlighted={index === firstPending} />
+          ))}
+        </Box>
+
+        <InfoNote icon={<ClockIcon sx={{ fontSize: 18 }} />}>
+          Se preferir que tudo saia junto, avise o garçom.
+        </InfoNote>
+      </Box>
+    </ClientScreen>
+  );
+}
+
+function PartialLine({ item, highlighted }: { item: TrackedLine; highlighted: boolean }) {
+  const done = item.status === 'DELIVERED';
+  const detail = item.canceled
+    ? 'Cancelado'
+    : done
+      ? `Entregue${item.deliveredAt ? ` às ${formatClock(item.deliveredAt)}` : ''}`
+      : (ITEM_STATUS_LABEL[item.status ?? ''] ?? orderStatusLabel(item.status ?? ''));
+  const strike = item.canceled ? 'line-through' : 'none';
+  return (
+    <Box
+      component="li"
+      sx={{
+        p: 4,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 3,
+        border: highlighted ? `2px solid ${colors.text}` : `1px solid ${colors.border}`,
+        borderRadius: `${radius.card}px`,
+      }}
+    >
+      <Box
+        aria-hidden
+        sx={{
+          width: 24,
+          height: 24,
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '50%',
+          bgcolor: done ? colors.textSecondary : 'transparent',
+          border: done ? 'none' : `${highlighted ? 2 : 1}px solid ${highlighted ? colors.text : colors.border}`,
+          color: '#FFFFFF',
+        }}
+      >
+        {done && <CheckIcon sx={{ fontSize: 16 }} />}
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography
+          sx={{
+            fontSize: fontSize.small,
+            fontWeight: fontWeight.extraBold,
+            color: item.canceled ? colors.textMuted : colors.text,
+            textDecoration: strike,
+          }}
+        >
+          {item.quantity}x {item.name}
+        </Typography>
+        <Typography
+          sx={{
+            fontSize: fontSize.caption,
+            fontWeight: highlighted ? fontWeight.extraBold : undefined,
+            color: highlighted ? colors.text : colors.textMuted,
+          }}
+        >
+          {detail}
+        </Typography>
+      </Box>
+      <Typography
+        sx={{
+          flexShrink: 0,
+          fontSize: fontSize.small,
+          fontWeight: fontWeight.extraBold,
+          color: item.canceled ? colors.textMuted : colors.text,
+          textDecoration: strike,
+        }}
+      >
         {formatCents(item.totalCents)}
       </Typography>
     </Box>

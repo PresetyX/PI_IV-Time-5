@@ -76,6 +76,21 @@ class OrderTrackingServiceTest {
     }
 
     @Test
+    void partialDeliveryShowsEachItemStatusAndDeliveryTime() {
+        Document order = order("READY",
+                item("Chopp 500 ml", 1400, 2, "DELIVERED").append("deliveredAt", Date.from(NOW.plusSeconds(300))),
+                item("Porção de fritas", 3200, 1, "READY"));
+        when(mongo.findOne(any(Query.class), eq(Document.class), eq("order"))).thenReturn(order);
+
+        OrderTrackingResponse tracking = service.track(guest, order.getObjectId("_id").toHexString());
+
+        assertEquals("DELIVERED", tracking.items().get(0).status());
+        assertEquals(NOW.plusSeconds(300), tracking.items().get(0).deliveredAt());
+        assertEquals("READY", tracking.items().get(1).status());
+        assertEquals(null, tracking.items().get(1).deliveredAt());
+    }
+
+    @Test
     void orderOutsideMyTabIsNotFound() {
         when(mongo.findOne(any(Query.class), eq(Document.class), eq("order"))).thenReturn(null);
 

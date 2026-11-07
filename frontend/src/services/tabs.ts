@@ -173,6 +173,8 @@ export interface TrackedLine {
   totalCents: number;
   canceled: boolean;
   options?: string[];
+  status?: string;
+  deliveredAt?: string;
 }
 
 export interface TrackedOrder {
