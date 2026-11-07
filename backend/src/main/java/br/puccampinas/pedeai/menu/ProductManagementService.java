@@ -2,25 +2,20 @@ package br.puccampinas.pedeai.menu;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import br.puccampinas.pedeai.auth.AuthenticatedUser;
-import br.puccampinas.pedeai.common.ForbiddenException;
 import br.puccampinas.pedeai.common.InvalidRequestException;
 import br.puccampinas.pedeai.common.ResourceNotFoundException;
 
 @Service
 public class ProductManagementService {
-
-    static final Set<String> VIEW_ROLES = Set.of("OWNER", "MANAGER", "KITCHEN");
-    static final Set<String> EDIT_ROLES = Set.of("OWNER", "MANAGER");
-    static final Set<String> AVAILABILITY_ROLES = Set.of("OWNER", "MANAGER", "KITCHEN");
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
@@ -34,7 +29,7 @@ public class ProductManagementService {
     }
 
     public ManagementCatalog catalog(AuthenticatedUser user) {
-        requireRole(user, VIEW_ROLES);
+        MenuAccess.requireRole(user, MenuAccess.VIEW_ROLES);
         Map<ObjectId, List<ManagementProduct>> productsByCategory = productRepository
                 .findByStoreIdOrderByPositionAsc(user.storeId()).stream()
                 .collect(Collectors.groupingBy(Product::categoryId,
@@ -53,15 +48,35 @@ public class ProductManagementService {
     }
 
     public ManagementProduct get(AuthenticatedUser user, String productId) {
-        requireRole(user, VIEW_ROLES);
+        MenuAccess.requireRole(user, MenuAccess.VIEW_ROLES);
         return ManagementProduct.of(find(user, productId));
     }
 
-    public ManagementProduct update(AuthenticatedUser user, String productId, UpdateProductRequest request) {
-        requireRole(user, EDIT_ROLES);
+    public ManagementProduct create(AuthenticatedUser user, ProductRequest request) {
+        MenuAccess.requireRole(user, MenuAccess.EDIT_ROLES);
+        Category category = categoryFor(user, request);
+        boolean available = request.available() == null || request.available();
+        Product created = new Product(
+                new ObjectId(),
+                user.storeId(),
+                category.id(),
+                request.name().trim(),
+                MenuAccess.blankToNull(request.description()),
+                request.priceCents(),
+                MenuAccess.blankToNull(request.imageUrl()),
+                request.prepMinutes(),
+                available,
+                available ? null : clock.instant(),
+                Boolean.TRUE.equals(request.isAlcoholic()),
+                nextPosition(user.storeId(), category.id()),
+                request.optionGroups() == null ? List.of() : validOptionGroups(request.optionGroups()));
+        return ManagementProduct.of(productRepository.save(created));
+    }
+
+    public ManagementProduct update(AuthenticatedUser user, String productId, ProductRequest request) {
+        MenuAccess.requireRole(user, MenuAccess.EDIT_ROLES);
         Product current = find(user, productId);
-        Category category = categoryRepository.findByStoreIdAndId(user.storeId(), parseId(request.categoryId()))
-                .orElseThrow(() -> new InvalidRequestException("Categoria não encontrada."));
+        Category category = categoryFor(user, request);
 
         boolean movedCategory = !category.id().equals(current.categoryId());
         int position = movedCategory ? nextPosition(user.storeId(), category.id()) : current.position();
@@ -75,9 +90,9 @@ public class ProductManagementService {
                 current.storeId(),
                 category.id(),
                 request.name().trim(),
-                blankToNull(request.description()),
+                MenuAccess.blankToNull(request.description()),
                 request.priceCents(),
-                blankToNull(request.imageUrl()),
+                MenuAccess.blankToNull(request.imageUrl()),
                 request.prepMinutes(),
                 available,
                 unavailableSince(current, available),
@@ -88,7 +103,7 @@ public class ProductManagementService {
     }
 
     public ManagementProduct setAvailability(AuthenticatedUser user, String productId, boolean available) {
-        requireRole(user, AVAILABILITY_ROLES);
+        MenuAccess.requireRole(user, MenuAccess.AVAILABILITY_ROLES);
         Product current = find(user, productId);
         if (current.available() == available) {
             return ManagementProduct.of(current);
@@ -101,9 +116,44 @@ public class ProductManagementService {
         return ManagementProduct.of(productRepository.save(updated));
     }
 
+    public List<ManagementProduct> reorder(AuthenticatedUser user, String categoryId, List<String> ids) {
+        MenuAccess.requireRole(user, MenuAccess.EDIT_ROLES);
+        Category category = categoryRepository.findByStoreIdAndId(user.storeId(), MenuAccess.parseId(categoryId))
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada."));
+        List<Product> products = productRepository
+                .findByStoreIdAndCategoryIdOrderByPositionAsc(user.storeId(), category.id());
+        List<ObjectId> order = MenuAccess.sameIds(ids, products.stream().map(Product::id).toList(), "produtos");
+        Map<ObjectId, Product> byId = products.stream().collect(Collectors.toMap(Product::id, p -> p));
+        List<Product> result = new ArrayList<>();
+        List<Product> changed = new ArrayList<>();
+        for (int index = 0; index < order.size(); index++) {
+            Product product = byId.get(order.get(index));
+            Product placed = product.position() == index + 1 ? product : new Product(
+                    product.id(), product.storeId(), product.categoryId(), product.name(), product.description(),
+                    product.priceCents(), product.imageUrl(), product.prepMinutes(), product.available(),
+                    product.unavailableSince(), product.isAlcoholic(), index + 1, product.optionGroups());
+            if (placed != product) {
+                changed.add(placed);
+            }
+            result.add(placed);
+        }
+        if (!changed.isEmpty()) {
+            productRepository.saveAll(changed);
+        }
+        return result.stream().map(ManagementProduct::of).toList();
+    }
+
     private Product find(AuthenticatedUser user, String productId) {
-        return productRepository.findByStoreIdAndId(user.storeId(), parseId(productId))
+        return productRepository.findByStoreIdAndId(user.storeId(), MenuAccess.parseId(productId))
                 .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado."));
+    }
+
+    private Category categoryFor(AuthenticatedUser user, ProductRequest request) {
+        if (request.categoryId() == null || !ObjectId.isValid(request.categoryId())) {
+            throw new InvalidRequestException("Categoria não encontrada.");
+        }
+        return categoryRepository.findByStoreIdAndId(user.storeId(), new ObjectId(request.categoryId()))
+                .orElseThrow(() -> new InvalidRequestException("Categoria não encontrada."));
     }
 
     private Instant unavailableSince(Product current, boolean available) {
@@ -143,22 +193,5 @@ public class ProductManagementService {
             }
         }
         return groups;
-    }
-
-    private static void requireRole(AuthenticatedUser user, Set<String> roles) {
-        if (user == null || !roles.contains(user.role())) {
-            throw new ForbiddenException("Seu perfil não permite esta operação.");
-        }
-    }
-
-    private static ObjectId parseId(String value) {
-        if (value == null || !ObjectId.isValid(value)) {
-            throw new ResourceNotFoundException("Identificador inválido.");
-        }
-        return new ObjectId(value);
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
     }
 }

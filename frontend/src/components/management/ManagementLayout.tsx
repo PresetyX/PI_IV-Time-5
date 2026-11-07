@@ -19,6 +19,7 @@ interface NavItem {
 const MANAGERS: Role[] = ['OWNER', 'MANAGER'];
 const FLOOR: Role[] = ['OWNER', 'MANAGER', 'WAITER'];
 const EVERYONE: Role[] = ['OWNER', 'MANAGER', 'WAITER', 'KITCHEN'];
+const MENU_EDITORS: Role[] = ['OWNER', 'MANAGER', 'KITCHEN'];
 
 const NAV: NavItem[] = [
   { to: '/gestao', label: 'Gestão', roles: MANAGERS, exact: true },
@@ -26,6 +27,8 @@ const NAV: NavItem[] = [
   { to: '/gestao/contas', label: 'Histórico de contas', roles: MANAGERS },
   { to: '/gestao/caixa', label: 'Caixa', roles: MANAGERS },
   { to: '/gestao/comissoes', label: 'Comissões', roles: MANAGERS },
+  { to: '/gestao/cardapio', label: 'Cardápio', roles: MENU_EDITORS },
+  { to: '/gestao/mesas', label: 'Mesas', roles: MANAGERS },
   { to: '/gestao/equipe', label: 'Equipe', roles: MANAGERS },
   { to: '/gestao/configuracao', label: 'Configuração', roles: MANAGERS },
   { to: '/producao', label: 'Produção', roles: EVERYONE },
