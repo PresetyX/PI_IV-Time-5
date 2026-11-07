@@ -28,6 +28,7 @@ const NAV: NavItem[] = [
   { to: '/gestao/caixa', label: 'Caixa', roles: MANAGERS },
   { to: '/gestao/comissoes', label: 'Comissões', roles: MANAGERS },
   { to: '/gestao/cardapio', label: 'Cardápio', roles: MENU_EDITORS },
+  { to: '/gestao/mesas', label: 'Mesas', roles: MANAGERS },
   { to: '/gestao/equipe', label: 'Equipe', roles: MANAGERS },
   { to: '/gestao/configuracao', label: 'Configuração', roles: MANAGERS },
   { to: '/producao', label: 'Produção', roles: EVERYONE },
