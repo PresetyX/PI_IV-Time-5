@@ -195,7 +195,7 @@ export function fetchOrder(slug: string, orderId: string): Promise<TrackedOrder>
   return api.get<TrackedOrder>(`/api/tabs/mine/orders/${orderId}`, guest(slug));
 }
 
-export type WaiterCallType = 'CLOSE_BILL' | 'QUESTION' | 'MISSING_ITEM' | 'ORDER_PROBLEM';
+export type WaiterCallType = 'CLOSE_BILL' | 'QUESTION' | 'MISSING_ITEM' | 'ORDER_PROBLEM' | 'PIX_SENT';
 
 export interface WaiterCall {
   id: string;

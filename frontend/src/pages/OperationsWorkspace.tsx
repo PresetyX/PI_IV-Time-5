@@ -52,6 +52,7 @@ type CallKind = { reason: string; label: string; color: string; tint: string; ra
 const CALL_KINDS: Record<string, CallKind> = {
   ORDER_PROBLEM: { reason: 'Problema no pedido', label: 'Problema', color: '#C62828', tint: '#FDECEC', rank: 0 },
   CLOSE_BILL: { reason: 'Fechar a conta', label: 'Conta', color: '#1D5FD1', tint: '#EAF1FD', rank: 1 },
+  PIX_SENT: { reason: 'Conferir o Pix', label: 'Pix', color: '#157A4A', tint: '#E8F5EE', rank: 1.5 },
   MISSING_ITEM: { reason: 'Faltou algo na mesa', label: 'Falta algo', color: '#7B3FD6', tint: '#F3ECFD', rank: 2 },
   QUESTION: { reason: 'Tirar uma dúvida', label: 'Dúvida', color: '#9A5B00', tint: '#FFF4E0', rank: 3 },
 };

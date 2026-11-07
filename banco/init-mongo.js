@@ -42,6 +42,7 @@ criar("store", {
     logoUrl: texto,
     primaryColor: { bsonType: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "cor da casa no app do cliente" },
     tagline: texto,
+    pixKey: texto,
     openingHours: {
       bsonType: "array",
       description: "um item por dia da semana",

@@ -56,6 +56,17 @@ export function fetchBill(slug: string): Promise<Bill> {
   return api.get<Bill>('/api/tabs/mine/bill', { token: readVisit(slug).guestToken });
 }
 
+export interface Pix {
+  tabId: string;
+  storeName: string;
+  amountCents: number;
+  payload?: string;
+}
+
+export function fetchPix(slug: string): Promise<Pix> {
+  return api.get<Pix>('/api/tabs/mine/pix', { token: readVisit(slug).guestToken });
+}
+
 export function orderStatusLabel(status: string): string {
   return ORDER_STATUS_LABEL[status] ?? status;
 }

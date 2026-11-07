@@ -32,7 +32,8 @@ public class WaiterCallService {
             "CLOSE_BILL", "Fechar a conta",
             "QUESTION", "Tirar uma dúvida",
             "MISSING_ITEM", "Faltou algo na mesa",
-            "ORDER_PROBLEM", "Problema no pedido");
+            "ORDER_PROBLEM", "Problema no pedido",
+            "PIX_SENT", "Conferir o Pix");
     static final String OPEN = "OPEN";
     static final String RESOLVED = "RESOLVED";
     private static final Set<String> STAFF = Set.of("OWNER", "MANAGER", "WAITER");
