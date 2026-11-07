@@ -35,6 +35,7 @@ const storeId = DB.store.insertOne({
   name: "Triunfo Lanches",
   kind: "LANCHONETE",
   phone: "(19) 3333-0000",
+  pixKey: "contato@triunfolanches.com",
   address: { street: "Rua das Palmeiras", number: "320", district: "Centro", city: "Campinas", state: "SP", zip: "13010-000" },
   primaryColor: "#D62F1F",
   tagline: "Lanche na chapa, batata na hora e milk-shake de verdade.",

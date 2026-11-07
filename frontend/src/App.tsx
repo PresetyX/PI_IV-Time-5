@@ -21,6 +21,7 @@ import CounterEntryPage from './pages/client/CounterEntryPage';
 import PickupPage from './pages/client/PickupPage';
 import PickupBoardPage from './pages/client/PickupBoardPage';
 import WaiterCallPage from './pages/client/WaiterCallPage';
+import PixPage from './pages/client/PixPage';
 import LoginPage from './pages/LoginPage';
 import OperationsWorkspace from './pages/OperationsWorkspace';
 import ManagementPage from './pages/ManagementPage';
@@ -50,15 +51,7 @@ export default function App() {
       <Route path="/t/:slug/carrinho/confirmar" element={<ConfirmOrderPage />} />
       <Route path="/t/:slug/pedidos/:orderId" element={<OrderStatusPage />} />
       <Route path="/t/:slug/pedidos/:orderId/enviado" element={<OrderSentPage />} />
-      <Route
-        path="/t/:slug/pix"
-        element={
-          <ClientPlaceholderPage
-            title="Pagar por Pix"
-            description="O pagamento por Pix entra na próxima parte do projeto."
-          />
-        }
-      />
+      <Route path="/t/:slug/pix" element={<PixPage />} />
       <Route path="/t/:slug/garcom" element={<WaiterCallPage />} />
       {/* [Mateus · Card 5] Alteração: balcão (entrada, senha e painel para TV) no lugar do placeholder. */}
       <Route path="/t/:slug/balcao" element={<CounterEntryPage />} />
