@@ -74,12 +74,13 @@ Rotas do painel para o cardápio. Tudo é filtrado pelo `storeId` do token: prod
 | --- | --- | --- |
 | `GET /api/management/products` | OWNER, MANAGER, KITCHEN | Todas as categorias em ordem de `position`, inclusive as ocultas, cada uma com todos os produtos, inclusive os esgotados |
 | `GET /api/management/products/{id}` | OWNER, MANAGER, KITCHEN | Um produto |
+| `POST /api/management/products` | OWNER, MANAGER | Cria o produto no fim da categoria, disponível por padrão |
 | `PUT /api/management/products/{id}` | OWNER, MANAGER | Edita o produto |
 | `PATCH /api/management/products/{id}/availability` | OWNER, MANAGER, KITCHEN | Liga ou desliga a disponibilidade (item esgotado) |
 
 Perfil sem permissão recebe `403 forbidden`.
 
-Corpo do `PUT`:
+Corpo do `POST` e do `PUT`:
 
 ```json
 {
@@ -96,7 +97,7 @@ Corpo do `PUT`:
 ```
 
 - `priceCents` é inteiro e no mínimo 1: `3200` = R$ 32,00. O front converte o valor digitado antes de enviar.
-- `isAlcoholic`, `available` e `optionGroups` são opcionais; ausentes, o valor atual é mantido.
+- `isAlcoholic`, `available` e `optionGroups` são opcionais. No `PUT`, ausentes mantêm o valor atual; no `POST`, valem `false`, `true` e lista vazia.
 - Trocar `categoryId` põe o produto no fim da nova categoria.
 - Mudar o preço não mexe em pedidos já enviados, que guardam a cópia do preço.
 
@@ -246,3 +247,22 @@ Público, para o painel de TV em `/t/:slug/painel`. Só números das senhas de h
 Senha com algum pedido pronto aparece só em `ready`.
 
 > O status `AWAITING_PAYMENT` e o campo `pickupTicket` foram acrescentados ao validador em `banco/init-mongo.js`. Banco criado antes precisa rodar o `init-mongo.js` de novo.
+
+### Categorias (administração)
+
+| Rota | Perfis | O que faz |
+| --- | --- | --- |
+| `GET /api/management/categories` | OWNER, MANAGER, KITCHEN | Categorias em ordem, com a quantidade de produtos de cada uma |
+| `POST /api/management/categories` | OWNER, MANAGER | Cria a categoria no fim da lista |
+| `PUT /api/management/categories/{id}` | OWNER, MANAGER | Renomeia, oculta ou mostra |
+| `DELETE /api/management/categories/{id}` | OWNER, MANAGER | Apaga a categoria vazia; com produto, só oculta |
+| `PUT /api/management/categories/order` | OWNER, MANAGER | Nova ordem das categorias |
+| `PUT /api/management/categories/{id}/products/order` | OWNER, MANAGER | Nova ordem dos produtos da categoria |
+
+Corpo do `POST` e do `PUT`: `{ "name": "Porções", "visible": true }`. `name` tem até 40 caracteres e não repete na loja, sem diferenciar maiúsculas (`409 conflict`). `visible` é opcional: ausente, vale `true` ao criar e mantém o valor atual ao editar.
+
+Resposta da categoria: `{ "id": "...", "name": "Porções", "position": 2, "visible": true, "products": 5 }`.
+
+O `DELETE` responde 200 com `{ "outcome": "DELETED" | "HIDDEN", "category": { ... } }`. Categoria com produto nunca é apagada: ela fica oculta (`visible: false`), some do cardápio do cliente e os produtos continuam no painel.
+
+As duas rotas de ordem recebem `{ "ids": ["...", "..."] }` com todos os ids, uma vez cada, na ordem nova; faltando ou sobrando id, a resposta é `400 validation`. As posições passam a ser 1, 2, 3...

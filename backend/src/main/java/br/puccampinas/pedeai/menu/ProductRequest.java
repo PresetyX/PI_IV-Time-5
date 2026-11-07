@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record UpdateProductRequest(
+public record ProductRequest(
         @NotBlank String categoryId,
         @NotBlank @Size(max = 80) String name,
         @Size(max = 140) String description,
