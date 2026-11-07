@@ -11,12 +11,18 @@ public record BillResponse(
         List<BillOrder> orders,
         int consumptionCents,
         int serviceFeeCents,
-        int totalCents) {
+        int totalCents,
+        boolean owner,
+        List<Person> people) {
 
     public record BillOrder(String id, int number, String status, List<BillLine> items) {
     }
 
     /** Item cancelado continua na lista, para a tela mostrar riscado, mas não entra em nenhuma soma. */
-    public record BillLine(String name, String note, int quantity, int totalCents, String status, boolean canceled) {
+    public record BillLine(String name, String note, int quantity, int totalCents, String status, boolean canceled,
+            String personId, String orderedBy, Instant orderedAt) {
+    }
+
+    public record Person(String id, String name, boolean owner, int totalCents) {
     }
 }

@@ -5,13 +5,14 @@ import ActionButton from '../../components/client/ActionButton';
 import ClientScreen from '../../components/client/ClientScreen';
 import ConnectionLostScreen from '../../components/client/ConnectionLostScreen';
 import { ClientError, ClientLoading } from '../../components/client/ClientStates';
-import { ScreenHeader } from '../../components/client/TabParts';
+import { InfoNote, ScreenHeader, SectionLabel } from '../../components/client/TabParts';
+import { LockIcon } from '../../components/client/icons';
 import { guestGatePath, useExpiredSession } from '../../hooks/useGuestSession';
 import { useStore } from '../../hooks/useStore';
 import { useStoreColor } from '../../hooks/useStoreColor';
 import { ApiError } from '../../services/api';
 import { fetchBill, orderStatusLabel } from '../../services/bill';
-import type { Bill, BillLine } from '../../services/bill';
+import type { Bill, BillLine, BillPerson } from '../../services/bill';
 import { formatCents } from '../../services/format';
 import { callWaiter, fetchWaiterCalls, formatClock } from '../../services/tabs';
 import { formatTableNumber } from '../../services/tables';
@@ -72,6 +73,21 @@ export default function BillPage() {
     } finally {
       setCalling(false);
     }
+  }
+
+  if ((bill.people?.length ?? 0) > 1) {
+    return (
+      <SharedBill
+        bill={bill}
+        waiterComing={waiterComing}
+        calling={calling}
+        callError={callError}
+        onCloseBill={payWithWaiter}
+        onBack={() => navigate(`/t/${slug}/comandas/minha`)}
+        onInvite={() => navigate(`/t/${slug}/comandas/minha`)}
+        onOrderMore={() => navigate(`/t/${slug}/cardapio`)}
+      />
+    );
   }
 
   return (
@@ -183,6 +199,199 @@ function Sum({ label, cents }: { label: string; cents: number }) {
     <Box sx={{ py: 0.5, display: 'flex', justifyContent: 'space-between', color: colors.textSecondary }}>
       <Typography sx={{ fontSize: fontSize.button }}>{label}</Typography>
       <Typography sx={{ fontSize: fontSize.button, fontWeight: fontWeight.extraBold }}>{formatCents(cents)}</Typography>
+    </Box>
+  );
+}
+
+const PERSON_COLORS = ['#111111', '#7A3FC0', '#157A4A', '#1D5FD1', '#9A5B00', '#C62828'];
+
+interface SharedBillProps {
+  bill: Bill;
+  waiterComing: boolean;
+  calling: boolean;
+  callError: boolean;
+  onCloseBill: () => void;
+  onBack: () => void;
+  onInvite: () => void;
+  onOrderMore: () => void;
+}
+
+function SharedBill({ bill, waiterComing, calling, callError, onCloseBill, onBack, onInvite, onOrderMore }: SharedBillProps) {
+  const [filter, setFilter] = useState('all');
+  const people = bill.people ?? [];
+  const colorOf = (id?: string) => PERSON_COLORS[Math.max(0, people.findIndex((person) => person.id === id)) % PERSON_COLORS.length];
+  const peopleCount = people.filter((person) => person.id !== 'staff').length;
+  const lines = bill.orders
+    .flatMap((order) => order.items)
+    .filter((item) => filter === 'all' || item.personId === filter);
+  const chips: { id: string; label: string }[] = [{ id: 'all', label: 'Todos' }, ...people.map((person) => ({ id: person.id, label: person.name }))];
+
+  return (
+    <ClientScreen
+      footerDivider
+      footer={
+        <>
+          {waiterComing && (
+            <Alert severity="success" sx={{ mb: 3, borderRadius: `${radius.button}px` }}>
+              O garçom já foi avisado e vem fechar a conta com você.
+            </Alert>
+          )}
+          {callError && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: `${radius.button}px` }}>
+              Não foi possível chamar o garçom agora. Tente de novo.
+            </Alert>
+          )}
+          <Box sx={{ display: 'flex', gap: 3 }}>
+            <ActionButton tone="secondary" onClick={onOrderMore}>
+              Pedir mais
+            </ActionButton>
+            {bill.owner && (
+              <ActionButton onClick={onCloseBill} disabled={calling || waiterComing}>
+                {calling ? <CircularProgress size={22} sx={{ color: 'inherit' }} /> : waiterComing ? 'Garçom a caminho' : 'Fechar a conta toda'}
+              </ActionButton>
+            )}
+          </Box>
+        </>
+      }
+    >
+      <ScreenHeader
+        title={`Comanda de ${bill.ownerName}`}
+        subtitle={`${bill.tableNumber > 0 ? `Mesa ${formatTableNumber(bill.tableNumber)}` : 'Balcão'} · ${peopleCount === 1 ? '1 pessoa' : `${peopleCount} pessoas`}`}
+        onBack={onBack}
+        action={
+          bill.owner ? (
+            <ActionButton
+              tone="secondary"
+              fullWidth={false}
+              onClick={onInvite}
+              sx={{ minHeight: 36, px: 3, fontSize: fontSize.caption, whiteSpace: 'nowrap' }}
+            >
+              Convidar
+            </ActionButton>
+          ) : undefined
+        }
+      />
+
+      <Box
+        role="group"
+        aria-label="Filtrar por pessoa"
+        sx={{ px: 5, pt: 4, display: 'flex', gap: 2, overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}
+      >
+        {chips.map((chip) => {
+          const on = chip.id === filter;
+          return (
+            <ButtonBase
+              key={chip.id}
+              aria-pressed={on}
+              onClick={() => setFilter(chip.id)}
+              sx={{
+                flexShrink: 0,
+                height: 36,
+                px: 4,
+                borderRadius: 999,
+                border: `1px solid ${on ? colors.text : colors.border}`,
+                bgcolor: on ? colors.text : colors.background,
+                color: on ? colors.background : colors.text,
+                fontFamily: 'inherit',
+                fontSize: fontSize.caption,
+                fontWeight: fontWeight.bold,
+              }}
+            >
+              {chip.label}
+            </ButtonBase>
+          );
+        })}
+      </Box>
+
+      <Box sx={{ px: 5, pt: 4, pb: 6 }}>
+        {lines.length === 0 && (
+          <Typography sx={{ py: 6, textAlign: 'center', color: colors.textMuted }}>Nenhum pedido ainda.</Typography>
+        )}
+        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+          {lines.map((item, index) => (
+            <SharedLine key={index} item={item} color={colorOf(item.personId)} first={index === 0} />
+          ))}
+        </Box>
+
+        <SectionLabel>Quanto cada um consumiu</SectionLabel>
+        <Box sx={{ p: 4, borderRadius: `${radius.card}px`, bgcolor: colors.surface }}>
+          {people.map((person) => (
+            <PersonTotal key={person.id} person={person} />
+          ))}
+          {bill.serviceFeeCents > 0 && (
+            <Box sx={{ py: 0.5, display: 'flex', justifyContent: 'space-between', color: colors.textSecondary }}>
+              <Typography sx={{ fontSize: fontSize.small }}>Serviço (10%, opcional)</Typography>
+              <Typography sx={{ fontSize: fontSize.small, fontWeight: fontWeight.extraBold }}>
+                {formatCents(bill.serviceFeeCents)}
+              </Typography>
+            </Box>
+          )}
+          <Box sx={{ mt: 3, pt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderTop: `1px solid ${colors.border}` }}>
+            <Typography sx={{ fontSize: fontSize.base, fontWeight: fontWeight.extraBold }}>Total da comanda</Typography>
+            <Typography sx={{ fontSize: fontSize.heading, fontWeight: fontWeight.extraBold }}>{formatCents(bill.totalCents)}</Typography>
+          </Box>
+        </Box>
+
+        <InfoNote icon={<LockIcon sx={{ fontSize: 18 }} />}>
+          {bill.owner
+            ? 'Quem abriu a comanda é quem fecha. Você paga a conta toda com o garçom.'
+            : `Quem abriu a comanda é quem fecha. ${bill.ownerName} encerra a conta no fim.`}
+        </InfoNote>
+      </Box>
+    </ClientScreen>
+  );
+}
+
+function SharedLine({ item, color, first }: { item: BillLine; color: string; first: boolean }) {
+  const strike = item.canceled ? 'line-through' : 'none';
+  const tone = item.canceled ? colors.textMuted : colors.text;
+  const who = item.orderedBy ?? '';
+  return (
+    <Box
+      component="li"
+      sx={{ py: 3, display: 'flex', gap: 3, alignItems: 'flex-start', borderTop: first ? 'none' : `1px solid ${colors.divider}` }}
+    >
+      <Box
+        aria-hidden
+        sx={{
+          width: 34,
+          height: 34,
+          mt: '2px',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '50%',
+          bgcolor: color,
+          color: '#FFFFFF',
+          fontSize: fontSize.caption,
+          fontWeight: fontWeight.extraBold,
+        }}
+      >
+        {who.trim().charAt(0).toUpperCase()}
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography sx={{ fontSize: fontSize.button, fontWeight: fontWeight.bold, color: tone, textDecoration: strike }}>
+          {item.quantity}x {item.name}
+        </Typography>
+        <Typography sx={{ fontSize: fontSize.caption, color: colors.textMuted }}>
+          {item.canceled ? 'Cancelado' : `Pedido por ${who}`}
+          {item.orderedAt ? ` · ${formatClock(item.orderedAt)}` : ''}
+        </Typography>
+        {item.note && <Typography sx={{ fontSize: fontSize.caption, color: colors.textSecondary }}>{item.note}</Typography>}
+      </Box>
+      <Typography sx={{ flexShrink: 0, fontSize: fontSize.button, fontWeight: fontWeight.extraBold, color: tone, textDecoration: strike }}>
+        {formatCents(item.totalCents)}
+      </Typography>
+    </Box>
+  );
+}
+
+function PersonTotal({ person }: { person: BillPerson }) {
+  return (
+    <Box sx={{ py: 0.5, display: 'flex', justifyContent: 'space-between' }}>
+      <Typography sx={{ fontSize: fontSize.small }}>{person.name}</Typography>
+      <Typography sx={{ fontSize: fontSize.small, fontWeight: fontWeight.extraBold }}>{formatCents(person.totalCents)}</Typography>
     </Box>
   );
 }

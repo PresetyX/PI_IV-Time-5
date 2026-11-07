@@ -90,6 +90,35 @@ class BillServiceTest {
         assertEquals(0, bill.totalCents());
     }
 
+    @Test
+    void sharedTabTellsWhoOrderedEachItemAndHowMuchEachPersonConsumed() {
+        ObjectId bia = new ObjectId();
+        ObjectId leo = new ObjectId();
+        Tab tab = new Tab(new ObjectId(), storeId, tableId, "TABLE", "Ana", guest.userId(), "CUSTOMER", null, null,
+                List.of(new Tab.Participant(bia, "Bia", NOW, null), new Tab.Participant(leo, "Léo", NOW, NOW)),
+                "OPEN", 0, 0, 0, 0, 0, NOW);
+        when(tabService.requireMyTab(guest)).thenReturn(tab);
+        when(tableRepository.findById(tableId))
+                .thenReturn(Optional.of(new Table(tableId, storeId, 5, null, 4, "t05", true, NOW)));
+        givenOrders(
+                order(42, "DELIVERED", placedBy(item("Chopp 500 ml", 1400, 2, "DELIVERED"), guest.userId()),
+                        placedBy(item("Batata", 3200, 1, "DELIVERED"), bia)),
+                order(43, "PREPARING", placedBy(item("Pastel", 900, 1, "PREPARING"), leo),
+                        placedBy(item("Pudim", 1300, 1, "CANCELLED"), bia)));
+
+        BillResponse bill = billService.billOfMyTab(guest);
+
+        assertTrue(bill.owner());
+        assertEquals("Bia", bill.orders().get(0).items().get(1).orderedBy());
+        assertEquals(List.of("Ana", "Bia", "Léo"), bill.people().stream().map(BillResponse.Person::name).toList());
+        assertEquals(List.of(2800, 3200, 900),
+                bill.people().stream().map(BillResponse.Person::totalCents).toList());
+    }
+
+    private static Document placedBy(Document item, ObjectId sessionId) {
+        return item.append("placedByType", "CUSTOMER").append("placedBySessionId", sessionId);
+    }
+
     private void givenTab() {
         Tab tab = new Tab(new ObjectId(), storeId, tableId, "TABLE", "Ana", new ObjectId(), "CUSTOMER", null, null,
                 List.of(), "OPEN", 0, 0, 0, 0, 0, NOW);
