@@ -71,6 +71,7 @@ public class OrderTrackingService {
                 : tableRepository.findById(tab.tableId()).map(table -> table.number()).orElse(0);
         return new OrderTrackingResponse(order.getObjectId("_id").toHexString(), TabTotals.number(order, "number"),
                 order.getString("status"), tableNumber, order.getDate("createdAt").toInstant(), lines, total,
-                timeline);
+                timeline, order.getString("cancelReason"), order.getString("cancelNote"),
+                order.get("cancelledAt") instanceof Date cancelledAt ? cancelledAt.toInstant() : null);
     }
 }

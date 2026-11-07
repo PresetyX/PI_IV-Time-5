@@ -186,6 +186,9 @@ export interface TrackedOrder {
   items: TrackedLine[];
   totalCents: number;
   timeline: { status: string; at: string }[];
+  cancelReason?: string;
+  cancelNote?: string;
+  cancelledAt?: string;
 }
 
 export function fetchOrder(slug: string, orderId: string): Promise<TrackedOrder> {

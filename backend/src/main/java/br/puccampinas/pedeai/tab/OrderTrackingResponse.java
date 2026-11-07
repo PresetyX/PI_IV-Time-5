@@ -12,7 +12,10 @@ public record OrderTrackingResponse(
         Instant createdAt,
         List<Line> items,
         int totalCents,
-        List<Step> timeline) {
+        List<Step> timeline,
+        String cancelReason,
+        String cancelNote,
+        Instant cancelledAt) {
 
     /** {@code options} traz os nomes das opções escolhidas ("Ao ponto", "Bacon extra"). */
     public record Line(String name, String note, int quantity, int totalCents, boolean canceled,

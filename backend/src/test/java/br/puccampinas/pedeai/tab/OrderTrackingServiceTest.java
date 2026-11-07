@@ -76,6 +76,21 @@ class OrderTrackingServiceTest {
     }
 
     @Test
+    void cancelledOrderBringsReasonNoteAndTime() {
+        Document order = order("CANCELLED", item("Pudim", 1300, 1, "CANCELLED"))
+                .append("cancelReason", "OUT_OF_STOCK").append("cancelNote", "acabou o pudim")
+                .append("cancelledAt", Date.from(NOW.plusSeconds(600)));
+        when(mongo.findOne(any(Query.class), eq(Document.class), eq("order"))).thenReturn(order);
+
+        OrderTrackingResponse tracking = service.track(guest, order.getObjectId("_id").toHexString());
+
+        assertEquals("OUT_OF_STOCK", tracking.cancelReason());
+        assertEquals("acabou o pudim", tracking.cancelNote());
+        assertEquals(NOW.plusSeconds(600), tracking.cancelledAt());
+        assertEquals(0, tracking.totalCents());
+    }
+
+    @Test
     void partialDeliveryShowsEachItemStatusAndDeliveryTime() {
         Document order = order("READY",
                 item("Chopp 500 ml", 1400, 2, "DELIVERED").append("deliveredAt", Date.from(NOW.plusSeconds(300))),
