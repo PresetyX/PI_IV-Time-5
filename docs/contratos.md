@@ -266,3 +266,23 @@ Resposta da categoria: `{ "id": "...", "name": "Porções", "position": 2, "visi
 O `DELETE` responde 200 com `{ "outcome": "DELETED" | "HIDDEN", "category": { ... } }`. Categoria com produto nunca é apagada: ela fica oculta (`visible: false`), some do cardápio do cliente e os produtos continuam no painel.
 
 As duas rotas de ordem recebem `{ "ids": ["...", "..."] }` com todos os ids, uma vez cada, na ordem nova; faltando ou sobrando id, a resposta é `400 validation`. As posições passam a ser 1, 2, 3...
+
+### Mesas (administração)
+
+| Rota | Perfis | O que faz |
+| --- | --- | --- |
+| `GET /api/management/tables` | OWNER, MANAGER | Todas as mesas em ordem de número, inclusive as desativadas, com a quantidade de comandas abertas |
+| `POST /api/management/tables` | OWNER, MANAGER | Cria a mesa ativa, já com o token do QR |
+| `PUT /api/management/tables/{id}` | OWNER, MANAGER | Muda número, apelido e lugares; o token continua o mesmo |
+| `PATCH /api/management/tables/{id}/active` | OWNER, MANAGER | Ativa ou desativa a mesa |
+| `POST /api/management/tables/{id}/token` | OWNER, MANAGER | Gera um token novo; o QR antigo para de funcionar |
+
+Corpo do `POST` e do `PUT`: `{ "number": 12, "nickname": "Varanda", "seats": 4 }`. `number` vai de 1 a 999 e não repete na loja (`409 conflict`); `nickname` (até 30 caracteres) e `seats` (1 a 50) são opcionais.
+
+Corpo do `PATCH`: `{ "active": false }`.
+
+Resposta da mesa: `{ "id": "...", "number": 12, "nickname": "Varanda", "seats": 4, "token": "t12-k3m9p2qa", "active": true, "createdAt": "...", "openTabs": 0 }`.
+
+- O token tem o formato `t<número>-<8 letras e números>` e é único entre todas as lojas. O QR leva para `/t/{slug}/{token}`.
+- Mesa desativada derruba o QR: `GET /api/public/stores/{slug}/tables/{token}` e a busca por número respondem 404, e o cliente não consegue abrir sessão nela. Ao reativar, a mesma plaquinha volta a funcionar.
+- Não dá para desativar mesa com comanda aberta (`409 conflict`): feche as comandas antes.
