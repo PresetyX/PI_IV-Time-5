@@ -8,6 +8,16 @@ export interface BillLine {
   totalCents: number;
   status: string;
   canceled: boolean;
+  personId?: string;
+  orderedBy?: string;
+  orderedAt?: string;
+}
+
+export interface BillPerson {
+  id: string;
+  name: string;
+  owner: boolean;
+  totalCents: number;
 }
 
 export interface BillOrder {
@@ -26,6 +36,8 @@ export interface Bill {
   consumptionCents: number;
   serviceFeeCents: number;
   totalCents: number;
+  owner?: boolean;
+  people?: BillPerson[];
 }
 
 const ORDER_STATUS_LABEL: Record<string, string> = {
