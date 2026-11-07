@@ -62,3 +62,40 @@ export function updateProduct(id: string, changes: ProductChanges): Promise<Cata
 export function setProductAvailability(id: string, available: boolean): Promise<CatalogProduct> {
   return api.patch<CatalogProduct>(`/api/management/products/${id}/availability`, { available });
 }
+
+export interface CatalogCategorySummary {
+  id: string;
+  name: string;
+  position: number;
+  visible: boolean;
+  products: number;
+}
+
+export interface CategoryRemoval {
+  outcome: 'DELETED' | 'HIDDEN';
+  category: CatalogCategorySummary;
+}
+
+export function createProduct(changes: ProductChanges): Promise<CatalogProduct> {
+  return api.post<CatalogProduct>('/api/management/products', changes);
+}
+
+export function createCategory(name: string, visible: boolean): Promise<CatalogCategorySummary> {
+  return api.post<CatalogCategorySummary>('/api/management/categories', { name, visible });
+}
+
+export function updateCategory(id: string, name: string, visible: boolean): Promise<CatalogCategorySummary> {
+  return api.put<CatalogCategorySummary>(`/api/management/categories/${id}`, { name, visible });
+}
+
+export function removeCategory(id: string): Promise<CategoryRemoval> {
+  return api.delete<CategoryRemoval>(`/api/management/categories/${id}`);
+}
+
+export function reorderCategories(ids: string[]): Promise<CatalogCategorySummary[]> {
+  return api.put<CatalogCategorySummary[]>('/api/management/categories/order', { ids });
+}
+
+export function reorderProducts(categoryId: string, ids: string[]): Promise<CatalogProduct[]> {
+  return api.put<CatalogProduct[]>(`/api/management/categories/${categoryId}/products/order`, { ids });
+}
