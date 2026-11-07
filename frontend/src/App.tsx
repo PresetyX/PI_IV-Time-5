@@ -31,6 +31,7 @@ import HistoryPage from './pages/management/HistoryPage';
 import CashPage from './pages/management/CashPage';
 import CommissionsPage from './pages/management/CommissionsPage';
 import SettingsPage from './pages/management/SettingsPage';
+import ProductsPage from './pages/management/ProductsPage';
 
 export default function App() {
   return (
@@ -74,6 +75,7 @@ export default function App() {
       <Route path="/fila-espera" element={<OperationsWorkspace />} />
       <Route path="/gestao" element={<ManagementPage />} />
       <Route path="/gestao/curva-abc" element={<AbcPage />} />
+      <Route path="/gestao/cardapio" element={<ProductsPage />} />
       <Route path="/gestao/equipe" element={<TeamPage />} />
       <Route path="/gestao/contas" element={<HistoryPage />} />
       <Route path="/gestao/caixa" element={<CashPage />} />
