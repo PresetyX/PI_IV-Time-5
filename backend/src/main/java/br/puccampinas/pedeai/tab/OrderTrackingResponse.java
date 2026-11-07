@@ -16,7 +16,7 @@ public record OrderTrackingResponse(
 
     /** {@code options} traz os nomes das opções escolhidas ("Ao ponto", "Bacon extra"). */
     public record Line(String name, String note, int quantity, int totalCents, boolean canceled,
-            List<String> options) {
+            List<String> options, String status, Instant deliveredAt) {
     }
 
     /** Do mais antigo para o mais novo; o primeiro é sempre a chegada na cozinha. */

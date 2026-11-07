@@ -9,9 +9,10 @@ interface ScreenHeaderProps {
   title: string;
   subtitle?: string;
   onBack: () => void;
+  action?: ReactNode;
 }
 
-export function ScreenHeader({ title, subtitle, onBack }: ScreenHeaderProps) {
+export function ScreenHeader({ title, subtitle, onBack, action }: ScreenHeaderProps) {
   return (
     <Box
       component="header"
@@ -39,6 +40,7 @@ export function ScreenHeader({ title, subtitle, onBack }: ScreenHeaderProps) {
           <Typography sx={{ fontSize: fontSize.caption, color: colors.textMuted }}>{subtitle}</Typography>
         )}
       </Box>
+      {action && <Box sx={{ flexShrink: 0 }}>{action}</Box>}
     </Box>
   );
 }
