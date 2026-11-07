@@ -131,7 +131,7 @@ function CartRow({ line, onQuantity, onNote }: CartRowProps) {
         </ButtonBase>
         <QuantityStepper
           value={line.quantity}
-          min={1}
+          min={0}
           max={MAX_LINE_QUANTITY}
           label={`Quantidade de ${line.name}`}
           onChange={onQuantity}
