@@ -171,6 +171,78 @@ class ProductManagementServiceTest {
                 () -> service.setAvailability(user("WAITER"), fritas.id().toHexString(), false));
     }
 
+    @Test
+    void createPutsTheProductAtTheEndOfItsCategoryAndAvailable() {
+        when(productRepository.findByStoreIdAndCategoryIdOrderByPositionAsc(storeId, porcoes.id()))
+                .thenReturn(List.of(fritas, calabresa));
+
+        ManagementProduct created = service.create(user("MANAGER"),
+                new ProductRequest(porcoes.id().toHexString(), " Isca de frango ", "300 g", 4200, null, 15, null,
+                        null, null));
+
+        assertEquals("Isca de frango", created.name());
+        assertEquals(4200, created.priceCents());
+        assertEquals(3, created.position());
+        assertTrue(created.available());
+        assertNull(created.unavailableSince());
+        assertFalse(created.isAlcoholic());
+        assertTrue(created.optionGroups().isEmpty());
+    }
+
+    @Test
+    void createAlreadyUnavailableRecordsTheDate() {
+        ManagementProduct created = service.create(user("OWNER"),
+                new ProductRequest(bebidas.id().toHexString(), "Chopp", null, 1400, null, null, true, false, null));
+
+        assertFalse(created.available());
+        assertEquals(NOW, created.unavailableSince());
+        assertTrue(created.isAlcoholic());
+        assertEquals(1, created.position());
+    }
+
+    @Test
+    void kitchenCannotCreateProduct() {
+        assertThrows(ForbiddenException.class, () -> service.create(user("KITCHEN"),
+                request(porcoes, "Fritas", 3200, null)));
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void createRejectsCategoryFromAnotherStore() {
+        Category alheia = new Category(new ObjectId(), new ObjectId(), "Outra loja", 1, true);
+
+        assertThrows(InvalidRequestException.class, () -> service.create(user("OWNER"),
+                request(alheia, "Fritas", 3200, null)));
+    }
+
+    @Test
+    void reorderRenumbersProductsInTheGivenOrder() {
+        when(productRepository.findByStoreIdAndCategoryIdOrderByPositionAsc(storeId, porcoes.id()))
+                .thenReturn(List.of(fritas, calabresa));
+
+        List<ManagementProduct> result = service.reorder(user("MANAGER"), porcoes.id().toHexString(),
+                List.of(calabresa.id().toHexString(), fritas.id().toHexString()));
+
+        assertEquals(List.of("Calabresa acebolada", "Porção de fritas"),
+                result.stream().map(ManagementProduct::name).toList());
+        assertEquals(List.of(1, 2), result.stream().map(ManagementProduct::position).toList());
+        verify(productRepository).saveAll(any());
+    }
+
+    @Test
+    void reorderRejectsMissingOrForeignProducts() {
+        when(productRepository.findByStoreIdAndCategoryIdOrderByPositionAsc(storeId, porcoes.id()))
+                .thenReturn(List.of(fritas, calabresa));
+
+        assertThrows(InvalidRequestException.class, () -> service.reorder(user("MANAGER"),
+                porcoes.id().toHexString(), List.of(fritas.id().toHexString())));
+        assertThrows(InvalidRequestException.class, () -> service.reorder(user("MANAGER"),
+                porcoes.id().toHexString(), List.of(fritas.id().toHexString(), new ObjectId().toHexString())));
+        assertThrows(InvalidRequestException.class, () -> service.reorder(user("MANAGER"),
+                porcoes.id().toHexString(), List.of(fritas.id().toHexString(), fritas.id().toHexString())));
+        verify(productRepository, never()).saveAll(any());
+    }
+
     private AuthenticatedUser user(String role) {
         return new AuthenticatedUser(new ObjectId(), storeId, role);
     }
@@ -181,9 +253,9 @@ class ProductManagementServiceTest {
                 unavailableSince, false, position, List.of());
     }
 
-    private static UpdateProductRequest request(Category category, String name, int priceCents,
+    private static ProductRequest request(Category category, String name, int priceCents,
             List<OptionGroup> optionGroups) {
-        return new UpdateProductRequest(category.id().toHexString(), name, "", priceCents, null, 12, false, null,
+        return new ProductRequest(category.id().toHexString(), name, "", priceCents, null, 12, false, null,
                 optionGroups);
     }
 }

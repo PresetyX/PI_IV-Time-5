@@ -1,12 +1,15 @@
 package br.puccampinas.pedeai.menu;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.puccampinas.pedeai.auth.AuthenticatedUser;
@@ -27,6 +30,13 @@ public class ProductManagementController {
         return service.catalog(user);
     }
 
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ManagementProduct create(@AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @RequestBody ProductRequest request) {
+        return service.create(user, request);
+    }
+
     @GetMapping("/{productId}")
     public ManagementProduct get(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String productId) {
         return service.get(user, productId);
@@ -34,7 +44,7 @@ public class ProductManagementController {
 
     @PutMapping("/{productId}")
     public ManagementProduct update(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String productId,
-            @Valid @RequestBody UpdateProductRequest request) {
+            @Valid @RequestBody ProductRequest request) {
         return service.update(user, productId, request);
     }
 

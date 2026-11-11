@@ -74,12 +74,13 @@ Rotas do painel para o cardápio. Tudo é filtrado pelo `storeId` do token: prod
 | --- | --- | --- |
 | `GET /api/management/products` | OWNER, MANAGER, KITCHEN | Todas as categorias em ordem de `position`, inclusive as ocultas, cada uma com todos os produtos, inclusive os esgotados |
 | `GET /api/management/products/{id}` | OWNER, MANAGER, KITCHEN | Um produto |
+| `POST /api/management/products` | OWNER, MANAGER | Cria o produto no fim da categoria, disponível por padrão |
 | `PUT /api/management/products/{id}` | OWNER, MANAGER | Edita o produto |
 | `PATCH /api/management/products/{id}/availability` | OWNER, MANAGER, KITCHEN | Liga ou desliga a disponibilidade (item esgotado) |
 
 Perfil sem permissão recebe `403 forbidden`.
 
-Corpo do `PUT`:
+Corpo do `POST` e do `PUT`:
 
 ```json
 {
@@ -96,7 +97,7 @@ Corpo do `PUT`:
 ```
 
 - `priceCents` é inteiro e no mínimo 1: `3200` = R$ 32,00. O front converte o valor digitado antes de enviar.
-- `isAlcoholic`, `available` e `optionGroups` são opcionais; ausentes, o valor atual é mantido.
+- `isAlcoholic`, `available` e `optionGroups` são opcionais. No `PUT`, ausentes mantêm o valor atual; no `POST`, valem `false`, `true` e lista vazia.
 - Trocar `categoryId` põe o produto no fim da nova categoria.
 - Mudar o preço não mexe em pedidos já enviados, que guardam a cópia do preço.
 
@@ -246,3 +247,42 @@ Público, para o painel de TV em `/t/:slug/painel`. Só números das senhas de h
 Senha com algum pedido pronto aparece só em `ready`.
 
 > O status `AWAITING_PAYMENT` e o campo `pickupTicket` foram acrescentados ao validador em `banco/init-mongo.js`. Banco criado antes precisa rodar o `init-mongo.js` de novo.
+
+### Categorias (administração)
+
+| Rota | Perfis | O que faz |
+| --- | --- | --- |
+| `GET /api/management/categories` | OWNER, MANAGER, KITCHEN | Categorias em ordem, com a quantidade de produtos de cada uma |
+| `POST /api/management/categories` | OWNER, MANAGER | Cria a categoria no fim da lista |
+| `PUT /api/management/categories/{id}` | OWNER, MANAGER | Renomeia, oculta ou mostra |
+| `DELETE /api/management/categories/{id}` | OWNER, MANAGER | Apaga a categoria vazia; com produto, só oculta |
+| `PUT /api/management/categories/order` | OWNER, MANAGER | Nova ordem das categorias |
+| `PUT /api/management/categories/{id}/products/order` | OWNER, MANAGER | Nova ordem dos produtos da categoria |
+
+Corpo do `POST` e do `PUT`: `{ "name": "Porções", "visible": true }`. `name` tem até 40 caracteres e não repete na loja, sem diferenciar maiúsculas (`409 conflict`). `visible` é opcional: ausente, vale `true` ao criar e mantém o valor atual ao editar.
+
+Resposta da categoria: `{ "id": "...", "name": "Porções", "position": 2, "visible": true, "products": 5 }`.
+
+O `DELETE` responde 200 com `{ "outcome": "DELETED" | "HIDDEN", "category": { ... } }`. Categoria com produto nunca é apagada: ela fica oculta (`visible: false`), some do cardápio do cliente e os produtos continuam no painel.
+
+As duas rotas de ordem recebem `{ "ids": ["...", "..."] }` com todos os ids, uma vez cada, na ordem nova; faltando ou sobrando id, a resposta é `400 validation`. As posições passam a ser 1, 2, 3...
+
+### Mesas (administração)
+
+| Rota | Perfis | O que faz |
+| --- | --- | --- |
+| `GET /api/management/tables` | OWNER, MANAGER | Todas as mesas em ordem de número, inclusive as desativadas, com a quantidade de comandas abertas |
+| `POST /api/management/tables` | OWNER, MANAGER | Cria a mesa ativa, já com o token do QR |
+| `PUT /api/management/tables/{id}` | OWNER, MANAGER | Muda número, apelido e lugares; o token continua o mesmo |
+| `PATCH /api/management/tables/{id}/active` | OWNER, MANAGER | Ativa ou desativa a mesa |
+| `POST /api/management/tables/{id}/token` | OWNER, MANAGER | Gera um token novo; o QR antigo para de funcionar |
+
+Corpo do `POST` e do `PUT`: `{ "number": 12, "nickname": "Varanda", "seats": 4 }`. `number` vai de 1 a 999 e não repete na loja (`409 conflict`); `nickname` (até 30 caracteres) e `seats` (1 a 50) são opcionais.
+
+Corpo do `PATCH`: `{ "active": false }`.
+
+Resposta da mesa: `{ "id": "...", "number": 12, "nickname": "Varanda", "seats": 4, "token": "t12-k3m9p2qa", "active": true, "createdAt": "...", "openTabs": 0 }`.
+
+- O token tem o formato `t<número>-<8 letras e números>` e é único entre todas as lojas. O QR leva para `/t/{slug}/{token}`.
+- Mesa desativada derruba o QR: `GET /api/public/stores/{slug}/tables/{token}` e a busca por número respondem 404, e o cliente não consegue abrir sessão nela. Ao reativar, a mesma plaquinha volta a funcionar.
+- Não dá para desativar mesa com comanda aberta (`409 conflict`): feche as comandas antes.
