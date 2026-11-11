@@ -103,6 +103,21 @@ const PONTO_DA_CARNE = { name: "Ponto da carne", required: true, min: 1, max: 1,
 const ADICIONAIS = { name: "Adicionais", required: false, min: 0, max: 3,
   options: [{ label: "Bacon extra", deltaCents: 600 }, { label: "Cheddar extra", deltaCents: 500 }, { label: "Ovo", deltaCents: 300 }] };
 
+const FOTO = function (id) { return "https://images.unsplash.com/photo-" + id + "?w=600&h=600&q=75&auto=format&fit=crop"; };
+const FOTOS = {
+  "X-salada": FOTO("1571091718767-18b5b1457add"),
+  "X-bacon": FOTO("1568901346375-23c9450c58cd"),
+  "Sanduíche de pernil": FOTO("1550547660-d9450f859349"),
+  "Triunfo duplo": FOTO("1565299507177-b0ac66763828"),
+  "Batata frita": FOTO("1541592106381-b31e9677c0e5"),
+  "Calabresa acebolada": FOTO("1600891964092-4316c288032e"),
+  "Nuggets": FOTO("1562967914-608f82629710"),
+  "Suco de laranja": FOTO("1600271886742-f049cd451bba"),
+  "Milk-shake": FOTO("1572490122747-3968b75cc699"),
+  "Cerveja long neck": FOTO("1608270586620-248524c67de9"),
+  "Petit gateau": FOTO("1624353365286-3f8d62daad51")
+};
+
 const produtos = [
   { cat: "Lanches", name: "X-salada", desc: "Pão, hambúrguer de 150 g, queijo, alface e tomate.", preco: 2800, prep: 12,
     opcoes: [PONTO_DA_CARNE, ADICIONAIS] },
@@ -138,6 +153,7 @@ produtos.forEach(function (p, i) {
     position: NumberInt(i),
     optionGroups: p.opcoes || []
   };
+  if (FOTOS[p.name]) { doc.imageUrl = FOTOS[p.name]; }
   // só grava a data quando o item está mesmo esgotado: o validador não aceita null
   if (p.esgotado) { doc.unavailableSince = agora; }
   DB.product.insertOne(doc);
