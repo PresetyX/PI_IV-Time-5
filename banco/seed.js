@@ -28,7 +28,7 @@ if (antigo) {
 // ---------------------------------------------------------------- store
 const horario = [];
 for (var d = 0; d <= 6; d++) {
-  horario.push({ weekday: d, opensAt: "17:00", closesAt: d === 5 || d === 6 ? "01:00" : "23:00", lastOrderAt: "22:30" });
+  horario.push({ weekday: d, opensAt: "00:00", closesAt: "23:59", lastOrderAt: "23:59" });
 }
 const storeId = DB.store.insertOne({
   slug: SLUG,
