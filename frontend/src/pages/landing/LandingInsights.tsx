@@ -8,7 +8,7 @@ import { CLIPS, Clip, CountUp, Em, PHOTOS, Photo, Reveal, Sub, Title, bob, drift
 
 const { accent, accentDark, peach, ink, body, muted, line, white, sans } = landing;
 
-export const DEMO_PATH = '/t/triunfo-lanches?mesa=t05-000a';
+export const DEMO_PATH = '/t/triunfo-lanches';
 
 function PillButton({ to, href, children, tone = 'accent' }: { to?: string; href?: string; children: ReactNode; tone?: 'accent' | 'white' | 'outline' | 'dark' }) {
   const styles = {
