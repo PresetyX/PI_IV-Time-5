@@ -139,7 +139,7 @@ class SessionServiceTest {
 
     private void givenStore(boolean requirePhone, OpeningStatus status) {
         Store store = new Store(storeId, "demo", "Demo", null, null, null, null, null, "#D62F1F", null, List.of(),
-                List.of("TABLE"), 1000, 500, requirePhone, null, null, false, true, null, null);
+                List.of("TABLE"), 1000, 500, requirePhone, null, null, null, false, true, null, null);
         when(storeService.getActiveStore("demo")).thenReturn(store);
         when(storeService.getStatus(store)).thenReturn(status);
     }

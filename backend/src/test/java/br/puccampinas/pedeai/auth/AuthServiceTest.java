@@ -131,7 +131,7 @@ class AuthServiceTest {
 
     private Store store(boolean active) {
         return new Store(storeId, "demo", "Demo", null, null, null, null, null, "#D62F1F", null, null, null,
-                1000, 500, null, null, null, false, active, null, null);
+                1000, 500, null, null, null, null, false, active, null, null);
     }
 
     private User user(boolean active, int failedAttempts, Instant lockedUntil) {

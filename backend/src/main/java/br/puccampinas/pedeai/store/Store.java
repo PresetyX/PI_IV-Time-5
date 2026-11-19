@@ -24,6 +24,7 @@ public record Store(
         int serviceFeeBasisPoints,
         int commissionBasisPoints,
         Boolean requireCustomerPhone,
+        Boolean allowRepeatRound,
         Instant pausedUntil,
         List<String> pausedScopes,
         boolean isTraining,

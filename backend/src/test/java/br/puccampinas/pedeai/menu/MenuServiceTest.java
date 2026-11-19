@@ -72,7 +72,7 @@ class MenuServiceTest {
 
     private static Store store(ObjectId id, boolean active) {
         return new Store(id, "demo", "Demo", null, null, null, null, null, "#D62F1F", null, null, null,
-                1000, 500, null, null, null, false, active, null, null);
+                1000, 500, null, null, null, null, false, active, null, null);
     }
 
     private static Product product(ObjectId storeId, ObjectId categoryId, String name, int priceCents, int position) {

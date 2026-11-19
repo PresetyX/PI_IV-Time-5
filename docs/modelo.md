@@ -71,6 +71,7 @@ Campos comuns a todas as coleções: `_id`, `createdAt`, `updatedAt`. A coleçã
 | `settings.counterService` | boolean | Aceita conta de balcão, com senha de retirada |
 | `settings.requireCustomerName` | boolean | Pede o nome do cliente antes de abrir a conta |
 | `settings.requireCustomerPhone` | boolean | Pede o telefone do cliente antes de abrir a conta |
+| `settings.allowRepeatRound` | boolean | Mostra o botão "Mais uma rodada" na comanda da mesa; ausente conta como ligado |
 
 ### user
 

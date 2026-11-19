@@ -65,6 +65,7 @@ criar("store", {
     serviceFeeBasisPoints: { bsonType: "int", minimum: 0, maximum: 3000, description: "1000 = 10%" },
     commissionBasisPoints: { bsonType: "int", minimum: 0, maximum: 3000, description: "500 = 5%" },
     requireCustomerPhone: bool,
+    allowRepeatRound: bool,
     pausedUntil: data,
     pausedScopes: { bsonType: "array", items: { enum: ["KITCHEN", "DRINKS", "COUNTER"] } },
     isTraining: { bsonType: "bool", description: "loja de treino: não entra em relatório" },

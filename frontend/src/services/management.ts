@@ -170,6 +170,7 @@ export interface StoreSettings {
   primaryColor: string;
   serviceModes: ServiceMode[];
   requireCustomerPhone: boolean;
+  allowRepeatRound: boolean;
 }
 
 export interface Invitation {

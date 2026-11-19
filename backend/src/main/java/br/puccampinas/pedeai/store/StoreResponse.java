@@ -15,6 +15,7 @@ public record StoreResponse(
         List<String> serviceModes,
         int serviceFeeBasisPoints,
         boolean requireCustomerPhone,
+        boolean allowRepeatRound,
         List<String> highlights,
         Integer averagePrepMinutes,
         OpeningStatus status) {

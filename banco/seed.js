@@ -44,6 +44,7 @@ const storeId = DB.store.insertOne({
   serviceFeeBasisPoints: NumberInt(1000),
   commissionBasisPoints: NumberInt(500),
   requireCustomerPhone: true,
+  allowRepeatRound: true,
   isTraining: false,
   active: true,
   createdAt: agora
