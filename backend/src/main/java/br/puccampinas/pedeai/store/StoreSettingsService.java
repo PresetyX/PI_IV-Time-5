@@ -43,7 +43,8 @@ public class StoreSettingsService {
         }
         return new Settings(store.getString("slug"), store.getString("name"), store.getString("tagline"),
                 store.getString("primaryColor"), store.getList("serviceModes", String.class, List.of()),
-                Boolean.TRUE.equals(store.getBoolean("requireCustomerPhone")));
+                Boolean.TRUE.equals(store.getBoolean("requireCustomerPhone")),
+                !Boolean.FALSE.equals(store.getBoolean("allowRepeatRound")));
     }
 
     public Settings update(AuthenticatedUser user, UpdateSettingsRequest request) {
@@ -58,6 +59,7 @@ public class StoreSettingsService {
                         .set("primaryColor", request.primaryColor().toUpperCase())
                         .set("serviceModes", List.copyOf(modes))
                         .set("requireCustomerPhone", request.requireCustomerPhone())
+                        .set("allowRepeatRound", request.allowRepeatRound() == null || request.allowRepeatRound())
                         .set("updatedAt", Date.from(clock.instant())),
                 "store");
         return get(user);
@@ -70,11 +72,11 @@ public class StoreSettingsService {
     }
 
     public record Settings(String slug, String name, String tagline, String primaryColor, List<String> serviceModes,
-            boolean requireCustomerPhone) {
+            boolean requireCustomerPhone, boolean allowRepeatRound) {
     }
 
     public record UpdateSettingsRequest(@NotBlank @Size(max = 60) String name, @Size(max = 120) String tagline,
             @NotBlank @Pattern(regexp = "^#[0-9A-Fa-f]{6}$") String primaryColor, List<String> serviceModes,
-            boolean requireCustomerPhone) {
+            boolean requireCustomerPhone, Boolean allowRepeatRound) {
     }
 }

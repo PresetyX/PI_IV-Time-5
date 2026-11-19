@@ -77,6 +77,7 @@ public class StoreService {
                 store.serviceModes() == null ? List.of() : store.serviceModes(),
                 store.serviceFeeBasisPoints(),
                 Boolean.TRUE.equals(store.requireCustomerPhone()),
+                !Boolean.FALSE.equals(store.allowRepeatRound()),
                 highlights,
                 averagePrepMinutes,
                 getStatus(store));

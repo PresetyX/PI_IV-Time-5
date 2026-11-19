@@ -37,6 +37,7 @@ export default function SettingsPage() {
         primaryColor: form.primaryColor,
         serviceModes: form.serviceModes,
         requireCustomerPhone: form.requireCustomerPhone,
+        allowRepeatRound: form.allowRepeatRound,
       });
       setData(saved);
       setMessage({ tone: 'success', text: 'Configuração salva. O cliente já vê as mudanças.' });
@@ -129,6 +130,12 @@ export default function SettingsPage() {
                 hint="Usado para avisar quando fica pronto"
                 checked={form.requireCustomerPhone}
                 onChange={() => setForm({ ...form, requireCustomerPhone: !form.requireCustomerPhone })}
+              />
+              <Toggle
+                label="Mais uma rodada"
+                hint="Botão para repetir o último pedido na comanda"
+                checked={form.allowRepeatRound}
+                onChange={() => setForm({ ...form, allowRepeatRound: !form.allowRepeatRound })}
               />
             </Card>
           </Box>

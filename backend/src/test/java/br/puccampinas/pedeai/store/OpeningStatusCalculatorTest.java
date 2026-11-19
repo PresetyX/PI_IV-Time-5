@@ -99,7 +99,7 @@ class OpeningStatusCalculatorTest {
         Instant now = LocalDateTime.parse(localDateTime).atZone(OpeningStatusCalculator.STORE_ZONE).toInstant();
         Clock clock = Clock.fixed(now, OpeningStatusCalculator.STORE_ZONE);
         Store store = new Store(new ObjectId(), "demo", "Demo", null, null, null, null, null, "#D62F1F", null, hours,
-                List.of("TABLE"), 1000, 500, null, pausedUntil, null, false, true, null, null);
+                List.of("TABLE"), 1000, 500, null, null, pausedUntil, null, false, true, null, null);
         return new OpeningStatusCalculator(clock).calculate(store);
     }
 }

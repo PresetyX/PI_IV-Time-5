@@ -99,6 +99,7 @@ export default function MyTabPage() {
 
   // [Mateus · Card 5] Alteração: comanda de balcão não tem mesa; mostra a senha quando já tiver.
   const counter = current.mode === 'COUNTER';
+  const allowRepeatRound = state.status !== 'ready' || state.store.allowRepeatRound;
   const place = counter
     ? `Balcão${current.pickupTicket ? ` · senha ${current.pickupTicket}` : ''}`
     : `Mesa ${formatTableNumber(current.tableNumber)}`;
@@ -136,9 +137,11 @@ export default function MyTabPage() {
           </ActionButton>
         ) : (
           <Box sx={{ mt: 2, display: 'flex', gap: 3 }}>
-            <ActionButton tone="quiet" onClick={() => navigate(`/t/${slug}/rodada`)}>
-              Mais uma rodada
-            </ActionButton>
+            {allowRepeatRound && (
+              <ActionButton tone="quiet" onClick={() => navigate(`/t/${slug}/rodada`)}>
+                Mais uma rodada
+              </ActionButton>
+            )}
             <ActionButton tone="quiet" onClick={() => navigate(`/t/${slug}/garcom`)}>
               Chamar o garçom
             </ActionButton>

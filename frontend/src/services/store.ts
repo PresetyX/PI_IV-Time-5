@@ -46,6 +46,7 @@ export interface Store {
   serviceModes: ServiceMode[];
   serviceFeeBasisPoints: number;
   requireCustomerPhone: boolean;
+  allowRepeatRound: boolean;
   highlights: string[];
   averagePrepMinutes?: number;
   status: StoreStatus;
