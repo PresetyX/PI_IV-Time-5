@@ -56,7 +56,6 @@ export default function App() {
       <Route path="/t/:slug/pedidos/:orderId/enviado" element={<OrderSentPage />} />
       <Route path="/t/:slug/pix" element={<PixPage />} />
       <Route path="/t/:slug/garcom" element={<WaiterCallPage />} />
-      {/* [Mateus · Card 5] Alteração: balcão (entrada, senha e painel para TV) no lugar do placeholder. */}
       <Route path="/t/:slug/balcao" element={<CounterEntryPage />} />
       <Route path="/t/:slug/balcao/senha" element={<PickupPage />} />
       <Route path="/t/:slug/painel" element={<PickupBoardPage />} />

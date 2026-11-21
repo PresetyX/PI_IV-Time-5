@@ -54,7 +54,6 @@ public class TabController {
         return orderTrackingService.track(guest, orderId);
     }
 
-    // [Mateus · Card 5] Alteração: senha do balcão (funciona também depois de a comanda fechar).
     @GetMapping("/mine/pickup")
     public PickupResponse pickup(@AuthenticationPrincipal AuthenticatedUser guest) {
         return pickupService.mine(guest);

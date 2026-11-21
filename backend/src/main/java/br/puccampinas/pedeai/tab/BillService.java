@@ -51,8 +51,6 @@ public class BillService {
         List<BillResponse.BillOrder> orders = new ArrayList<>();
         for (Document order : mongo.find(query, Document.class, "order")) {
             Instant orderedAt = order.get("createdAt") instanceof Date date ? date.toInstant() : null;
-            // [Mateus · Card 4] Alteração: o pedido cancelado é gravado como CANCELLED (dois L, ver init-mongo.js e
-            // OrderOperationService); comparar só com "CANCELED" deixava o pedido cancelado somando na conta.
             boolean orderCanceled = TabTotals.IGNORED_STATUS.contains(order.getString("status"));
             List<BillResponse.BillLine> lines = new ArrayList<>();
             for (Object raw : order.getList("items", Object.class, List.of())) {
@@ -75,9 +73,7 @@ public class BillService {
                     order.get("number", Number.class).intValue(), order.getString("status"), lines));
         }
 
-        // [Mateus · Card 5] Alteração: no balcão não há taxa de serviço (o cliente paga só o pedido, antes do preparo).
         int serviceFee = "COUNTER".equals(tab.mode()) ? 0 : Math.round(consumption * SERVICE_FEE_PERCENT / 100f);
-        // [Mateus · Card 5] Alteração: comanda de balcão não tem mesa; findById(null) dava erro.
         int tableNumber = tab.tableId() == null ? 0
                 : tableRepository.findById(tab.tableId()).map(table -> table.number()).orElse(0);
         List<BillResponse.Person> people = new ArrayList<>();

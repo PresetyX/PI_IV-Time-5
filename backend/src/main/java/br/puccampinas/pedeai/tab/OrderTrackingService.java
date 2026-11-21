@@ -57,7 +57,6 @@ public class OrderTrackingService {
         }
 
         List<OrderTrackingResponse.Step> timeline = new ArrayList<>();
-        // [Mateus · Card 5] Alteração: pedido de balcão (tem pickupTicket) nasce esperando o pagamento no caixa.
         String firstStep = order.get("pickupTicket") != null ? "AWAITING_PAYMENT" : "RECEIVED";
         timeline.add(new OrderTrackingResponse.Step(firstStep, order.getDate("createdAt").toInstant()));
         for (Document event : order.getList("statusHistory", Document.class, List.of())) {
@@ -66,7 +65,6 @@ public class OrderTrackingService {
             }
         }
 
-        // [Mateus · Card 5] Alteração: comanda de balcão não tem mesa; findById(null) dava erro.
         int tableNumber = tab.tableId() == null ? 0
                 : tableRepository.findById(tab.tableId()).map(table -> table.number()).orElse(0);
         return new OrderTrackingResponse(order.getObjectId("_id").toHexString(), TabTotals.number(order, "number"),

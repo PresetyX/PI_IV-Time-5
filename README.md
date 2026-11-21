@@ -83,9 +83,20 @@ Fluxo de uma requisição: `frontend` chama `backend` por HTTP, `backend` lê e 
 
 ## Como rodar
 
-### Com Docker (tudo de uma vez)
+### Com Docker
 
-Pré-requisito: Docker com Compose v2.
+
+Pré-requisitos: Docker com Compose v2 e JDK 17 com Maven 3.9 (o server de socket roda fora do Docker).
+
+**1. Server de socket, no terminal (sempre primeiro):**
+
+```bash
+mvn -f server/pom.xml compile exec:java
+```
+
+Ele escuta na porta 5000 e mostra uma linha por requisição recebida, por exemplo `VALIDATE_ORDER de 172.17.0.3 -> OK (3 ms)`. Para parar, `Ctrl+C`.
+
+**2. O resto, em outro terminal:**
 
 ```bash
 cp .env.example .env
@@ -97,12 +108,13 @@ Preencha `JWT_SECRET` no `.env` da raiz com uma chave de pelo menos 32 caractere
 docker compose up --build
 ```
 
-Sobem o MongoDB local, o server, o backend e o frontend, nessa ordem. Na primeira subida, o serviço `db-init` cria as coleções com `banco/init-mongo.js` e carrega a casa `triunfo-lanches` com `banco/seed.js`. Nas próximas, o seed é pulado e os dados continuam no volume `mongo-data`.
+Sobem o MongoDB local, o backend e o frontend. O backend acessa o server da sua máquina por `host.docker.internal:5000`. Se o server estiver desligado, o resto sobe normalmente, o `/health` responde 503 e todo pedido é recusado ("não conseguimos conferir seu pedido") até o server voltar; não é preciso reiniciar o Docker. Na primeira subida, o serviço `db-init` cria as coleções com `banco/init-mongo.js` e carrega a casa `triunfo-lanches` com `banco/seed.js`. Nas próximas, o seed é pulado e os dados continuam no volume `mongo-data`.
 
 | Serviço | Endereço |
 | --- | --- |
 | Site e aplicação | `http://localhost:3000` |
 | Backend | `http://localhost:8080/health` |
+| Server de socket (no terminal) | `localhost:5000` |
 | MongoDB | `mongodb://localhost:27017/pedeai` |
 
 Login da equipe na casa de demonstração: qualquer usuário do `banco/seed.js` com a senha `pedeai123`.

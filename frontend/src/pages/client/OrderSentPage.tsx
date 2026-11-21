@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
@@ -31,7 +35,7 @@ export default function OrderSentPage() {
   const [order, setOrder] = useState<TrackedOrder | null>(null);
   const [missing, setMissing] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
-  // [Mateus · Card 5] No balcão a tela mostra a senha e manda pagar no caixa.
+  // No balcão a tela mostra a senha e manda pagar no caixa.
   const counter = Boolean(readVisit(slug).counter);
   const [ticket, setTicket] = useState<number | null>(null);
 

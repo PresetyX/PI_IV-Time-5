@@ -65,7 +65,7 @@ class BillServiceTest {
         assertEquals(3200, bill.consumptionCents());
     }
 
-    // [Mateus · Card 4] O cancelamento da equipe grava CANCELLED (dois L); a conta não pode cobrar esse pedido.
+    // O cancelamento da equipe grava CANCELLED (dois L); a conta não pode cobrar esse pedido.
     @Test
     void orderCancelledByTheStaffLeavesTheTotal() {
         givenTab();

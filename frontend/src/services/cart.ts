@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 import type { MenuProduct } from './menu';
 import type { OrderItemInput } from './tabs';
 import { readVisit } from './visit';

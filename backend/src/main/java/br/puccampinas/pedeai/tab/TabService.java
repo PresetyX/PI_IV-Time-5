@@ -31,8 +31,6 @@ public class TabService {
 
     public static final Duration JOIN_CODE_DURATION = Duration.ofMinutes(5);
     private static final String MODE_TABLE = "TABLE";
-    // [Mateus · Card 5] Alteração: comanda de balcão (sessão sem mesa). Uma por pessoa; outras pessoas só entram com
-    // o link da comanda e o código, porque não há mesa para listar.
     static final String MODE_COUNTER = "COUNTER";
     private static final String STATUS_OPEN = "OPEN";
 
@@ -71,7 +69,6 @@ public class TabService {
             throw new ConflictException("You already have a tab on this table");
         }
         Instant now = clock.instant();
-        // [Mateus · Card 5] Alteração: sessão de balcão abre comanda COUNTER, sem mesa.
         Tab tab = tabRepository.insert(new Tab(new ObjectId(), session.storeId(), session.tableId(),
                 isCounter(session) ? MODE_COUNTER : MODE_TABLE,
                 session.name(), session.id(), "CUSTOMER", newCode(), now.plus(JOIN_CODE_DURATION), List.of(),
@@ -137,7 +134,6 @@ public class TabService {
         return view(saveParticipants(tab, next), session);
     }
 
-    // [Mateus · Card 5] Alteração: antes era tableSession e recusava sessão sem mesa; agora aceita a de balcão.
     private GuestSession guestSession(AuthenticatedUser guest) {
         GuestSession session = sessionRepository.findById(guest.userId())
                 .filter(found -> found.storeId().equals(guest.storeId()))
@@ -156,7 +152,6 @@ public class TabService {
     /** Mesa: as comandas abertas da mesa. Balcão: só as comandas de balcão de que a sessão faz parte. */
     private List<Tab> openTabs(GuestSession session) {
         if (isCounter(session)) {
-            // [Mateus · Card 5] Alteração: no balcão não há mesa para listar as comandas dos outros.
             Query query = Query.query(Criteria.where("storeId").is(session.storeId()).and("mode").is(MODE_COUNTER)
                     .and("status").is(STATUS_OPEN).orOperator(Criteria.where("ownerSessionId").is(session.id()),
                             Criteria.where("participants.sessionId").is(session.id())))
@@ -173,7 +168,6 @@ public class TabService {
 
     private Tab tabOnMyTable(GuestSession session, String tabId) {
         return tabRepository.findByStoreIdAndId(session.storeId(), parseId(tabId))
-                // [Mateus · Card 5] Alteração: no balcão vale qualquer comanda de balcão aberta da loja (precisa do código).
                 .filter(tab -> STATUS_OPEN.equals(tab.status()) && (isCounter(session)
                         ? MODE_COUNTER.equals(tab.mode())
                         : session.tableId().equals(tab.tableId())))
@@ -244,7 +238,6 @@ public class TabService {
                     totals.getOrDefault(participant.sessionId(), 0), participant.joinedAt()));
         }
 
-        // [Mateus · Card 5] Alteração: comanda de balcão não tem mesa (tableNumber 0) e mostra a senha, se já tiver.
         int tableNumber = tab.tableId() == null ? 0
                 : tableRepository.findById(tab.tableId()).map(table -> table.number()).orElse(0);
         return new TabResponse(tab.id().toHexString(), tableNumber, tab.customerName(), owner,
@@ -252,7 +245,7 @@ public class TabService {
                 tab.totalCents(), tab.openedAt(), members, tab.mode(), pickupTicketOf(tab));
     }
 
-    /** [Mateus · Card 5] Senha do balcão gravada na comanda pelo primeiro pedido; o {@link Tab} não tem o campo. */
+    /** Senha do balcão gravada na comanda pelo primeiro pedido; o {@link Tab} não tem o campo. */
     Integer pickupTicketOf(Tab tab) {
         if (!MODE_COUNTER.equals(tab.mode())) {
             return null;
@@ -266,7 +259,6 @@ public class TabService {
     private Map<ObjectId, Integer> totalsBySession(Tab tab) {
         Map<ObjectId, Integer> totals = new HashMap<>();
         Query query = Query.query(Criteria.where("storeId").is(tab.storeId()).and("tabId").is(tab.id())
-                // [Mateus · Card 4] Alteração: ignora CANCELLED (dois L, como o pedido é gravado) além de CANCELED.
                 .and("status").nin(TabTotals.IGNORED_STATUS));
         for (Document order : mongo.find(query, Document.class, "order")) {
             List<?> items = order.get("items", List.class);

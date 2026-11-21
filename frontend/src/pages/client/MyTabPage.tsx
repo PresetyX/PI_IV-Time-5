@@ -71,7 +71,6 @@ export default function MyTabPage() {
   }, [codeExpired, load]);
 
   if (gate) return <Navigate to={gate} replace />;
-  // [Mateus · Card 5] Alteração: no balcão, sem comanda aberta (já retirou) a senha mostra a retirada confirmada.
   if (missing) return <Navigate to={readVisit(slug).counter ? `/t/${slug}/balcao/senha` : `/t/${slug}/comandas`} replace />;
   if (state.status === 'loading' || (tab === null && !loadFailed)) return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
@@ -97,7 +96,6 @@ export default function MyTabPage() {
     run(() => removeTabMember(slug, current.id, member.sessionId), 'Não foi possível remover agora. Tente de novo.');
   }
 
-  // [Mateus · Card 5] Alteração: comanda de balcão não tem mesa; mostra a senha quando já tiver.
   const counter = current.mode === 'COUNTER';
   const allowRepeatRound = state.status !== 'ready' || state.store.allowRepeatRound;
   const place = counter
@@ -130,7 +128,6 @@ export default function MyTabPage() {
             Ver a conta
           </ActionButton>
         </Box>
-        {/* [Mateus · Card 5] Alteração: no balcão não há garçom nem rodada da mesa; entra "Minha senha". */}
         {counter ? (
           <ActionButton tone="quiet" sx={{ mt: 2 }} onClick={() => navigate(`/t/${slug}/balcao/senha`)}>
             Minha senha
@@ -181,7 +178,6 @@ export default function MyTabPage() {
               </Typography>
             </Box>
             {counter ? (
-              // [Mateus · Card 5] Alteração: no balcão não há mesa para achar a comanda; vai o link de convite.
               <>
                 <Typography sx={{ mt: 3, fontSize: fontSize.small, color: colors.textSecondary }}>
                   Para alguém pedir junto com você, mande este link e passe o código. Tudo cai nesta comanda e na

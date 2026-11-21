@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 package br.puccampinas.pedeai.tab;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -5,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -66,6 +69,7 @@ class OrderPlacementServiceTest {
 
     @BeforeEach
     void givenOpenTab() {
+        when(validation.validate(any())).thenReturn(result(OrderValidationClient.Status.VALID));
         tab = new Tab(new ObjectId(), storeId, new ObjectId(), "TABLE", "Ana", guest.userId(), "CUSTOMER", null, null,
                 List.of(), "OPEN", 0, 0, 0, 0, 0, NOW);
         when(tabService.requireMyTab(guest)).thenReturn(tab);
@@ -110,8 +114,7 @@ class OrderPlacementServiceTest {
 
     @Test
     void rejectedBySocketSavesNothingAndKeepsTheNumber() {
-        doThrow(new OrderRejectedException(HttpStatus.CONFLICT, OrderRejectedException.PRICE_CHANGED, "mudou"))
-                .when(validation).validate(any());
+        when(validation.validate(any())).thenReturn(result(OrderValidationClient.Status.PRICE_CHANGED));
 
         OrderRejectedException e = assertThrows(OrderRejectedException.class,
                 () -> service.place(guest, request(5000, item(fries, 1, null), item(beer, 2, null))));
@@ -122,9 +125,7 @@ class OrderPlacementServiceTest {
 
     @Test
     void socketTimeoutSavesNothing() {
-        doThrow(new OrderRejectedException(HttpStatus.SERVICE_UNAVAILABLE,
-                OrderRejectedException.VALIDATION_UNAVAILABLE, "sem resposta"))
-                .when(validation).validate(any());
+        when(validation.validate(any())).thenReturn(result(OrderValidationClient.Status.UNAVAILABLE));
 
         OrderRejectedException e = assertThrows(OrderRejectedException.class,
                 () -> service.place(guest, request(3200, item(fries, 1, null))));
@@ -259,7 +260,7 @@ class OrderPlacementServiceTest {
         assertEquals(false, saved.getValue().getBoolean("ageConfirmed"));
     }
 
-    // [Mateus · Card 5] Balcão: pedido espera o pagamento e o primeiro pedido ganha a senha do dia.
+    // Balcão: pedido espera o pagamento e o primeiro pedido ganha a senha do dia.
     @Test
     void counterOrderAwaitsPaymentAndGetsThePickupTicket() {
         Tab counterTab = new Tab(new ObjectId(), storeId, null, "COUNTER", "Bia", guest.userId(), "CUSTOMER", null,
@@ -303,6 +304,29 @@ class OrderPlacementServiceTest {
 
         assertEquals("RECEIVED", placed.status());
         assertEquals(null, placed.pickupTicket());
+    }
+
+    @Test
+    void closedHoursFromTheServerIsStoreClosed() {
+        when(validation.validate(any())).thenReturn(result(OrderValidationClient.Status.CLOSED_HOURS));
+
+        OrderRejectedException e = assertThrows(OrderRejectedException.class,
+                () -> service.place(guest, request(3200, item(fries, 1, null))));
+
+        assertEquals(OrderRejectedException.STORE_CLOSED, e.getCode());
+        assertNothingSaved();
+    }
+
+    @Test
+    void invalidParamsFromTheServerIsBadRequest() {
+        when(validation.validate(any())).thenReturn(result(OrderValidationClient.Status.INVALID));
+
+        assertThrows(InvalidRequestException.class, () -> service.place(guest, request(3200, item(fries, 1, null))));
+        assertNothingSaved();
+    }
+
+    private static OrderValidationClient.Result result(OrderValidationClient.Status status) {
+        return new OrderValidationClient.Result(status, "detalhe do server");
     }
 
     private void assertNothingSaved() {

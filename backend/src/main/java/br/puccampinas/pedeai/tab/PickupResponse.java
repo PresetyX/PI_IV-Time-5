@@ -1,10 +1,14 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 package br.puccampinas.pedeai.tab;
 
 import java.time.Instant;
 import java.util.List;
 
 /**
- * [Mateus · Card 5] Senha do balcão vista pelo cliente. {@code pickupTicket} é nulo até o primeiro pedido;
+ * Senha do balcão vista pelo cliente. {@code pickupTicket} é nulo até o primeiro pedido;
  * {@code tabStatus} CLOSED quer dizer retirada confirmada.
  */
 public record PickupResponse(

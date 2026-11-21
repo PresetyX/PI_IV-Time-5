@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 import type { ReactNode } from 'react';
 import { Box, ButtonBase, IconButton, Typography } from '@mui/material';
 import { formatCents } from '../../services/format';

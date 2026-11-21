@@ -39,9 +39,14 @@ public class ConnectionHandler implements Runnable {
             if (line == null) {
                 return;
             }
-            writer.write(process(line));
+            long start = System.nanoTime();
+            String response = process(line);
+            writer.write(response);
             writer.write('\n');
             writer.flush();
+            long millis = (System.nanoTime() - start) / 1_000_000;
+            String from = connection.getInetAddress() == null ? "?" : connection.getInetAddress().getHostAddress();
+            LOGGER.info(() -> commandOf(line) + " de " + from + " -> " + resultOf(response) + " (" + millis + " ms)");
         } catch (IOException e) {
             LOGGER.log(Level.FINE, "Connection error", e);
         }
@@ -70,6 +75,25 @@ public class ConnectionHandler implements Runnable {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "ok");
         return result;
+    }
+
+    /** Nome do comando da linha recebida, para o log. */
+    static String commandOf(String line) {
+        int end = line.indexOf('|');
+        String command = (end < 0 ? line : line.substring(0, end)).trim().toUpperCase();
+        if (command.isEmpty()) {
+            return "(vazio)";
+        }
+        return command.length() > 30 ? command.substring(0, 30) + "..." : command;
+    }
+
+    /** "OK" ou o código do erro da resposta, para o log. */
+    static String resultOf(String response) {
+        if (response.startsWith("OK|")) {
+            return "OK";
+        }
+        String[] parts = response.split("\\|", 3);
+        return parts.length > 1 ? parts[1] : response;
     }
 
     private static String readLine(Reader reader) throws IOException {

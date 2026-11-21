@@ -23,7 +23,7 @@ const REFRESH_MS = 5000;
 const { colors, fontSize, fontWeight, radius } = tokens;
 
 const STEP_LABEL: Record<string, string> = {
-  AWAITING_PAYMENT: 'Esperando o pagamento no caixa', // [Mateus · Card 5]
+  AWAITING_PAYMENT: 'Esperando o pagamento no caixa',
   RECEIVED: 'Recebido pela cozinha',
   PREPARING: 'Entrou em preparo',
   READY: 'Pronto para entrega',
@@ -141,7 +141,6 @@ export default function OrderStatusPage() {
       ) : (
         <ScreenHeader
           title={`Pedido #${order.number}`}
-          // [Mateus · Card 5] Alteração: pedido de balcão não tem mesa.
           subtitle={`${order.tableNumber > 0 ? `Mesa ${formatTableNumber(order.tableNumber)}` : 'Balcão'} · ${orderStatusLabel(order.status)}`}
           onBack={() => navigate(`/t/${slug}/conta`)}
         />

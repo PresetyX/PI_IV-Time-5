@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
@@ -12,7 +16,7 @@ const REFRESH_MS = 5000;
 const { colors, fontSize, fontWeight, radius } = tokens;
 
 /**
- * [Mateus · Card 5] Painel de senhas do balcão para TV. Público e sem login: só os números das senhas de hoje,
+ * Painel de senhas do balcão para TV. Público e sem login: só os números das senhas de hoje,
  * em preparo (já pagas) e prontas para retirar.
  */
 export default function PickupBoardPage() {

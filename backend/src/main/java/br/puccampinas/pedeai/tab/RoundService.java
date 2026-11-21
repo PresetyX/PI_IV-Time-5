@@ -78,7 +78,6 @@ public class RoundService {
 
         Set<ObjectId> repeated = lastItems.stream().map(item -> item.getObjectId("productId"))
                 .collect(Collectors.toSet());
-        // [Mateus · Card 5] Alteração: comanda de balcão não tem mesa; findById(null) dava erro.
         int tableNumber = tab.tableId() == null ? 0
                 : tableRepository.findById(tab.tableId()).map(table -> table.number()).orElse(0);
         return new RoundResponse(tab.customerName(), tableNumber,
@@ -89,8 +88,6 @@ public class RoundService {
 
     /** Pedidos de todas as comandas abertas na mesa, do mais novo para o mais antigo. */
     private List<Document> ordersOnTheTable(Tab tab) {
-        // [Mateus · Card 5] Alteração: no balcão não há mesa; sem isso a busca por tableId nulo pegaria todas as
-        // comandas de balcão da loja e sugeriria o pedido de desconhecidos.
         if (tab.tableId() == null) {
             return List.of();
         }

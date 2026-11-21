@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 package br.puccampinas.pedeai.order;
 
 import java.time.Clock;
@@ -20,7 +24,7 @@ import br.puccampinas.pedeai.store.Store;
 import br.puccampinas.pedeai.store.StoreService;
 
 /**
- * [Mateus · Card 5] Painel de senhas do balcão para TV. Público: devolve só números de senha de hoje (nada de nome
+ * Painel de senhas do balcão para TV. Público: devolve só números de senha de hoje (nada de nome
  * ou valor), separados em "em preparo" (já pagos) e "prontos". Senha com algum pedido pronto aparece só em prontos.
  */
 @RestController

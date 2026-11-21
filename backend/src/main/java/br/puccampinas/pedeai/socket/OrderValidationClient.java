@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 package br.puccampinas.pedeai.socket;
 
 import java.time.LocalTime;
@@ -5,50 +9,69 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import br.puccampinas.pedeai.common.InvalidRequestException;
-import br.puccampinas.pedeai.common.OrderRejectedException;
-import br.puccampinas.pedeai.common.ServerUnavailableException;
+import java.util.regex.Pattern;
 
 /**
- * Pede ao {@code server/} o {@code VALIDATE_ORDER} de um pedido. Só retorna normalmente quando o server
- * respondeu que o pedido é válido; qualquer outra coisa (recusa, timeout, resposta estranha) vira exceção,
- * para o pedido nunca ser gravado sem validação.
+ * Pede ao {@code server/} o {@code VALIDATE_ORDER} de um pedido e diz o que ele respondeu.
+ *
+ * <p>Java puro (sem Spring, sem Jackson): o JSON dos itens é montado aqui mesmo e a resposta é lida pelo
+ * protocolo de texto. Só devolve {@link Status#VALID} quando o server respondeu {@code OK} com
+ * {@code "valid":true}; qualquer outra coisa (recusa, timeout, resposta estranha) é outro status, para o pedido
+ * nunca ser gravado sem validação. Quem chama decide a resposta HTTP de cada status.
  */
-@Component
 public class OrderValidationClient {
 
     static final String COMMAND = "VALIDATE_ORDER";
     private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
+    private static final Pattern VALID_TRUE = Pattern.compile("\"valid\"\\s*:\\s*true");
 
     private final SocketClient socketClient;
-    private final ObjectMapper objectMapper;
 
-    public OrderValidationClient(SocketClient socketClient, ObjectMapper objectMapper) {
+    public OrderValidationClient(SocketClient socketClient) {
         this.socketClient = socketClient;
-        this.objectMapper = objectMapper;
     }
 
-    public void validate(OrderValidation order) {
+    /** Resultado da validação. {@code detail} traz a mensagem do server ou o motivo da falha. */
+    public enum Status {
+        /** O server conferiu e aprovou: pode gravar. */
+        VALID,
+        /** {@code TOTAL_MISMATCH}: o total que o cliente viu não bate com os preços do banco. */
+        PRICE_CHANGED,
+        /** {@code CLOSED_HOURS}: fora do horário de pedidos da loja. */
+        CLOSED_HOURS,
+        /** {@code INVALID_PARAMS}: quantidade, observação ou valores fora das regras. */
+        INVALID,
+        /** Sem resposta em {@link SocketClient#TIMEOUT_MILLIS} ms, server fora do ar ou resposta inesperada. */
+        UNAVAILABLE
+    }
+
+    public record Result(Status status, String detail) {
+
+        public boolean valid() {
+            return status == Status.VALID;
+        }
+    }
+
+    public Result validate(OrderValidation order) {
         SocketResponse response;
         try {
             response = socketClient.send(COMMAND, params(order));
-        } catch (ServerUnavailableException e) {
-            throw unavailable(e);
+        } catch (SocketUnavailableException e) {
+            return new Result(Status.UNAVAILABLE, e.getMessage());
         }
         if (!response.ok()) {
-            throw rejection(response);
+            String code = response.code() == null ? "" : response.code();
+            return switch (code) {
+                case "TOTAL_MISMATCH" -> new Result(Status.PRICE_CHANGED, response.message());
+                case "CLOSED_HOURS" -> new Result(Status.CLOSED_HOURS, response.message());
+                case "INVALID_PARAMS" -> new Result(Status.INVALID, response.message());
+                default -> new Result(Status.UNAVAILABLE, code + ": " + response.message());
+            };
         }
-        if (!isValid(response.body())) {
-            throw unavailable(new IllegalStateException("Unexpected validation body: " + response.body()));
+        if (response.body() == null || !VALID_TRUE.matcher(response.body()).find()) {
+            return new Result(Status.UNAVAILABLE, "Unexpected validation body: " + response.body());
         }
+        return new Result(Status.VALID, null);
     }
 
     Map<String, String> params(OrderValidation order) {
@@ -62,51 +85,53 @@ public class OrderValidationClient {
         return params;
     }
 
-    private String itemsJson(List<Item> items) {
-        List<Map<String, Object>> json = items.stream().map(item -> {
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("unitPriceCents", item.unitPriceCents());
-            row.put("quantity", item.quantity());
-            if (item.note() != null && !item.note().isEmpty()) {
-                row.put("note", item.note());
+    /** {@code [{"unitPriceCents":3200,"quantity":1,"note":"sem cebola","options":[{"deltaCents":600}]}]} */
+    static String itemsJson(List<Item> items) {
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < items.size(); i++) {
+            Item item = items.get(i);
+            if (i > 0) {
+                json.append(',');
             }
-            row.put("options", item.optionDeltasCents().stream().map(delta -> Map.of("deltaCents", delta)).toList());
-            return row;
-        }).toList();
-        try {
-            return objectMapper.writeValueAsString(json);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Could not serialize order items", e);
+            json.append("{\"unitPriceCents\":").append(item.unitPriceCents())
+                    .append(",\"quantity\":").append(item.quantity());
+            if (item.note() != null && !item.note().isEmpty()) {
+                json.append(",\"note\":");
+                appendString(json, item.note());
+            }
+            json.append(",\"options\":[");
+            List<Integer> deltas = item.optionDeltasCents() == null ? List.of() : item.optionDeltasCents();
+            for (int j = 0; j < deltas.size(); j++) {
+                if (j > 0) {
+                    json.append(',');
+                }
+                json.append("{\"deltaCents\":").append(deltas.get(j)).append('}');
+            }
+            json.append("]}");
         }
+        return json.append(']').toString();
     }
 
-    private boolean isValid(String body) {
-        try {
-            JsonNode node = objectMapper.readTree(body);
-            return node != null && node.path("valid").asBoolean(false);
-        } catch (JsonProcessingException e) {
-            return false;
+    /** Texto JSON entre aspas, com os escapes que o {@code SimpleJson} do server entende. */
+    private static void appendString(StringBuilder json, String text) {
+        json.append('"');
+        for (char c : text.toCharArray()) {
+            switch (c) {
+                case '"' -> json.append("\\\"");
+                case '\\' -> json.append("\\\\");
+                case '\n' -> json.append("\\n");
+                case '\r' -> json.append("\\r");
+                case '\t' -> json.append("\\t");
+                default -> {
+                    if (c < 0x20) {
+                        json.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        json.append(c);
+                    }
+                }
+            }
         }
-    }
-
-    private static RuntimeException rejection(SocketResponse response) {
-        String code = response.code() == null ? "" : response.code();
-        return switch (code) {
-            case "TOTAL_MISMATCH" -> new OrderRejectedException(HttpStatus.CONFLICT,
-                    OrderRejectedException.PRICE_CHANGED,
-                    "O valor do pedido mudou. Confira o carrinho e envie de novo.");
-            case "CLOSED_HOURS" -> new OrderRejectedException(HttpStatus.CONFLICT,
-                    OrderRejectedException.STORE_CLOSED,
-                    "A casa não está aceitando pedidos neste horário.");
-            case "INVALID_PARAMS" -> new InvalidRequestException(response.message());
-            default -> unavailable(new IllegalStateException(code + ": " + response.message()));
-        };
-    }
-
-    private static OrderRejectedException unavailable(Throwable cause) {
-        return new OrderRejectedException(HttpStatus.SERVICE_UNAVAILABLE,
-                OrderRejectedException.VALIDATION_UNAVAILABLE,
-                "Não foi possível conferir o pedido agora. Tente de novo em instantes.", cause);
+        json.append('"');
     }
 
     /** Pedido a validar. Horários em {@code HH:mm}, já no fuso da loja. */

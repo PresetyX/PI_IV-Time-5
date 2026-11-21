@@ -34,7 +34,7 @@ import br.puccampinas.pedeai.store.StoreService;
 @Service
 public class OrderPlacementService {
 
-    /** [Mateus · Card 5] Pedido de balcão enviado, esperando o pagamento no caixa; não aparece na cozinha. */
+    /** Pedido de balcão enviado, esperando o pagamento no caixa; não aparece na cozinha. */
     public static final String AWAITING_PAYMENT = "AWAITING_PAYMENT";
 
     private final TabService tabService;
@@ -127,9 +127,13 @@ public class OrderPlacementService {
                     "Seu pedido tem bebida alcoólica. Confirme que você tem 18 anos ou mais.");
         }
 
-        orderValidationClient.validate(new OrderValidationClient.OrderValidation(toValidate,
-                request.expectedTotalCents(), total, status.opensAt(), status.lastOrderAt(),
-                LocalTime.now(clock.withZone(OpeningStatusCalculator.STORE_ZONE))));
+        OrderValidationClient.Result validation = orderValidationClient.validate(
+                new OrderValidationClient.OrderValidation(toValidate, request.expectedTotalCents(), total,
+                        status.opensAt(), status.lastOrderAt(),
+                        LocalTime.now(clock.withZone(OpeningStatusCalculator.STORE_ZONE))));
+        if (!validation.valid()) {
+            throw rejection(validation);
+        }
 
         ObjectId orderId = new ObjectId();
         int number = nextNumber(tab.storeId(), "ORDER");
@@ -187,6 +191,21 @@ public class OrderPlacementService {
                 new Update().inc("seq", 1), FindAndModifyOptions.options().upsert(true).returnNew(true),
                 Document.class, "sequence");
         return counter.get("seq", Number.class).intValue();
+    }
+
+    /** Resposta HTTP de cada recusa do server (as mesmas de antes). */
+    private static RuntimeException rejection(OrderValidationClient.Result validation) {
+        return switch (validation.status()) {
+            case PRICE_CHANGED -> new OrderRejectedException(HttpStatus.CONFLICT, OrderRejectedException.PRICE_CHANGED,
+                    "O valor do pedido mudou. Confira o carrinho e envie de novo.");
+            case CLOSED_HOURS -> new OrderRejectedException(HttpStatus.CONFLICT, OrderRejectedException.STORE_CLOSED,
+                    "A casa não está aceitando pedidos neste horário.");
+            case INVALID -> new InvalidRequestException(validation.detail());
+            default -> new OrderRejectedException(HttpStatus.SERVICE_UNAVAILABLE,
+                    OrderRejectedException.VALIDATION_UNAVAILABLE,
+                    "Não foi possível conferir o pedido agora. Tente de novo em instantes.",
+                    new IllegalStateException(validation.detail()));
+        };
     }
 
     private static ObjectId objectId(String value) {

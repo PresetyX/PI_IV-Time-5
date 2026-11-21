@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 package br.puccampinas.pedeai.tab;
 
 import java.time.Clock;
@@ -18,7 +22,7 @@ import br.puccampinas.pedeai.session.GuestSession;
 import br.puccampinas.pedeai.session.GuestSessionRepository;
 
 /**
- * [Mateus · Card 5] Senha do balcão do cliente: a comanda de balcão mais recente da sessão, aberta ou já fechada,
+ * Senha do balcão do cliente: a comanda de balcão mais recente da sessão, aberta ou já fechada,
  * para a tela continuar mostrando "Retirada confirmada" depois que a comanda fecha sozinha.
  */
 @Service

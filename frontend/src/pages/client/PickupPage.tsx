@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
@@ -33,7 +37,7 @@ const STATUS: Record<string, { label: string; tone: 'dark' | 'light' | 'muted' }
 };
 
 /**
- * [Mateus · Card 5] Senha do balcão. A mesma tela mostra a senha com o status dos pedidos, o destaque de
+ * Senha do balcão. A mesma tela mostra a senha com o status dos pedidos, o destaque de
  * "pronto para retirar" e a "retirada confirmada" quando a comanda fecha.
  */
 export default function PickupPage() {

@@ -1,6 +1,10 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 import { api } from './api';
 
-// [Mateus · Card 5] Painel de senhas do balcão (público, só números).
+// Painel de senhas do balcão (público, só números).
 export interface PickupBoard {
   storeName: string;
   preparing: number[];

@@ -1,8 +1,11 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 package br.puccampinas.pedeai.socket;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -14,18 +17,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import br.puccampinas.pedeai.common.InvalidRequestException;
-import br.puccampinas.pedeai.common.OrderRejectedException;
-import br.puccampinas.pedeai.common.ServerUnavailableException;
 
 class OrderValidationClientTest {
 
     private final SocketClient socketClient = mock(SocketClient.class);
-    private final OrderValidationClient client = new OrderValidationClient(socketClient, new ObjectMapper());
+    private final OrderValidationClient client = new OrderValidationClient(socketClient);
 
     private final OrderValidationClient.OrderValidation order = new OrderValidationClient.OrderValidation(
             List.of(new OrderValidationClient.Item(3200, 1, "sem cebola", List.of(600)),
@@ -46,10 +42,21 @@ class OrderValidationClientTest {
     }
 
     @Test
+    void noteIsEscapedTheWayTheServerReadsIt() {
+        String json = OrderValidationClient.itemsJson(List.of(
+                new OrderValidationClient.Item(500, 1, "sem \"cebola\"\nbem passado \\ ok\t" + (char) 1, List.of())));
+
+        assertEquals("[{\"unitPriceCents\":500,\"quantity\":1,"
+                + "\"note\":\"sem \\\"cebola\\\"\\nbem passado \\\\ ok\\t\\u0001\",\"options\":[]}]", json);
+    }
+
+    @Test
     void validOrderPasses() {
         respond(new SocketResponse(true, "{\"valid\":true,\"totalCents\":5400}", null, null));
 
-        assertDoesNotThrow(() -> client.validate(order));
+        OrderValidationClient.Result result = client.validate(order);
+
+        assertTrue(result.valid());
         verify(socketClient).send(eq("VALIDATE_ORDER"), anyMap());
     }
 
@@ -57,52 +64,53 @@ class OrderValidationClientTest {
     void totalMismatchIsPriceChanged() {
         respond(new SocketResponse(false, null, "TOTAL_MISMATCH", "Total 5000 does not match computed 5400"));
 
-        assertRejected(HttpStatus.CONFLICT, OrderRejectedException.PRICE_CHANGED);
+        assertStatus(OrderValidationClient.Status.PRICE_CHANGED);
     }
 
     @Test
-    void closedHoursIsStoreClosed() {
+    void closedHoursIsClosedHours() {
         respond(new SocketResponse(false, null, "CLOSED_HOURS", "Store is closed at 23:10"));
 
-        assertRejected(HttpStatus.CONFLICT, OrderRejectedException.STORE_CLOSED);
+        assertStatus(OrderValidationClient.Status.CLOSED_HOURS);
     }
 
     @Test
-    void invalidParamsIsBadRequest() {
+    void invalidParamsIsInvalidWithTheServerMessage() {
         respond(new SocketResponse(false, null, "INVALID_PARAMS", "quantity must be between 1 and 20"));
 
-        assertThrows(InvalidRequestException.class, () -> client.validate(order));
+        OrderValidationClient.Result result = client.validate(order);
+
+        assertEquals(OrderValidationClient.Status.INVALID, result.status());
+        assertEquals("quantity must be between 1 and 20", result.detail());
     }
 
     @Test
     void timeoutOrUnreachableServerIsUnavailable() {
         when(socketClient.send(eq("VALIDATE_ORDER"), anyMap()))
-                .thenThrow(new ServerUnavailableException("Server did not respond within 3000 ms"));
+                .thenThrow(new SocketUnavailableException("Server did not respond within 3000 ms"));
 
-        assertRejected(HttpStatus.SERVICE_UNAVAILABLE, OrderRejectedException.VALIDATION_UNAVAILABLE);
+        assertStatus(OrderValidationClient.Status.UNAVAILABLE);
     }
 
     @Test
     void unexpectedServerErrorIsUnavailable() {
         respond(new SocketResponse(false, null, "INTERNAL", "Internal server error"));
 
-        assertRejected(HttpStatus.SERVICE_UNAVAILABLE, OrderRejectedException.VALIDATION_UNAVAILABLE);
+        assertStatus(OrderValidationClient.Status.UNAVAILABLE);
     }
 
     @Test
     void okWithoutValidTrueIsNeverAccepted() {
         respond(new SocketResponse(true, "{\"status\":\"ok\"}", null, null));
 
-        assertRejected(HttpStatus.SERVICE_UNAVAILABLE, OrderRejectedException.VALIDATION_UNAVAILABLE);
+        assertStatus(OrderValidationClient.Status.UNAVAILABLE);
     }
 
     private void respond(SocketResponse response) {
         when(socketClient.send(eq("VALIDATE_ORDER"), anyMap())).thenReturn(response);
     }
 
-    private void assertRejected(HttpStatus status, String code) {
-        OrderRejectedException e = assertThrows(OrderRejectedException.class, () -> client.validate(order));
-        assertEquals(status, e.getStatus());
-        assertEquals(code, e.getCode());
+    private void assertStatus(OrderValidationClient.Status status) {
+        assertEquals(status, client.validate(order).status());
     }
 }

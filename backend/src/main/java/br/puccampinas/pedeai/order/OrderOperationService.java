@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 package br.puccampinas.pedeai.order;
 
 import java.time.Clock;
@@ -23,7 +27,7 @@ import br.puccampinas.pedeai.common.ResourceNotFoundException;
 import br.puccampinas.pedeai.tab.TabTotals;
 
 /**
- * [Mateus · Card 4] Cancelar pedido com motivo e entrega parcial. Toda mudança grava um documento em
+ * Cancelar pedido com motivo e entrega parcial. Toda mudança grava um documento em
  * {@code orderEvent} e também em {@code statusHistory} do pedido, que é o que o acompanhamento do cliente lê.
  */
 @Service
@@ -170,7 +174,7 @@ public class OrderOperationService {
     }
 
     /**
-     * [Mateus · Card 5] Pagamento no caixa de um pedido de balcão: grava o pagamento, soma em {@code tab.paidCents} e
+     * Pagamento no caixa de um pedido de balcão: grava o pagamento, soma em {@code tab.paidCents} e
      * solta o pedido para a cozinha ({@code AWAITING_PAYMENT} vira {@code RECEIVED}).
      */
     public Result pay(AuthenticatedUser user, String orderId, String method) {
@@ -220,7 +224,7 @@ public class OrderOperationService {
     }
 
     /**
-     * [Mateus · Card 5] Comanda de balcão fecha sozinha quando não sobra pedido por entregar e tudo foi pago. A de
+     * Comanda de balcão fecha sozinha quando não sobra pedido por entregar e tudo foi pago. A de
      * mesa continua sendo fechada pela equipe em /contas.
      */
     private void closeCounterTabWhenDone(AuthenticatedUser user, ObjectId tabId, Date now) {
