@@ -98,7 +98,7 @@ categorias.forEach(function (c) {
   }).insertedId;
 });
 
-// [Mateus · Card 3] Todo hambúrguer pergunta o ponto da carne e aceita adicionais (mesmos grupos do Triunfo duplo).
+// Todo hambúrguer pergunta o ponto da carne e aceita adicionais (mesmos grupos do Triunfo duplo).
 const PONTO_DA_CARNE = { name: "Ponto da carne", required: true, min: 1, max: 1,
   options: [{ label: "Ao ponto", deltaCents: 0 }, { label: "Bem passado", deltaCents: 0 }] };
 const ADICIONAIS = { name: "Adicionais", required: false, min: 0, max: 3,

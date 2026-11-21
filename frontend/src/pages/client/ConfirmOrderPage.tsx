@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Box, CircularProgress, Typography } from '@mui/material';
@@ -277,7 +281,7 @@ export default function ConfirmOrderPage() {
           </Box>
         </Box>
         <InfoNote>
-          {/* [Mateus · Card 5] No balcão, o pedido só vai para a cozinha depois do pagamento no caixa. */}
+          {/* No balcão, o pedido só vai para a cozinha depois do pagamento no caixa. */}
           {visit.counter
             ? 'Depois de enviar, você recebe a senha. Pague no caixa e o pedido entra na cozinha. Não há taxa de serviço.'
             : 'Ao enviar, o pedido vai direto para a cozinha e entra na sua comanda. Para mudar depois, chame o garçom.'}

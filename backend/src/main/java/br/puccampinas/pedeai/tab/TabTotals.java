@@ -34,7 +34,6 @@ public class TabTotals {
         Document store = mongo.findById(storeId, Document.class, "store");
         int feeBasisPoints = store == null ? 0 : number(store, "serviceFeeBasisPoints");
         Document tab = mongo.findById(tabId, Document.class, "tab");
-        // [Mateus · Card 5] Alteração: comanda de balcão não cobra taxa de serviço.
         if (tab != null && "COUNTER".equals(tab.getString("mode"))) {
             feeBasisPoints = 0;
         }

@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 package br.puccampinas.pedeai.tab;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

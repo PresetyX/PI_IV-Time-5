@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 import { useState } from 'react';
 import { Box, TextField, Typography } from '@mui/material';
 import { MAX_LINE_QUANTITY, MAX_NOTE_LENGTH, unitPrice } from '../../services/cart';

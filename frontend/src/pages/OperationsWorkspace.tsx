@@ -37,7 +37,6 @@ type Waiting = { id: string; number: number; name: string; partySize: number; cr
 type Workspace = { store: { name: string; logoUrl?: string; pausedUntil?: string; pausedScopes?: string[] }; role: string; tables: { id: string; number: number; nickname?: string }[]; tabs: Tab[]; orders: Order[]; waitlist: Waiting[]; serverTime: string };
 
 const COLUMNS = ['RECEIVED', 'PREPARING', 'READY'] as const;
-// [Mateus · Card 4] Alteração: cada motivo agora tem o código que o backend grava em order.cancelReason.
 const REASONS: [CancelReason, string][] = [
   ['GAVE_UP', 'Cliente desistiu'],
   ['WRONG_ORDER', 'Pedido lançado errado'],
@@ -192,7 +191,6 @@ export default function OperationsWorkspace() {
     }
   }
 
-  // [Mateus · Card 4] Alteração: cancelar pedido com motivo (antes o botão ficava desligado).
   async function cancelOrder(order: Order, reason: CancelReason, note: string) {
     if (busy || !synced) return;
     setBusy(true);
@@ -208,7 +206,6 @@ export default function OperationsWorkspace() {
     }
   }
 
-  // [Mateus · Card 4] Alteração: entrega parcial. itemIndexes são as posições em order.items.
   async function deliverItems(order: Order, itemIndexes: number[]) {
     if (busy || !synced || itemIndexes.length === 0) return;
     setBusy(true);
@@ -223,7 +220,6 @@ export default function OperationsWorkspace() {
     }
   }
 
-  // [Mateus · Card 5] Alteração: pagamento no caixa de pedido de balcão; depois dele o pedido entra na cozinha.
   const awaitingPayment = (data?.orders ?? [])
     .filter((order) => order.status === 'AWAITING_PAYMENT')
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
@@ -313,10 +309,8 @@ interface Ctx {
   resolveCall: (tabId: string, callId: string) => Promise<void>;
   navigate: ReturnType<typeof useNavigate>;
   notify: (title: string) => void;
-  // [Mateus · Card 4] Alteração: cancelar com motivo e entrega parcial, ligados ao OrderOperationController.
   cancelOrder: (order: Order, reason: CancelReason, note: string) => Promise<void>;
   deliverItems: (order: Order, itemIndexes: number[]) => Promise<void>;
-  // [Mateus · Card 5] Alteração: pedidos de balcão esperando pagamento no caixa e o registro do pagamento.
   awaitingPayment: Order[];
   payOrder: (order: Order, method: string) => Promise<void>;
 }
@@ -347,7 +341,6 @@ function resolvePage(root: string, view: string, pieces: string[], ctx: Ctx, clo
     const tabs = <FloorTabs ctx={ctx} current={view} />;
     if (view === 'entregas') return { title: 'Entregas pendentes', body: <>{tabs}<Deliveries ctx={ctx} /></> };
     if (view === 'chamados') return { title: 'Chamados', body: <>{tabs}<Calls ctx={ctx} /></> };
-    // [Mateus · Card 5] Alteração: caixa do balcão.
     if (view === 'balcao') return { title: 'Balcão · aguardando pagamento', body: <>{tabs}<CounterPayments ctx={ctx} /></> };
     return { title: 'Salão', body: <>{tabs}<TablesMap ctx={ctx} /></> };
   }
@@ -487,7 +480,6 @@ function OrderCard({ ctx, order, large = false }: { ctx: Ctx; order: Order; larg
         {tab?.customerName ? ` · ${tab.customerName}` : ''}
       </Typography>
       <ItemList order={order} large={large} />
-      {/* [Mateus · Card 4] Alteração: "Cancelar pedido" ao lado da ação principal, sem precisar abrir o pedido. */}
       <Box sx={{ display: 'flex', gap: 2 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <OrderAction ctx={ctx} order={order} />
@@ -642,11 +634,9 @@ function ConfirmReady({ ctx, order }: { ctx: Ctx; order: Order }) {
   );
 }
 
-// [Mateus · Card 4] Alteração: o botão "Cancelar pedido" agora chama o backend (antes ficava desligado).
 function CancelOrder({ ctx, order }: { ctx: Ctx; order: Order }) {
   const [reason, setReason] = useState<CancelReason>(REASONS[0][0]);
   const [note, setNote] = useState('');
-  // [Mateus · Card 5] Alteração: pedido de balcão que ainda não foi pago também pode ser cancelado.
   const cancellable = ['AWAITING_PAYMENT', 'RECEIVED', 'PREPARING'].includes(order.status) && KITCHEN_ROLES.includes(ctx.role);
   return (
     <Box sx={{ maxWidth: 560 }}>
@@ -808,7 +798,6 @@ function FloorTabs({ ctx, current }: { ctx: Ctx; current: string }) {
         options={[
           { value: 'mesas', label: 'Mesas' },
           { value: 'entregas', label: `Entregas (${ctx.ready.length})` },
-          // [Mateus · Card 5] Alteração: caixa do balcão.
           { value: 'balcao', label: `Balcão (${ctx.awaitingPayment.length})` },
           { value: 'chamados', label: `Chamados (${ctx.calls.length})` },
         ]}
@@ -992,7 +981,6 @@ function Deliveries({ ctx }: { ctx: Ctx }) {
             alert={waiting >= 5}
             lead={ctx.tableNumber(order.tableId ?? tab?.tableId) ?? tab?.pickupTicket ?? '#'}
             title={`${ctx.title(order)}${tab?.customerName ? ` · ${tab.customerName}` : ''}`}
-            // [Mateus · Card 4] Alteração: o detalhe lista só o que falta entregar; as ações viraram DeliverItems.
             detail={order.items.filter((item) => !HIDDEN_ITEMS.includes(item.status) && item.status !== 'DELIVERED').map((item) => `${item.quantity}× ${item.nameSnapshot}`).join(', ')}
             side={<Pill tone={waiting >= 5 ? 'red' : 'neutral'}>pronto há {waiting} min</Pill>}
             actions={
@@ -1007,8 +995,6 @@ function Deliveries({ ctx }: { ctx: Ctx }) {
   );
 }
 
-// [Mateus · Card 4] Novo: entrega parcial. O garçom marca o que levou à mesa; o pedido só sai da lista quando
-// todos os itens forem entregues. Os índices enviados são as posições em order.items.
 function DeliverItems({ ctx, order }: { ctx: Ctx; order: Order }) {
   const [marked, setMarked] = useState<number[]>([]);
   const permitted = FLOOR_ROLES.includes(ctx.role);
@@ -1059,8 +1045,6 @@ function DeliverItems({ ctx, order }: { ctx: Ctx; order: Order }) {
   );
 }
 
-// [Mateus · Card 5] Novo: caixa do balcão. O pedido de balcão só entra na fila da cozinha depois que o pagamento
-// é registrado aqui (POST /api/operations/orders/{id}/pay).
 function CounterPayments({ ctx }: { ctx: Ctx }) {
   if (!ctx.awaitingPayment.length) return <EmptyState text="Nenhum pedido de balcão esperando pagamento" />;
   return (

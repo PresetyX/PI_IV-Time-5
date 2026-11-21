@@ -67,7 +67,7 @@ class TabServiceTest {
                 .thenAnswer(call -> Optional.ofNullable(stored).filter(tab -> tab.id().equals(call.getArgument(1))));
     }
 
-    // [Mateus · Card 5] Comanda de balcão: sessão sem mesa abre comanda COUNTER e a encontra sem precisar de mesa.
+    // Comanda de balcão: sessão sem mesa abre comanda COUNTER e a encontra sem precisar de mesa.
     @Test
     void counterSessionOpensACounterTabWithoutTable() {
         GuestSession bia = new GuestSession(new ObjectId(), storeId, null, "COUNTER", "Bia", null, null, NOW,

@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 package br.puccampinas.pedeai.order;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -144,7 +148,7 @@ class OrderOperationServiceTest {
         assertThrows(ForbiddenException.class, () -> service.deliver(kitchen, orderId.toHexString(), List.of(0)));
     }
 
-    // [Mateus · Card 5] Pagamento no caixa do balcão.
+    // Pagamento no caixa do balcão.
     @Test
     void payingACounterOrderSendsItToTheKitchen() {
         when(mongo.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),

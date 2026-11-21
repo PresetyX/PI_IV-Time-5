@@ -1,9 +1,8 @@
 package br.puccampinas.pedeai.socket;
 
-import br.puccampinas.pedeai.common.ResourceNotFoundException;
-import br.puccampinas.pedeai.common.ServerUnavailableException;
-import br.puccampinas.pedeai.common.UpstreamErrorException;
-
+/**
+ * Resposta de uma linha do {@code server/}: {@code OK|json} ou {@code ERROR|codigo|mensagem}.
+ */
 public record SocketResponse(boolean ok, String body, String code, String message) {
 
     private static final String OK_PREFIX = "OK|";
@@ -19,13 +18,6 @@ public record SocketResponse(boolean ok, String body, String code, String messag
             String message = parts.length > 1 ? parts[1] : "";
             return new SocketResponse(false, null, code, message);
         }
-        throw new ServerUnavailableException("Malformed response from server");
-    }
-
-    public RuntimeException toException() {
-        if ("NOT_FOUND".equals(code)) {
-            return new ResourceNotFoundException(message);
-        }
-        return new UpstreamErrorException(code, message);
+        throw new SocketUnavailableException("Malformed response from server");
     }
 }

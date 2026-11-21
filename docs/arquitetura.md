@@ -51,6 +51,22 @@ Pacote raiz `br.puccampinas.pedeai.server`:
 
 O `SocketServer` aceita conexões em laço e entrega cada uma a uma thread de um pool fixo. O JSON é montado e lido por uma classe própria. O protocolo está em `docs/protocolo.md`.
 
+
+O server roda fora do Docker, no terminal (`mvn -f server/pom.xml compile exec:java`), e registra uma linha por requisição: comando, endereço de quem pediu, resultado (`OK` ou o código do erro) e tempo. O log não traz os dados do pedido.
+
+### Cliente do socket (no backend)
+
+A comunicação por socket não usa Spring dos dois lados. No `backend/`, o pacote `socket` é Java puro (`java.net`, `java.io`, `java.util`):
+
+| Classe | Papel |
+| --- | --- |
+| `SocketClient` | Abre uma conexão por requisição, envia a linha e lê a resposta; conectar, enviar e ler cabem em 3 segundos |
+| `SocketResponse` | Lê `OK|json` ou `ERROR|codigo|mensagem` |
+| `OrderValidationClient` | Monta o `VALIDATE_ORDER` (JSON dos itens feito à mão) e devolve o resultado: válido, preço mudou, fora do horário, inválido ou indisponível |
+| `SocketUnavailableException` | Server fora do ar, sem resposta no prazo ou resposta fora do protocolo |
+
+A única ponte com o Spring é `config/SocketConfig`, que cria os dois clientes com `SOCKET_HOST` e `SOCKET_PORT`. O `OrderPlacementService` traduz o resultado em resposta HTTP. O teste `SocketPackageIsPureJavaTest` falha se algum arquivo do pacote `socket` importar algo fora de `java.*`.
+
 ## Frontend
 
 React com Material UI. O tema recebe a cor primária por uma variável, para o whitelabel trocar em tempo de execução. O cliente HTTP único fica em `frontend/src/services/api.ts`.

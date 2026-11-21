@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 import { useCallback, useState } from 'react';
 import { readCart, saveCart } from '../services/cart';
 import type { CartLine } from '../services/cart';

@@ -36,34 +36,26 @@ services:
         fi
     restart: "no"
 
-  server:
-    build: ./server
-    restart: unless-stopped
-    environment:
-      SOCKET_PORT: 5000
-    healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/5000' || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-
+  # O server de socket roda fora do Docker, no terminal, antes do compose: mvn -f server/pom.xml compile exec:java
+  # O backend o acessa pela máquina (host.docker.internal).
   backend:
     build: ./backend
     restart: unless-stopped
     environment:
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/pedeai}
-      SOCKET_HOST: server
-      SOCKET_PORT: 5000
+      SOCKET_HOST: ${SOCKET_HOST:-host.docker.internal}
+      SOCKET_PORT: ${SOCKET_PORT:-5000}
       JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no arquivo .env da raiz}
       JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-60}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    # No Linux o host.docker.internal precisa ser declarado; no Docker Desktop (Windows/Mac) ele já existe.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
       db-init:
         condition: service_completed_successfully
-      server:
-        condition: service_healthy
 
   frontend:
     build:

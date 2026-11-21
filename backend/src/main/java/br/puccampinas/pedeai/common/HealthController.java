@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.puccampinas.pedeai.socket.SocketClient;
 import br.puccampinas.pedeai.socket.SocketResponse;
+import br.puccampinas.pedeai.socket.SocketUnavailableException;
 
 @RestController
 public class HealthController {
@@ -41,7 +42,7 @@ public class HealthController {
         try {
             SocketResponse response = socketClient.send("PING", Map.of());
             return response.ok() ? "up" : "error";
-        } catch (ServerUnavailableException e) {
+        } catch (SocketUnavailableException e) {
             return "down";
         }
     }

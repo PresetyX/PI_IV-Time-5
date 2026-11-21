@@ -42,7 +42,6 @@ export default function TableScanPage() {
     fetchTableByToken(slug, tableToken)
       .then((table) => {
         if (cancelled) return;
-        // [Mateus · Card 5] Alteração: ler o QR da mesa deixa de ser visita de balcão (e descarta a sessão de balcão).
         const fromCounter = readVisit(slug).counter;
         updateVisit(slug, {
           table,

@@ -22,9 +22,9 @@ export interface Tab {
   id: string;
   /** 0 na comanda de balcão. */
   tableNumber: number;
-  /** [Mateus · Card 5] TABLE ou COUNTER. */
+  /** TABLE ou COUNTER. */
   mode?: 'TABLE' | 'COUNTER';
-  /** [Mateus · Card 5] Senha do balcão, depois do primeiro pedido. */
+  /** Senha do balcão, depois do primeiro pedido. */
   pickupTicket?: number | null;
   ownerName: string;
   owner: boolean;
@@ -214,7 +214,7 @@ export function callWaiter(slug: string, type: WaiterCallType): Promise<WaiterCa
   return api.post<WaiterCall>('/api/tabs/mine/calls', { type }, guest(slug));
 }
 
-// [Mateus · Card 5] Senha do balcão vista pelo cliente; continua respondendo depois de a comanda fechar.
+// Senha do balcão vista pelo cliente; continua respondendo depois de a comanda fechar.
 export interface PickupLine {
   name: string;
   quantity: number;

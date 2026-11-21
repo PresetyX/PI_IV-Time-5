@@ -11,27 +11,24 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import br.puccampinas.pedeai.common.ServerUnavailableException;
-
-@Component
+/**
+ * Cliente do protocolo de texto do {@code server/} (ver docs/protocolo.md).
+ */
 public class SocketClient {
 
-    private static final int TIMEOUT_MILLIS = 3000;
+    public static final int TIMEOUT_MILLIS = 3000;
 
     private final String host;
     private final int port;
 
-    public SocketClient(@Value("${socket.host}") String host, @Value("${socket.port}") int port) {
+    public SocketClient(String host, int port) {
         this.host = host;
         this.port = port;
     }
 
     /**
      * Envia uma linha e lê a resposta. Conectar, enviar e ler cabem juntos em {@link #TIMEOUT_MILLIS}:
-     * sem resposta completa nesse prazo, lança {@link ServerUnavailableException}.
+     * sem resposta completa nesse prazo, lança {@link SocketUnavailableException}.
      */
     public SocketResponse send(String command, Map<String, String> params) {
         String line = buildLine(command, params);
@@ -45,13 +42,13 @@ public class SocketClient {
 
             String response = readLine(socket, deadline);
             if (response == null) {
-                throw new ServerUnavailableException("Server closed the connection without responding");
+                throw new SocketUnavailableException("Server closed the connection without responding");
             }
             return SocketResponse.parse(response);
         } catch (SocketTimeoutException e) {
-            throw new ServerUnavailableException("Server did not respond within " + TIMEOUT_MILLIS + " ms", e);
+            throw new SocketUnavailableException("Server did not respond within " + TIMEOUT_MILLIS + " ms", e);
         } catch (IOException e) {
-            throw new ServerUnavailableException("Server unreachable at " + host + ":" + port, e);
+            throw new SocketUnavailableException("Server unreachable at " + host + ":" + port, e);
         }
     }
 

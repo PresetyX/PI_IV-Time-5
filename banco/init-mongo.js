@@ -208,7 +208,7 @@ criar("tab", {
       }
     },
     status: { enum: ["OPEN", "AWAITING_PAYMENT", "CLOSED"] },
-    // [Mateus · Card 5] senha de retirada do dia, só na comanda de balcão; vem de sequence <storeId>:<data>:PICKUP
+    // senha de retirada do dia, só na comanda de balcão; vem de sequence <storeId>:<data>:PICKUP
     pickupTicket: inteiro,
     subtotalCents: inteiro,
     serviceFeeCents: inteiro,
@@ -236,7 +236,7 @@ criar("order", {
     tabId: oid,
     tableId: oid,
     number: { bsonType: "int", description: "número do dia, vem de counter" },
-    // [Mateus · Card 5] AWAITING_PAYMENT: pedido de balcão enviado, esperando o pagamento no caixa; não aparece na
+    // AWAITING_PAYMENT: pedido de balcão enviado, esperando o pagamento no caixa; não aparece na
     // cozinha até a equipe registrar o pagamento (aí vira RECEIVED).
     status: { enum: ["AWAITING_PAYMENT", "RECEIVED", "PREPARING", "READY", "DELIVERED", "CANCELLED"] },
     pickupTicket: { bsonType: "int", description: "cópia de tab.pickupTicket no pedido de balcão" },
@@ -353,7 +353,7 @@ criar("orderEvent", {
   properties: {
     storeId: storeId,
     orderId: oid,
-    // [Mateus · Card 4] ITEMS_DELIVERED: entrega parcial; itemIndexes diz quais itens do pedido foram entregues.
+    // ITEMS_DELIVERED: entrega parcial; itemIndexes diz quais itens do pedido foram entregues.
     type: { enum: ["CREATED", "STATUS_CHANGED", "ITEM_REMOVED", "CANCELLED", "PRINTED", "ITEMS_DELIVERED"] },
     from: texto,
     to: texto,

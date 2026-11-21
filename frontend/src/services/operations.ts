@@ -1,6 +1,5 @@
 import { api } from './api';
 
-// [Mateus · Card 5] Alteração: AWAITING_PAYMENT é o pedido de balcão esperando o pagamento no caixa.
 export type OrderStatus = 'AWAITING_PAYMENT' | 'RECEIVED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED';
 export type QueueStatus = 'ALL' | 'RECEIVED' | 'PREPARING' | 'READY';
 export type QueueMode = 'ALL' | 'TABLE' | 'COUNTER';
@@ -30,16 +29,15 @@ export const operations = {
   detail: (id: string) => api.get<KitchenOrder>(`/api/operations/orders/${encodeURIComponent(id)}`),
   changeStatus: (order: KitchenOrder, status: OrderStatus) => api.patch<{ id: string; status: OrderStatus }>(
     `/api/operations/orders/${encodeURIComponent(order.id)}/status`, { expectedStatus: order.status, status }),
-  // [Mateus · Card 4] Alteração: cancelar com motivo e entrega parcial (OrderOperationController no backend).
   cancel: (id: string, reason: CancelReason, note: string) => api.post<{ id: string; status: OrderStatus }>(
     `/api/operations/orders/${encodeURIComponent(id)}/cancel`, { reason, note: note.trim() || undefined }),
   deliver: (id: string, itemIndexes: number[]) => api.post<{ id: string; status: OrderStatus }>(
     `/api/operations/orders/${encodeURIComponent(id)}/deliver`, { itemIndexes }),
-  // [Mateus · Card 5] Pagamento no caixa de um pedido de balcão; solta o pedido para a cozinha.
+  // Pagamento no caixa de um pedido de balcão; solta o pedido para a cozinha.
   pay: (id: string, method: string) => api.post<{ id: string; status: OrderStatus }>(
     `/api/operations/orders/${encodeURIComponent(id)}/pay`, { method }),
 };
-// [Mateus · Card 4] Motivos aceitos pelo backend em POST /api/operations/orders/{id}/cancel.
+// Motivos aceitos pelo backend em POST /api/operations/orders/{id}/cancel.
 export type CancelReason = 'GAVE_UP' | 'WRONG_ORDER' | 'OUT_OF_STOCK' | 'DUPLICATE';
 export function orderTitle(order: KitchenOrder): string {
   if (order.mode === 'COUNTER') return `Balcão · pedido #${order.number}`;

@@ -1,3 +1,7 @@
+/*
+ * Autor: Mateus Souza Marinho
+ * RA: 24005497
+ */
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -21,7 +25,7 @@ import { tokens } from '../../theme/theme';
 const FORM_ID = 'counter-form';
 const { colors, fontSize, fontWeight, radius } = tokens;
 
-/** [Mateus · Card 5] Entrada no balcão: nome e celular, sem mesa. Abre a comanda de balcão e leva ao cardápio. */
+/** Entrada no balcão: nome e celular, sem mesa. Abre a comanda de balcão e leva ao cardápio. */
 export default function CounterEntryPage() {
   const { slug = '' } = useParams();
   const { state, retry } = useStore(slug);

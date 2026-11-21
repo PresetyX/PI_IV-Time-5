@@ -4,8 +4,8 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * [Mateus · Card 5] Alteração: {@code mode} (TABLE ou COUNTER) e {@code pickupTicket} (senha do balcão, só depois do
- * primeiro pedido) foram acrescentados no fim. Na comanda de balcão, {@code tableNumber} é 0.
+ * Comanda vista pelo cliente. {@code mode} é TABLE ou COUNTER; {@code pickupTicket} é a senha do balcão, que só
+ * existe depois do primeiro pedido. Na comanda de balcão, {@code tableNumber} é 0.
  */
 public record TabResponse(
         String id,
