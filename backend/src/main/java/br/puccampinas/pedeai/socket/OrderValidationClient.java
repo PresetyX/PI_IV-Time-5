@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
  * {@code "valid":true}; qualquer outra coisa (recusa, timeout, resposta estranha) é outro status, para o pedido
  * nunca ser gravado sem validação. Quem chama decide a resposta HTTP de cada status.
  */
+
 public class OrderValidationClient {
 
     static final String COMMAND = "VALIDATE_ORDER";
@@ -31,17 +32,21 @@ public class OrderValidationClient {
         this.socketClient = socketClient;
     }
 
-    /** Resultado da validação. {@code detail} traz a mensagem do server ou o motivo da falha. */
+    /** Resultado da validação. A mensagem do server ou o motivo do erro*/
     public enum Status {
-        /** O server conferiu e aprovou: pode gravar. */
+        /* O server conferiu e aprovou: pode gravar. */
         VALID,
-        /** {@code TOTAL_MISMATCH}: o total que o cliente viu não bate com os preços do banco. */
+        
+        /** o total que o cliente viu não bate com os preços do banco. */
         PRICE_CHANGED,
-        /** {@code CLOSED_HOURS}: fora do horário de pedidos da loja. */
+
+        /** fora do horário de pedidos da loja. */
         CLOSED_HOURS,
-        /** {@code INVALID_PARAMS}: quantidade, observação ou valores fora das regras. */
+        
+        /** quantidade, observação ou valores fora das regras. */
         INVALID,
-        /** Sem resposta em {@link SocketClient#TIMEOUT_MILLIS} ms, server fora do ar ou resposta inesperada. */
+        
+        /** server fora do ar ou resposta inesperada. */
         UNAVAILABLE
     }
 
@@ -53,12 +58,15 @@ public class OrderValidationClient {
     }
 
     public Result validate(OrderValidation order) {
+        
         SocketResponse response;
+        
         try {
             response = socketClient.send(COMMAND, params(order));
         } catch (SocketUnavailableException e) {
             return new Result(Status.UNAVAILABLE, e.getMessage());
         }
+        
         if (!response.ok()) {
             String code = response.code() == null ? "" : response.code();
             return switch (code) {
@@ -68,9 +76,11 @@ public class OrderValidationClient {
                 default -> new Result(Status.UNAVAILABLE, code + ": " + response.message());
             };
         }
+        
         if (response.body() == null || !VALID_TRUE.matcher(response.body()).find()) {
             return new Result(Status.UNAVAILABLE, "Unexpected validation body: " + response.body());
         }
+        
         return new Result(Status.VALID, null);
     }
 
@@ -85,22 +95,29 @@ public class OrderValidationClient {
         return params;
     }
 
-    /** {@code [{"unitPriceCents":3200,"quantity":1,"note":"sem cebola","options":[{"deltaCents":600}]}]} */
+    /** retorno um texto JSON representando os itens do pedido. */
     static String itemsJson(List<Item> items) {
+        
         StringBuilder json = new StringBuilder("[");
+        
         for (int i = 0; i < items.size(); i++) {
             Item item = items.get(i);
+            
             if (i > 0) {
                 json.append(',');
             }
+            
             json.append("{\"unitPriceCents\":").append(item.unitPriceCents())
                     .append(",\"quantity\":").append(item.quantity());
+            
             if (item.note() != null && !item.note().isEmpty()) {
                 json.append(",\"note\":");
                 appendString(json, item.note());
             }
+            
             json.append(",\"options\":[");
             List<Integer> deltas = item.optionDeltasCents() == null ? List.of() : item.optionDeltasCents();
+            
             for (int j = 0; j < deltas.size(); j++) {
                 if (j > 0) {
                     json.append(',');
@@ -109,6 +126,7 @@ public class OrderValidationClient {
             }
             json.append("]}");
         }
+    
         return json.append(']').toString();
     }
 

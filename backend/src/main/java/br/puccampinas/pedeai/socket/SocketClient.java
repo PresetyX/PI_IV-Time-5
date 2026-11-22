@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Cliente do protocolo de texto do {@code server/} (ver docs/protocolo.md).
+ * Cliente do protocolo de texto do server/
  */
 public class SocketClient {
 
@@ -26,13 +26,12 @@ public class SocketClient {
         this.port = port;
     }
 
-    /**
-     * Envia uma linha e lê a resposta. Conectar, enviar e ler cabem juntos em {@link #TIMEOUT_MILLIS}:
-     * sem resposta completa nesse prazo, lança {@link SocketUnavailableException}.
-     */
+    /* Envia uma linha e lê a resposta. Conectar, enviar e ler a resposta. */
     public SocketResponse send(String command, Map<String, String> params) {
+        
         String line = buildLine(command, params);
         long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(TIMEOUT_MILLIS);
+        
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(host, port), remainingMillis(deadline));
 
@@ -50,8 +49,9 @@ public class SocketClient {
         } catch (IOException e) {
             throw new SocketUnavailableException("Server unreachable at " + host + ":" + port, e);
         }
-    }
+    }   
 
+    // Lê uma linha do socket até encontrar um '\n' ou atingir o deadline.
     private static String readLine(Socket socket, long deadline) throws IOException {
         InputStream in = socket.getInputStream();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -67,12 +67,16 @@ public class SocketClient {
             bytes.write(b);
         }
     }
+    
 
+    // Decodifica os bytes lidos do socket em uma string UTF-8, removendo o '\r' final se presente.
     private static String decode(ByteArrayOutputStream bytes) {
         String text = bytes.toString(StandardCharsets.UTF_8);
         return text.endsWith("\r") ? text.substring(0, text.length() - 1) : text;
     }
 
+
+    // Retorna o tempo restante até o deadline em milissegundos, ou lança SocketTimeoutException se o deadline já passou.
     private static int remainingMillis(long deadline) throws SocketTimeoutException {
         long remaining = TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime());
         if (remaining <= 0) {
@@ -82,9 +86,11 @@ public class SocketClient {
     }
 
     private static String buildLine(String command, Map<String, String> params) {
+        
         StringBuilder line = new StringBuilder(command);
         params.forEach((key, value) -> line.append('|').append(key).append('=').append(escape(value)));
         return line.toString();
+
     }
 
     private static String escape(String value) {
