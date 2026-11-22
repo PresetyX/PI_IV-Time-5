@@ -58,6 +58,7 @@ function CounterForm({ store, joinPath }: { store: Store; joinPath: string | nul
   const navigate = useNavigate();
   const [name, setName] = useState(readVisit(store.slug).customerName ?? '');
   const [phone, setPhone] = useState('');
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +66,7 @@ function CounterForm({ store, joinPath }: { store: Store; joinPath: string | nul
   const nameError = submitted && name.trim() === '' ? 'Conte como podemos te chamar.' : null;
   const phoneMissing = store.requireCustomerPhone && phoneDigits(phone) === '';
   const phoneInvalid = phoneDigits(phone) !== '' && !isValidPhone(phone);
-  const phoneError = submitted && (phoneMissing || phoneInvalid) ? 'Informe o celular com DDD.' : null;
+  const phoneError = (submitted || phoneTouched) && (phoneMissing || phoneInvalid) ? 'Informe o celular com DDD.' : null;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -105,7 +106,7 @@ function CounterForm({ store, joinPath }: { store: Store; joinPath: string | nul
     <ClientScreen
       footer={
         <>
-          <ActionButton type="submit" form={FORM_ID} disabled={sending}>
+          <ActionButton type="submit" form={FORM_ID} disabled={sending || phoneMissing || phoneInvalid}>
             {sending ? <CircularProgress size={22} sx={{ color: 'inherit' }} /> : 'Continuar'}
           </ActionButton>
           <FootNote>Ao continuar você concorda com o uso dos dados para este atendimento, conforme a LGPD.</FootNote>
@@ -142,6 +143,7 @@ function CounterForm({ store, joinPath }: { store: Store; joinPath: string | nul
             placeholder="(19) 99999-0000"
             value={phone}
             onChange={(event) => setPhone(formatPhone(event.target.value))}
+            onBlur={() => setPhoneTouched(true)}
             autoComplete="tel-national"
             inputProps={{ inputMode: 'numeric' }}
             error={Boolean(phoneError)}

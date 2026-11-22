@@ -102,6 +102,18 @@ class SessionServiceTest {
     }
 
     @Test
+    void landlineAndPhoneWithoutNineAreRejected() {
+        givenStore(true, OPEN);
+        when(tableService.getActiveByToken(storeId, "t05-1d3e")).thenReturn(table);
+
+        for (String phone : List.of("(19) 3333-0000", "(19) 89999-0000", "(01) 99999-0000")) {
+            assertThrows(InvalidRequestException.class, () -> sessionService.create(
+                    new CreateSessionRequest("demo", "TABLE", "t05-1d3e", "Ana", phone)));
+        }
+        verify(sessionRepository, never()).save(any());
+    }
+
+    @Test
     void invalidPhoneIsRejected() {
         givenStore(false, OPEN);
         when(tableService.getActiveByToken(storeId, "t05-1d3e")).thenReturn(table);

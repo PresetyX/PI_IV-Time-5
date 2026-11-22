@@ -15,6 +15,5 @@ export function formatPhone(value: string): string {
 }
 
 export function isValidPhone(value: string): boolean {
-  const length = phoneDigits(value).length;
-  return length === 10 || length === 11;
+  return /^[1-9]{2}9\d{8}$/.test(phoneDigits(value));
 }

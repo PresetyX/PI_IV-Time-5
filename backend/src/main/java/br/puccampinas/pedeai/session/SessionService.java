@@ -53,7 +53,7 @@ public class SessionService {
 
         String phone = normalizePhone(request.phone());
         if (phone == null && Boolean.TRUE.equals(store.requireCustomerPhone())) {
-            throw new InvalidRequestException("phone is required by this store");
+            throw new InvalidRequestException("Esta casa pede o celular para continuar.");
         }
 
         Instant now = clock.instant();
@@ -84,8 +84,8 @@ public class SessionService {
             return null;
         }
         String digits = phone.replaceAll("\\D", "");
-        if (digits.length() < 10 || digits.length() > 11) {
-            throw new InvalidRequestException("phone must have 10 or 11 digits with area code");
+        if (!digits.matches("[1-9]{2}9\\d{8}")) {
+            throw new InvalidRequestException("Informe o celular com DDD e os 9 dígitos.");
         }
         return digits;
     }
