@@ -4,7 +4,7 @@
  */
 // Cria as coleções do Pede Aí com validação, os índices e o estabelecimento de demonstração.
 // Uso: mongosh "$MONGODB_URI" server/scripts/init-db.js
-// Idempotente: pode rodar de novo sem duplicar nada. Modelo completo em docs/modelo.md.
+// Idempotente: pode rodar de novo sem duplicar nada. Modelo completo em docs/dicionario-de-dados.md.
 
 db = db.getSiblingDB('pedeai');
 

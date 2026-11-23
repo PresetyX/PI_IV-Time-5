@@ -235,7 +235,7 @@ Estas regras valem para todo o código e evitam retrabalho:
 | Arquivo | Conteúdo |
 | --- | --- |
 | `docs/contratos.md` | Rotas da API, entrada, saída e códigos de erro |
-| `docs/modelo.md` | Dicionário de dados: coleções, campos, tipos e índices |
+| `docs/dicionario-de-dados.md` | Dicionário de dados do MongoDB: coleções, campos, tipos, relacionamentos e índices |
 | `docs/arquitetura.md` | Os três processos, camadas, pastas e decisões técnicas com justificativa |
 | `docs/protocolo.md` | Protocolo de texto do socket entre `backend/` e `server/`, comandos e exemplos |
 
