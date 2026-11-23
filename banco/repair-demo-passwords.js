@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Bonetto da Costa
+ * RA: 25018203
+ */
 // Somente banco de desenvolvimento. Não executar em produção ou loja real.
 // Repara apenas senha e bloqueio das quatro contas conhecidas da demonstração.
 // Não recria usuários, não altera perfis e não apaga pedidos, mesas ou comandas.
