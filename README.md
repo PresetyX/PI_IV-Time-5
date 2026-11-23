@@ -267,14 +267,17 @@ Campos usados em cada card: Status (A fazer, Fazendo, Em revisão, Feito), Etapa
 
 ## Cronograma
 
-| Etapa | Período | Foco |
+As etapas abaixo são as que aconteceram, com as datas tiradas dos documentos de ideação e dos pull requests deste repositório.
+
+| Período | Etapa | O que foi entregue |
 | --- | --- | --- |
-| E0 Fundação | 14/10 a 20/10 | Monorepo, cluster, base do server, do backend e do frontend, contratos e dicionário |
-| E1 Multiempresa e acesso | 21/10 a 03/11 | Estabelecimento como tenant, login, perfis e tema da casa |
-| E2 Cardápio e mesas | 04/11 a 17/11 | Categorias, produtos, disponibilidade, mesas e QR code |
-| E3 Conta e pedido | 18/11 a 30/11 | Identificação do cliente, conta, carrinho, envio e acompanhamento |
-| E4 Operação e fechamento | 01/12 a 09/12 | Cozinha, salão, pagamento manual, retirada e relatórios |
-| E5 Qualidade e entrega | 10/12 a 16/12 | Testes, documentação, demonstração e apresentação |
+| 31/08 a 16/09 | Ideação | Apresentação da ideia, mapa mental, Business Model Canvas, mapa da empatia, matriz SWOT, protótipo e pitch |
+| 29/09 a 26/10 | Fundação | Repositório, backlog, modelo de dados e script do banco, arquitetura, protocolo do socket e base dos três processos |
+| 27/10 a 29/10 | Cliente, operação e gestão | Entrada pelo QR, sessão do cliente, comandas e conta, telas da cozinha e do salão, painel de gestão, Docker e site institucional |
+| 05/11 a 07/11 | Pedido e fechamento | Pedido pronto, chamar o garçom, mais uma rodada, cancelamento e entrega parcial, balcão com senha, comanda compartilhada e Pix |
+| 11/11 a 19/11 | Cardápio e demonstração | Cardápio no painel, cardápio interativo do cliente e casa de demonstração |
+| 21/11 a 23/11 | Qualidade e entrega | Servidor de validação sem Spring, testes do servidor, autoria e comentários no código, validação do celular, dicionário de dados e release `v1.0.0` |
+| 24/11 | Banca | Apresentação do projeto |
 
 ## Licença
 
