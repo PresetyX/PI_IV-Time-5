@@ -35,6 +35,7 @@ const SPARKLES = [
   { left: '86%', top: '-4%', scale: 0.3, delay: 0.35 },
   { left: '92%', top: '62%', scale: 0.22, delay: 0.7 },
 ];
+// Desliga as animações para quem pediu menos movimento no sistema.
 const stillWhenAsked = { '@media (prefers-reduced-motion: reduce)': { animation: 'none' } };
 
 /** O Biggas pulando de alegria, para comemorar com o cliente. */
