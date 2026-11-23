@@ -35,20 +35,20 @@ Fora do escopo desta versão: confirmação automática de pagamento por gateway
 
 ### Backend (`backend/`)
 
-- **Java 17** com **Spring Boot 3** (Spring Web, Spring Data MongoDB, Spring Security e Validation)
+- **Java 17** com **Spring Boot 3.2** (Spring Web, Spring Data MongoDB, Spring Security com JWT e Validation)
 - Expõe HTTP para o front e acessa o MongoDB com Spring Data
-- Consulta o `server/` por socket para validar pedido e pagamento antes de aceitá-los
+- Consulta o `server/` por socket para validar cada pedido antes de aceitá-lo
 - Build com **Maven**
 
 ### Server (`server/`)
 
-- **Java 17** puro, socket TCP na porta 5000, sem nenhuma dependência
+- **Java 17** puro, socket TCP na porta 5000, sem dependências (o JUnit 5 entra só nos testes)
 - Não acessa o banco: só valida, por socket, o que o `backend/` pede (comandos `PING` e `VALIDATE_ORDER`)
 - Build com **Maven**
 
 ### Banco de dados
 
-- **MongoDB Atlas** (cluster M0 gratuito em desenvolvimento)
+- **MongoDB 7**: local, pelo Docker Compose, ou no **MongoDB Atlas** (cluster M0 gratuito)
 
 ### Frontend (`frontend/`)
 
@@ -75,7 +75,7 @@ PI_IV-Time-5/
 │   ├── src/
 │   └── package.json
 ├── banco/            # Scripts do MongoDB: init-mongo.js (coleções e índices) e seed.js (dados de exemplo)
-├── docs/             # Contratos, modelo de dados, arquitetura e protocolo do socket
+├── docs/             # Ideação, dicionário de dados, arquitetura, contratos e protocolo do socket
 └── README.md
 ```
 
