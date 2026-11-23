@@ -23,6 +23,7 @@ public class WaiterCallController {
         this.waiterCallService = waiterCallService;
     }
 
+    /** Marca um chamado aberto da comanda como atendido pela equipe. */
     @PostMapping("/{tabId}/calls/{callId}/resolve")
     public WaiterCallResponse resolve(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String tabId,
             @PathVariable String callId) {
