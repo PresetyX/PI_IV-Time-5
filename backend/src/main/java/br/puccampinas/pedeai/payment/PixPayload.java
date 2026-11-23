@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.payment;
 
 import java.nio.charset.StandardCharsets;
