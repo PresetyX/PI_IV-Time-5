@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 import { keyframes } from '@emotion/react';
 import { Box } from '@mui/material';
 import { CHEF_PATHS } from '../BrandMark';
