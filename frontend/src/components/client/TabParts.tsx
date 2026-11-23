@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 import type { ReactNode } from 'react';
 import { Box, IconButton, Typography } from '@mui/material';
 import { tokens } from '../../theme/theme';
