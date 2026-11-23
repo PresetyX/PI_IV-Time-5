@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Bonetto da Costa
+ * RA: 25018203
+ */
 import { api } from './api';
 
 export type OrderStatus = 'AWAITING_PAYMENT' | 'RECEIVED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED';
