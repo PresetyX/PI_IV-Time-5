@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Bonetto da Costa
+ * RA: 25018203
+ */
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
