@@ -253,6 +253,7 @@ Estas regras valem para todo o código e evitam retrabalho:
 
 | Arquivo | Conteúdo |
 | --- | --- |
+| `docs/ideacao/apresentacao-da-ideia.pdf` | Documento de ideação: problema, proposta, funcionamento, módulos e diferenciais |
 | `docs/contratos.md` | Rotas da API, entrada, saída e códigos de erro |
 | `docs/dicionario-de-dados.md` | Dicionário de dados do MongoDB: coleções, campos, tipos, relacionamentos e índices |
 | `docs/arquitetura.md` | Os três processos, camadas, pastas e decisões técnicas com justificativa |
