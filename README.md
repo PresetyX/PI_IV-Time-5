@@ -210,6 +210,25 @@ mongosh "<string de conexao>" banco/seed.js
 
 O menu da casa fica em `GET /api/public/stores/triunfo-lanches/menu`.
 
+### Acesso à demonstração
+
+| Quem | Onde | Login |
+| --- | --- | --- |
+| Cliente na mesa | `http://localhost:3000/t/triunfo-lanches/<token da mesa>` (o token sai no fim do `seed.js`) | nome e celular |
+| Cliente no balcão | `http://localhost:3000/t/triunfo-lanches/balcao` | nome e celular |
+| Painel de senhas | `http://localhost:3000/t/triunfo-lanches/painel` | — |
+| Equipe | `http://localhost:3000/login` | `marcos@` (dono), `paula@` (gerente), `rafa@` (garçom) ou `ze@triunfolanches.com` (cozinha), senha `pedeai123` |
+
+## Testes
+
+| Processo | Comando | Testes |
+| --- | --- | --- |
+| Backend | `mvn -f backend/pom.xml test` | 172 testes de unidade (JUnit 5 e Mockito) |
+| Server | `mvn -f server/pom.xml test` | 57 testes: intraclasse do `OrderValidator`, `SocketServer` e `Request`, e interclasse do `VALIDATE_ORDER` pelo socket |
+| Frontend | `cd frontend && npm run build` | checagem de tipos do TypeScript e build |
+
+Os três rodam no GitHub Actions a cada pull request.
+
 ## Convenções
 
 Estas regras valem para todo o código e evitam retrabalho:
