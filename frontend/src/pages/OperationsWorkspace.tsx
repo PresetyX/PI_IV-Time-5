@@ -33,6 +33,7 @@ import { tokens } from '../theme/theme';
 
 const { colors, fontSize, fontWeight, radius } = tokens;
 
+// Formato dos dados que chegam de /api/operations/workspace.
 type Item = { nameSnapshot: string; quantity: number; unitPriceCents: number; status: string; note?: string; options?: { label: string }[] };
 type Order = { id: string; tabId: string; tableId?: string; number: number; status: OrderStatus; items: Item[]; totalCents: number; createdAt: string; readyAt?: string; statusHistory?: { to: string; at: string }[] };
 type Call = { id: string; type?: string; reason: string; createdAt: string; status: string };
@@ -40,6 +41,7 @@ type Tab = { id: string; tableId?: string; mode: string; customerName?: string; 
 type Waiting = { id: string; number: number; name: string; partySize: number; createdAt: string; status: string };
 type Workspace = { store: { name: string; logoUrl?: string; pausedUntil?: string; pausedScopes?: string[] }; role: string; tables: { id: string; number: number; nickname?: string }[]; tabs: Tab[]; orders: Order[]; waitlist: Waiting[]; serverTime: string };
 
+// Colunas da produção, na ordem em que o pedido avança.
 const COLUMNS = ['RECEIVED', 'PREPARING', 'READY'] as const;
 const REASONS: [CancelReason, string][] = [
   ['GAVE_UP', 'Cliente desistiu'],
@@ -77,6 +79,7 @@ const money = (cents?: number) => (cents === undefined ? '—' : formatCents(cen
 const time = (date?: string) => (date ? new Date(date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—');
 const pad = (value: number) => String(value).padStart(2, '0');
 
+/** Busca os dados da operação e repete a cada 15 segundos. Também mantém o relógio alinhado com o servidor. */
 function useWorkspace() {
   const [data, setData] = useState<Workspace | null>(null);
   const [error, setError] = useState('');
@@ -86,6 +89,7 @@ function useWorkspace() {
   const [offset, setOffset] = useState(0);
 
   useEffect(() => {
+    // Evita atualizar a tela depois que ela foi fechada.
     let stopped = false;
     let timer: ReturnType<typeof setTimeout>;
     async function load() {
@@ -93,6 +97,7 @@ function useWorkspace() {
         const result = await api.get<Workspace>('/api/operations/workspace');
         if (stopped) return;
         setData(result);
+        // Diferença entre o relógio do servidor e o do aparelho.
         setOffset(Date.parse(result.serverTime) - Date.now());
         setSynced(true);
         setError('');
@@ -101,6 +106,7 @@ function useWorkspace() {
         setSynced(false);
         setError(cause instanceof ApiError && cause.status === 401 ? 'Sua sessão expirou. Entre de novo.' : 'Não foi possível sincronizar com o servidor.');
       } finally {
+        // Agenda a próxima busca só quando a atual termina, com sucesso ou erro.
         if (!stopped) timer = setTimeout(load, 15000);
       }
     }
@@ -112,6 +118,7 @@ function useWorkspace() {
   }, [revision]);
 
   useEffect(() => {
+    // Atualiza o relógio a cada segundo, para os minutos de espera andarem sozinhos.
     const timer = setInterval(() => setClock(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -120,6 +127,7 @@ function useWorkspace() {
   return { data, error, synced, reload, now: clock + offset, setError };
 }
 
+/** Tela única de produção, salão, contas e fila de espera. A rota define o que aparece. */
 export default function OperationsWorkspace() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -127,10 +135,12 @@ export default function OperationsWorkspace() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
 
+  // Primeiro pedaço da rota é a área (producao, salao...) e o segundo é a tela dentro dela.
   const pieces = pathname.split('/').filter(Boolean);
   const root = pieces[0];
   const view = pieces[1] ?? '';
 
+  // Minutos passados desde a data, sem deixar negativo.
   const age = (date: string) => Math.max(0, Math.floor((now - Date.parse(date)) / 60000));
   const tabFor = (order: Order) => data?.tabs.find((tab) => tab.id === order.tabId);
   const tableNumber = (id?: string) => data?.tables.find((table) => table.id === id)?.number;
@@ -140,16 +150,21 @@ export default function OperationsWorkspace() {
     if (tab?.mode === 'COUNTER') return `Balcão${tab.pickupTicket ? ` · senha ${tab.pickupTicket}` : ''}`;
     return number ? `Mesa ${pad(number)}` : `Pedido #${order.number}`;
   };
+  // Pedido atrasado: ainda não ficou pronto e passou do limite de minutos.
   const late = (order: Order) => ['RECEIVED', 'PREPARING'].includes(order.status) && age(order.createdAt) >= LATE_MINUTES;
+  // Pedidos da fila, do mais antigo para o mais novo.
   const active = (data?.orders ?? [])
     .filter((order) => COLUMNS.some((status) => status === order.status))
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+  // Pedidos prontos, com quem espera há mais tempo primeiro.
   const ready = active
     .filter((order) => order.status === 'READY')
     .sort((a, b) => Date.parse(a.readyAt ?? a.createdAt) - Date.parse(b.readyAt ?? b.createdAt));
+  // Chamados abertos de todas as comandas, junto com a comanda de cada um.
   const calls = data?.tabs.flatMap((tab) => (tab.waiterCalls ?? []).filter((call) => call.status === 'OPEN').map((call) => ({ ...call, tab }))) ?? [];
   const role = data?.role ?? '';
 
+  /** Leva o pedido para a próxima etapa. Se der erro, recarrega, porque ele pode ter mudado em outra tela. */
   async function advance(order: Order) {
     if (busy || !synced) return;
     const target = order.status === 'RECEIVED' ? 'PREPARING' : order.status === 'PREPARING' ? 'READY' : 'DELIVERED';
@@ -828,6 +843,7 @@ function readDismissedCalls(): string[] {
  * Autor: Pedro Henrique Bonetto da Costa
  * RA: 25018203
  */
+/** Mapa de mesas do salão: mostra livre, ocupada, pagando ou chamando e abre a primeira conta da mesa ao tocar. */
 function TablesMap({ ctx }: { ctx: Ctx }) {
   const { data, calls } = ctx;
   const [dismissed, setDismissed] = useState<string[]>(readDismissedCalls);
@@ -879,6 +895,7 @@ function TablesMap({ ctx }: { ctx: Ctx }) {
               .sort((a, b) => callKind(a).rank - callKind(b).rank);
             const calling = tableCalls[0];
             const kind = calling ? callKind(calling) : null;
+            // Mesa pagando: alguma comanda dela está aguardando pagamento.
             const paying = tabs.some((tab) => tab.status === 'AWAITING_PAYMENT');
             const occupied = tabs.length > 0;
             return (
