@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import br.puccampinas.pedeai.auth.AuthenticatedUser;
 import br.puccampinas.pedeai.table.TableRepository;
 
+/** Monta a conta da comanda, com o consumo de cada pessoa e a taxa de serviço. */
 @Service
 public class BillService {
 
@@ -39,11 +40,13 @@ public class BillService {
         this.mongo = mongo;
     }
 
+    /** Conta da comanda do cliente. Itens cancelados aparecem, mas não entram nos totais. */
     public BillResponse billOfMyTab(AuthenticatedUser guest) {
         Tab tab = tabService.requireMyTab(guest);
         Query query = Query.query(Criteria.where("storeId").is(tab.storeId()).and("tabId").is(tab.id()))
                 .with(Sort.by(Sort.Direction.ASC, "createdAt"));
 
+        // Inclui quem já foi removido, para os itens dessa pessoa continuarem com nome.
         Map<String, String> names = new LinkedHashMap<>();
         names.put(tab.ownerSessionId().toHexString(), tab.customerName());
         for (Tab.Participant participant : tab.participantsOrEmpty()) {
@@ -77,6 +80,7 @@ public class BillService {
                     order.get("number", Number.class).intValue(), order.getString("status"), lines));
         }
 
+        // 10% de serviço na mesa; no balcão não tem taxa.
         int serviceFee = "COUNTER".equals(tab.mode()) ? 0 : Math.round(consumption * SERVICE_FEE_PERCENT / 100f);
         int tableNumber = tab.tableId() == null ? 0
                 : tableRepository.findById(tab.tableId()).map(table -> table.number()).orElse(0);
@@ -85,10 +89,12 @@ public class BillService {
         people.add(new BillResponse.Person(ownerId, tab.customerName(), true, totalsByPerson.getOrDefault(ownerId, 0)));
         for (Tab.Participant participant : tab.participantsOrEmpty()) {
             String id = participant.sessionId().toHexString();
+            // Quem foi removido só aparece se consumiu algo.
             if (participant.active() || totalsByPerson.containsKey(id)) {
                 people.add(new BillResponse.Person(id, participant.name(), false, totalsByPerson.getOrDefault(id, 0)));
             }
         }
+        // Itens lançados pelo garçom ficam numa linha própria.
         if (totalsByPerson.containsKey(STAFF_ID)) {
             people.add(new BillResponse.Person(STAFF_ID, STAFF_NAME, false, totalsByPerson.get(STAFF_ID)));
         }
@@ -97,6 +103,7 @@ public class BillService {
                 consumption, serviceFee, consumption + serviceFee, owner, people);
     }
 
+    /** De quem é o item: do garçom, da sessão que pediu ou, se essa informação faltar, do dono. */
     private static String personOf(Document item, Tab tab) {
         if ("STAFF".equals(item.getString("placedByType"))) {
             return STAFF_ID;
