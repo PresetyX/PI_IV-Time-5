@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Alert, Box, ButtonBase, CircularProgress, Typography } from '@mui/material';
@@ -17,9 +21,11 @@ import { formatTableNumber } from '../../services/tables';
 import { readVisit } from '../../services/visit';
 import { tokens } from '../../theme/theme';
 
+// Intervalo para atualizar a lista de comandas da mesa.
 const REFRESH_MS = 8000;
 const { colors, fontSize, fontWeight, radius } = tokens;
 
+/** Lista as comandas abertas na mesa. O cliente entra em uma delas ou cria a sua. */
 export default function TabsPage() {
   const { slug = '' } = useParams();
   const navigate = useNavigate();
@@ -48,6 +54,7 @@ export default function TabsPage() {
     return () => window.clearInterval(timer);
   }, [gate, load]);
 
+  // Sem sessão de convidado, manda para a mesa ou identificação.
   if (gate) return <Navigate to={gate} replace />;
   if (state.status === 'loading' || (tabs === null && !loadFailed)) return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
@@ -56,6 +63,7 @@ export default function TabsPage() {
   const table = readVisit(slug).table;
   const hasMine = tabs.some((tab) => tab.mine);
 
+  // Abre a comanda do cliente. O 409 indica que ele já tem uma, então vai direto para ela.
   async function create() {
     if (creating) return;
     setCreating(true);
@@ -159,6 +167,7 @@ export default function TabsPage() {
   );
 }
 
+// Cartão de uma comanda da mesa, com dono, pessoas e total.
 function TabCard({ tab, onClick }: { tab: TabSummary; onClick: () => void }) {
   const people = tab.peopleCount === 1 ? '1 pessoa' : `${tab.peopleCount} pessoas`;
   return (

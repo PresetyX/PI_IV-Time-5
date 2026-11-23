@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.tab;
 
 import java.time.Clock;
@@ -28,6 +32,7 @@ import br.puccampinas.pedeai.common.ResourceNotFoundException;
 @Service
 public class WaiterCallService {
 
+    // Motivos aceitos: o tipo enviado pelo cliente e o texto mostrado no salão.
     static final Map<String, String> REASONS = Map.of(
             "CLOSE_BILL", "Fechar a conta",
             "QUESTION", "Tirar uma dúvida",
@@ -73,10 +78,15 @@ public class WaiterCallService {
         return view(call);
     }
 
+    /** Lista todos os chamados da comanda do cliente, abertos e atendidos. */
     public List<WaiterCallResponse> callsOfMyTab(AuthenticatedUser guest) {
         return callsOf(tabService.requireMyTab(guest)).stream().map(WaiterCallService::view).toList();
     }
 
+    /**
+     * Dono, gerente ou garçom marca um chamado aberto como atendido.
+     * Dá 404 se o chamado não existe na loja e 409 se ele já foi atendido.
+     */
     public WaiterCallResponse resolve(AuthenticatedUser staff, String tabId, String callId) {
         if (staff == null || !STAFF.contains(staff.role())) {
             throw new ForbiddenException("Seu perfil não permite atender chamados.");
@@ -87,11 +97,13 @@ public class WaiterCallService {
         Query query = Query.query(Criteria.where("_id").is(new ObjectId(tabId)).and("storeId").is(staff.storeId())
                 .and("waiterCalls").elemMatch(Criteria.where("id").is(callId).and("status").is(OPEN)));
         Instant now = clock.instant();
+        // O filtro só pega chamado ainda aberto, então dois garçons não atendem o mesmo chamado.
         boolean changed = mongo.updateFirst(query, new Update()
                 .set("waiterCalls.$.status", RESOLVED)
                 .set("waiterCalls.$.resolvedAt", Date.from(now))
                 .set("waiterCalls.$.resolvedBy", staff.userId()), "tab").getModifiedCount() > 0;
         if (!changed) {
+            // Nada mudou: busca de novo para saber se o chamado não existe ou se já foi atendido.
             Document tab = mongo.findOne(Query.query(Criteria.where("_id").is(new ObjectId(tabId))
                     .and("storeId").is(staff.storeId())), Document.class, "tab");
             boolean exists = tab != null && tab.getList("waiterCalls", Document.class, List.of()).stream()
@@ -104,12 +116,14 @@ public class WaiterCallService {
         return new WaiterCallResponse(callId, null, null, RESOLVED, null, now);
     }
 
+    /** Lê os chamados gravados na comanda; devolve lista vazia se não houver nenhum. */
     private List<Document> callsOf(Tab tab) {
         Document stored = mongo.findOne(Query.query(Criteria.where("_id").is(tab.id()).and("storeId").is(tab.storeId())),
                 Document.class, "tab");
         return stored == null ? List.of() : stored.getList("waiterCalls", Document.class, List.of());
     }
 
+    /** Converte o chamado gravado no banco na resposta da API. */
     private static WaiterCallResponse view(Document call) {
         Date resolvedAt = call.getDate("resolvedAt");
         return new WaiterCallResponse(call.getString("id"), call.getString("type"), call.getString("reason"),

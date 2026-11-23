@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 import { useEffect, useState } from 'react';
 import { keyframes } from '@emotion/react';
 import { matchPath, useLocation, useNavigate } from 'react-router-dom';
@@ -10,6 +14,7 @@ import ActionButton from './ActionButton';
 import HappyBiggas from './HappyBiggas';
 import { CloseIcon } from './icons';
 
+// Intervalo para consultar a conta e descobrir pedidos prontos.
 const REFRESH_MS = 6000;
 const { colors, fontSize, fontWeight } = tokens;
 
@@ -30,6 +35,7 @@ const glow = keyframes`
 `;
 
 const CONFETTI_COLORS = ['#FFFFFF', '#F7B26A', '#FFD9C7', '#111111'];
+// Confetes com posição, atraso e cor fixos, calculados pelo índice.
 const CONFETTI = Array.from({ length: 28 }, (_, index) => ({
   left: (index * 37) % 100,
   delay: (index % 7) * 0.18,
@@ -51,6 +57,7 @@ function seenKey(slug: string): string {
   return `pedeai.ready.${slug}`;
 }
 
+// Pedidos que já tiveram o aviso mostrado nesta sessão do navegador.
 function readSeen(slug: string): string[] {
   try {
     return JSON.parse(sessionStorage.getItem(seenKey(slug)) ?? '[]') as string[];
@@ -59,6 +66,7 @@ function readSeen(slug: string): string[] {
   }
 }
 
+// Guarda os pedidos avisados para não comemorar duas vezes.
 function markSeen(slug: string, ids: string[]) {
   try {
     sessionStorage.setItem(seenKey(slug), JSON.stringify([...new Set([...readSeen(slug), ...ids])]));
@@ -83,6 +91,7 @@ export default function OrderReadyNotifier() {
       try {
         const bill = await fetchBill(currentSlug);
         const seen = readSeen(currentSlug);
+        // Só os pedidos prontos que ainda não foram avisados.
         const fresh = bill.orders.filter((order) => order.status === 'READY' && !seen.includes(order.id));
         if (stopped || fresh.length === 0) return;
         markSeen(currentSlug, fresh.map((order) => order.id));
@@ -103,6 +112,7 @@ export default function OrderReadyNotifier() {
   }, [slug, hasTab]);
 
   // O pedido continua guardado depois de fechar, para o conteúdo não sumir durante a saída do pop-up.
+  // Não abre o pop-up se o cliente já está na tela desse pedido.
   const open = Boolean(visible && slug && ready && pathname !== `/t/${slug}/pedidos/${ready.id}`);
   const close = () => setVisible(false);
 

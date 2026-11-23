@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.tab;
 
 import java.security.SecureRandom;
@@ -26,6 +30,7 @@ import br.puccampinas.pedeai.session.GuestSession;
 import br.puccampinas.pedeai.session.GuestSessionRepository;
 import br.puccampinas.pedeai.table.TableRepository;
 
+/** Regras da comanda: abrir, entrar com o código de convite, trocar o código e remover participantes. */
 @Service
 public class TabService {
 
@@ -50,6 +55,7 @@ public class TabService {
         this.clock = clock;
     }
 
+    /** Lista as comandas abertas da mesa. No balcão, só as de que a pessoa faz parte. */
     public List<TabSummary> listOnMyTable(AuthenticatedUser guest) {
         GuestSession session = guestSession(guest);
         return openTabs(session).stream()
@@ -63,6 +69,7 @@ public class TabService {
         return findMine(guestSession(guest)).orElseThrow(() -> new ResourceNotFoundException("You have no open tab"));
     }
 
+    /** Abre uma comanda com o cliente como dono. Cada pessoa só pode estar em uma comanda aberta. */
     public TabResponse open(AuthenticatedUser guest) {
         GuestSession session = guestSession(guest);
         if (findMine(session).isPresent()) {
@@ -76,6 +83,7 @@ public class TabService {
         return view(tab, session);
     }
 
+    /** Devolve a comanda do cliente. Se quem pede é o dono e o código venceu, gera um novo. */
     public TabResponse mine(AuthenticatedUser guest) {
         GuestSession session = guestSession(guest);
         Tab tab = findMine(session).orElseThrow(() -> new ResourceNotFoundException("You have no open tab"));
@@ -85,12 +93,15 @@ public class TabService {
         return view(tab, session);
     }
 
+    /** Entra numa comanda da mesma mesa com o código de convite. */
     public TabResponse join(AuthenticatedUser guest, String tabId, String code) {
         GuestSession session = guestSession(guest);
         Tab tab = tabOnMyTable(session, tabId);
+        // Quem já está na comanda só recebe ela de volta, sem erro.
         if (isMember(tab, session.id())) {
             return view(tab, session);
         }
+        // Quem foi removido pelo dono não pode voltar, nem com o código certo.
         boolean removed = tab.participantsOrEmpty().stream()
                 .anyMatch(p -> p.sessionId().equals(session.id()) && !p.active());
         if (removed) {
@@ -107,12 +118,14 @@ public class TabService {
         return view(saveParticipants(tab, next), session);
     }
 
+    /** Troca o código de convite na hora. Só o dono pode. */
     public TabResponse newCode(AuthenticatedUser guest, String tabId) {
         GuestSession session = guestSession(guest);
         Tab tab = ownedTab(session, tabId);
         return view(rotateCode(tab), session);
     }
 
+    /** Remove um participante da comanda. Só o dono pode, e o próprio dono não pode ser removido. */
     public TabResponse removeParticipant(AuthenticatedUser guest, String tabId, String participantId) {
         GuestSession session = guestSession(guest);
         Tab tab = ownedTab(session, tabId);
@@ -126,6 +139,7 @@ public class TabService {
             throw new ResourceNotFoundException("Participant not found");
         }
         Instant now = clock.instant();
+        // Não apaga o participante: só marca a saída, para os itens dele continuarem na conta.
         List<Tab.Participant> next = tab.participantsOrEmpty().stream()
                 .map(p -> p.sessionId().equals(target) && p.active()
                         ? new Tab.Participant(p.sessionId(), p.name(), p.joinedAt(), now)
@@ -134,6 +148,7 @@ public class TabService {
         return view(saveParticipants(tab, next), session);
     }
 
+    /** Carrega a sessão do convidado e confere se é da loja, se não expirou e se tem mesa ou é de balcão. */
     private GuestSession guestSession(AuthenticatedUser guest) {
         GuestSession session = sessionRepository.findById(guest.userId())
                 .filter(found -> found.storeId().equals(guest.storeId()))
@@ -162,10 +177,12 @@ public class TabService {
                 session.storeId(), session.tableId(), STATUS_OPEN);
     }
 
+    /** A comanda aberta em que a sessão está, como dono ou participante ativo. */
     private java.util.Optional<Tab> findMine(GuestSession session) {
         return openTabs(session).stream().filter(tab -> isMember(tab, session.id())).findFirst();
     }
 
+    /** Busca uma comanda aberta da mesma mesa da sessão, ou de balcão se a sessão for de balcão. */
     private Tab tabOnMyTable(GuestSession session, String tabId) {
         return tabRepository.findByStoreIdAndId(session.storeId(), parseId(tabId))
                 .filter(tab -> STATUS_OPEN.equals(tab.status()) && (isCounter(session)
@@ -174,6 +191,7 @@ public class TabService {
                 .orElseThrow(() -> new ResourceNotFoundException("Tab not found"));
     }
 
+    /** Igual a {@link #tabOnMyTable}, mas só deixa passar o dono da comanda. */
     private Tab ownedTab(GuestSession session, String tabId) {
         Tab tab = tabOnMyTable(session, tabId);
         if (!tab.ownerSessionId().equals(session.id())) {
@@ -182,6 +200,7 @@ public class TabService {
         return tab;
     }
 
+    /** Gera um novo código de convite, válido por mais 5 minutos. */
     private Tab rotateCode(Tab tab) {
         Tab next = tab.withJoinCode(newCode(), clock.instant().plus(JOIN_CODE_DURATION));
         return change(next, new Update().set("joinCode", next.joinCode()).set("joinCodeExpiresAt", next.joinCodeExpiresAt()));
@@ -201,15 +220,18 @@ public class TabService {
         return next;
     }
 
+    /** O código venceu ou ainda não existe. */
     private boolean codeExpired(Tab tab) {
         return tab.joinCode() == null || tab.joinCodeExpiresAt() == null
                 || !tab.joinCodeExpiresAt().isAfter(clock.instant());
     }
 
+    /** Código aleatório de 4 dígitos. */
     private String newCode() {
         return String.format("%04d", random.nextInt(10000));
     }
 
+    /** A sessão é o dono ou um participante ativo da comanda. */
     private static boolean isMember(Tab tab, ObjectId sessionId) {
         return tab.ownerSessionId().equals(sessionId)
                 || activeParticipants(tab).stream().anyMatch(p -> p.sessionId().equals(sessionId));
@@ -226,6 +248,7 @@ public class TabService {
         return new ObjectId(value);
     }
 
+    /** Monta a comanda do jeito que a pessoa que está vendo pode ver. */
     private TabResponse view(Tab tab, GuestSession viewer) {
         boolean owner = tab.ownerSessionId().equals(viewer.id());
         Map<ObjectId, Integer> totals = totalsBySession(tab);
@@ -240,6 +263,7 @@ public class TabService {
 
         int tableNumber = tab.tableId() == null ? 0
                 : tableRepository.findById(tab.tableId()).map(table -> table.number()).orElse(0);
+        // Só o dono recebe o código de convite.
         return new TabResponse(tab.id().toHexString(), tableNumber, tab.customerName(), owner,
                 owner ? tab.joinCode() : null, owner ? tab.joinCodeExpiresAt() : null,
                 tab.totalCents(), tab.openedAt(), members, tab.mode(), pickupTicketOf(tab));

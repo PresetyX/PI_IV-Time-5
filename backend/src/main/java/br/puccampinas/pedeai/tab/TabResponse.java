@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.tab;
 
 import java.time.Instant;
@@ -20,6 +24,7 @@ public record TabResponse(
         String mode,
         Integer pickupTicket) {
 
+    /** Uma pessoa da comanda e quanto ela já pediu. */
     public record Member(String sessionId, String name, boolean owner, int totalCents, Instant joinedAt) {
     }
 }

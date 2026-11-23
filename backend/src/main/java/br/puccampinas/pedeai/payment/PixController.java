@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.payment;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -6,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.puccampinas.pedeai.auth.AuthenticatedUser;
 
+/** Endpoint que entrega ao cliente o Pix para pagar a comanda. */
 @RestController
 public class PixController {
 
@@ -15,6 +20,7 @@ public class PixController {
         this.pixService = pixService;
     }
 
+    /** Devolve o valor e o Pix copia e cola da comanda do cliente. */
     @GetMapping("/api/tabs/mine/pix")
     public PixResponse pix(@AuthenticationPrincipal AuthenticatedUser guest) {
         return pixService.pixOfMyTab(guest);

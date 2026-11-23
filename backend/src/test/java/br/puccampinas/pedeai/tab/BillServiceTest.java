@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.tab;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,6 +25,7 @@ import br.puccampinas.pedeai.auth.AuthenticatedUser;
 import br.puccampinas.pedeai.table.Table;
 import br.puccampinas.pedeai.table.TableRepository;
 
+/** Testes da conta parcial da comanda: consumo, taxa de serviço e total. */
 class BillServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-10-27T23:00:00Z");
@@ -33,6 +38,7 @@ class BillServiceTest {
     private final ObjectId tableId = new ObjectId();
     private final AuthenticatedUser guest = new AuthenticatedUser(new ObjectId(), storeId, "GUEST");
 
+    // Soma o consumo, aplica 10% de serviço e deixa o pedido cancelado fora do total.
     @Test
     void sumsConsumptionAddsTenPercentServiceAndLeavesCanceledOutOfTheTotal() {
         givenTab();
@@ -51,6 +57,7 @@ class BillServiceTest {
         assertEquals(9020, bill.totalCents());
     }
 
+    // Itens cancelados continuam na lista, marcados como cancelados.
     @Test
     void keepsCanceledItemsInTheListMarkedAsCanceled() {
         givenTab();
@@ -79,6 +86,7 @@ class BillServiceTest {
         assertEquals(3200, bill.consumptionCents());
     }
 
+    // Comanda sem pedidos tem total zero.
     @Test
     void emptyTabHasZeroTotals() {
         givenTab();
@@ -90,6 +98,7 @@ class BillServiceTest {
         assertEquals(0, bill.totalCents());
     }
 
+    // Comanda dividida mostra quem pediu cada item e quanto cada pessoa consumiu.
     @Test
     void sharedTabTellsWhoOrderedEachItemAndHowMuchEachPersonConsumed() {
         ObjectId bia = new ObjectId();

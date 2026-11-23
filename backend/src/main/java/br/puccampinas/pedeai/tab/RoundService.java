@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.tab;
 
 import java.util.ArrayList;
@@ -25,10 +29,12 @@ import br.puccampinas.pedeai.session.GuestSession;
 import br.puccampinas.pedeai.session.GuestSessionRepository;
 import br.puccampinas.pedeai.table.TableRepository;
 
+/** Monta o "Mais uma rodada": repete o último pedido da comanda e sugere o que outros da mesa pediram. */
 @Service
 public class RoundService {
 
     static final int MAX_SUGGESTIONS = 3;
+    // Comanda aguardando pagamento ainda conta como aberta na mesa.
     private static final List<String> OPEN_STATUS = List.of("OPEN", "AWAITING_PAYMENT");
 
     private final TabService tabService;
@@ -46,6 +52,7 @@ public class RoundService {
         this.mongo = mongo;
     }
 
+    /** Último pedido da comanda com preço e disponibilidade atuais, mais até 3 sugestões da mesa. */
     public RoundResponse roundOfMyTab(AuthenticatedUser guest) {
         Tab tab = tabService.requireMyTab(guest);
         Document lastOrder = mongo.findOne(Query.query(Criteria.where("storeId").is(tab.storeId())
@@ -66,6 +73,7 @@ public class RoundService {
         for (Document item : lastItems) {
             Product product = products.get(item.getObjectId("productId"));
             List<PlaceOrderRequest.SelectedOption> options = OrderOptions.fromItem(item);
+            // Se as opções antigas não valem mais, o item fica indisponível e mantém o preço do pedido antigo.
             Optional<OrderOptions.Resolved> current = product == null ? Optional.empty()
                     : OrderOptions.tryResolve(product, options);
             items.add(new RoundResponse.RoundItem(item.getObjectId("productId").toHexString(),
@@ -76,6 +84,7 @@ public class RoundService {
                     product != null && product.available() && current.isPresent(), options));
         }
 
+        // Produtos que já estão na rodada não viram sugestão.
         Set<ObjectId> repeated = lastItems.stream().map(item -> item.getObjectId("productId"))
                 .collect(Collectors.toSet());
         int tableNumber = tab.tableId() == null ? 0
@@ -88,6 +97,7 @@ public class RoundService {
 
     /** Pedidos de todas as comandas abertas na mesa, do mais novo para o mais antigo. */
     private List<Document> ordersOnTheTable(Tab tab) {
+        // Balcão não tem mesa, então não há sugestões.
         if (tab.tableId() == null) {
             return List.of();
         }
@@ -109,6 +119,7 @@ public class RoundService {
             for (Document item : TabTotals.activeItems(order)) {
                 ObjectId productId = item.getObjectId("productId");
                 Product product = products.get(productId);
+                // Pula itens da própria pessoa, produtos indisponíveis ou com opções que não valem mais, e repetidos.
                 if (picked.size() == MAX_SUGGESTIONS || me.equals(item.getObjectId("placedBySessionId"))
                         || product == null || !product.available()
                         || OrderOptions.tryResolve(product, OrderOptions.fromItem(item)).isEmpty()

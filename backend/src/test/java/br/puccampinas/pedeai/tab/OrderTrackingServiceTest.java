@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.tab;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,6 +29,7 @@ import br.puccampinas.pedeai.common.ResourceNotFoundException;
 import br.puccampinas.pedeai.table.Table;
 import br.puccampinas.pedeai.table.TableRepository;
 
+/** Testes do acompanhamento de um pedido pelo cliente. */
 class OrderTrackingServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-10-27T23:00:00Z");
@@ -46,6 +51,7 @@ class OrderTrackingServiceTest {
                 .thenReturn(Optional.of(new Table(tableId, storeId, 5, null, 4, "t05", true, NOW)));
     }
 
+    // Monta a linha do tempo a partir do histórico de status do pedido.
     @Test
     void buildsTheTimelineFromTheStatusHistory() {
         Document order = order("READY", item("Porção de fritas", 3200, 1, "READY"),
@@ -63,6 +69,7 @@ class OrderTrackingServiceTest {
         assertEquals(NOW.plusSeconds(1200), tracking.timeline().get(2).at());
     }
 
+    // Item cancelado continua listado, mas fica fora do total.
     @Test
     void canceledItemStaysListedButOutOfTheTotal() {
         Document order = order("PREPARING", item("Batata", 3200, 1, "PREPARING"), item("Pudim", 1300, 1, "CANCELLED"));
@@ -75,6 +82,7 @@ class OrderTrackingServiceTest {
         assertEquals(1, tracking.timeline().size());
     }
 
+    // Pedido cancelado traz motivo, observação e horário do cancelamento, com total zero.
     @Test
     void cancelledOrderBringsReasonNoteAndTime() {
         Document order = order("CANCELLED", item("Pudim", 1300, 1, "CANCELLED"))
@@ -90,6 +98,7 @@ class OrderTrackingServiceTest {
         assertEquals(0, tracking.totalCents());
     }
 
+    // Entrega parcial mostra o status e o horário de entrega de cada item.
     @Test
     void partialDeliveryShowsEachItemStatusAndDeliveryTime() {
         Document order = order("READY",
@@ -105,6 +114,7 @@ class OrderTrackingServiceTest {
         assertEquals(null, tracking.items().get(1).deliveredAt());
     }
 
+    // Pedido fora da comanda ou id inválido dá 404.
     @Test
     void orderOutsideMyTabIsNotFound() {
         when(mongo.findOne(any(Query.class), eq(Document.class), eq("order"))).thenReturn(null);

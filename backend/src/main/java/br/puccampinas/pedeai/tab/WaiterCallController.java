@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.tab;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +23,7 @@ public class WaiterCallController {
         this.waiterCallService = waiterCallService;
     }
 
+    /** Marca um chamado aberto da comanda como atendido pela equipe. */
     @PostMapping("/{tabId}/calls/{callId}/resolve")
     public WaiterCallResponse resolve(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String tabId,
             @PathVariable String callId) {

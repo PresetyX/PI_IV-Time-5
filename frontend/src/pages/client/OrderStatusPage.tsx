@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
@@ -19,9 +23,11 @@ import type { TrackedLine, TrackedOrder } from '../../services/tabs';
 import { formatTableNumber } from '../../services/tables';
 import { tokens } from '../../theme/theme';
 
+// Intervalo para atualizar o status do pedido.
 const REFRESH_MS = 5000;
 const { colors, fontSize, fontWeight, radius } = tokens;
 
+// Texto de cada etapa na linha do tempo do pedido.
 const STEP_LABEL: Record<string, string> = {
   AWAITING_PAYMENT: 'Esperando o pagamento no caixa',
   RECEIVED: 'Recebido pela cozinha',
@@ -30,11 +36,13 @@ const STEP_LABEL: Record<string, string> = {
   DELIVERED: 'Entregue na mesa',
 };
 
+// Formata a hora como "HH:MM".
 function formatTime(iso: string): string {
   const date = new Date(iso);
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+/** Tela de acompanhamento de um pedido, com itens e linha do tempo. */
 export default function OrderStatusPage() {
   const { slug = '', orderId = '' } = useParams();
   const navigate = useNavigate();
@@ -65,6 +73,7 @@ export default function OrderStatusPage() {
   }, [gate, load]);
 
   if (gate) return <Navigate to={gate} replace />;
+  // Pedido não encontrado (404), volta para a conta.
   if (missing) return <Navigate to={`/t/${slug}/conta`} replace />;
   if (state.status === 'loading' || (order === null && !loadFailed)) return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
@@ -72,6 +81,7 @@ export default function OrderStatusPage() {
 
   const ready = order.status === 'READY';
   const cancelled = order.status === 'CANCELLED' || order.status === 'CANCELED';
+  // Etapa mais recente primeiro.
   const steps = [...order.timeline].reverse();
 
   if (cancelled) {
@@ -88,6 +98,7 @@ export default function OrderStatusPage() {
 
   const active = order.items.filter((item) => !item.canceled);
   const delivered = active.filter((item) => item.status === 'DELIVERED').length;
+  // Pedido pronto com só parte dos itens entregue mostra a tela de entrega parcial.
   if (ready && delivered > 0 && delivered < active.length) {
     return (
       <PartialDelivery
@@ -206,6 +217,7 @@ export default function OrderStatusPage() {
   );
 }
 
+// Linha de um item do pedido; item cancelado aparece riscado.
 function Line({ item }: { item: TrackedLine }) {
   const color = item.canceled ? colors.textMuted : colors.text;
   const strike = item.canceled ? 'line-through' : 'none';
@@ -227,6 +239,7 @@ function Line({ item }: { item: TrackedLine }) {
   );
 }
 
+// Texto do status de cada item na entrega parcial.
 const ITEM_STATUS_LABEL: Record<string, string> = {
   RECEIVED: 'Na fila da cozinha',
   PREPARING: 'Em preparo',
@@ -242,8 +255,10 @@ interface PartialDeliveryProps {
   onOrderMore: () => void;
 }
 
+// Tela de pedido entregue em partes, com progresso dos itens.
 function PartialDelivery({ order, delivered, total, onBack, onCallWaiter, onOrderMore }: PartialDeliveryProps) {
   const place = order.tableNumber > 0 ? `Mesa ${formatTableNumber(order.tableNumber)}` : 'Balcão';
+  // Destaca o primeiro item que ainda falta entregar.
   const firstPending = order.items.findIndex((item) => !item.canceled && item.status !== 'DELIVERED');
 
   return (
@@ -313,6 +328,7 @@ function PartialDelivery({ order, delivered, total, onBack, onCallWaiter, onOrde
   );
 }
 
+// Item na entrega parcial, com marca de entregue ou o status atual.
 function PartialLine({ item, highlighted }: { item: TrackedLine; highlighted: boolean }) {
   const done = item.status === 'DELIVERED';
   const detail = item.canceled
@@ -386,6 +402,7 @@ function PartialLine({ item, highlighted }: { item: TrackedLine; highlighted: bo
   );
 }
 
+// Texto para cada motivo de cancelamento.
 const CANCEL_REASON_LABEL: Record<string, string> = {
   OUT_OF_STOCK: 'Faltou ingrediente para preparar o pedido.',
   WRONG_ORDER: 'O pedido foi lançado errado.',
@@ -401,10 +418,12 @@ interface CancelledOrderProps {
   onOrderMore: () => void;
 }
 
+// Tela de pedido cancelado, com o motivo e a conta atualizada.
 function CancelledOrder({ slug, order, onBill, onCallWaiter, onOrderMore }: CancelledOrderProps) {
   const [bill, setBill] = useState<Bill | null>(null);
 
   useEffect(() => {
+    // Evita atualizar o estado depois que a tela saiu.
     let alive = true;
     fetchBill(slug)
       .then((next) => alive && setBill(next))

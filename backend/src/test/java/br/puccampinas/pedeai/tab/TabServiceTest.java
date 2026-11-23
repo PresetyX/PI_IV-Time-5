@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.tab;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,6 +39,7 @@ import br.puccampinas.pedeai.session.GuestSessionRepository;
 import br.puccampinas.pedeai.table.Table;
 import br.puccampinas.pedeai.table.TableRepository;
 
+/** Testes da comanda: abrir, entrar com código, código novo e remover participante. */
 class TabServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-10-27T23:00:00Z");
@@ -85,6 +90,7 @@ class TabServiceTest {
         assertThrows(ConflictException.class, () -> service.open(guest(bia)));
     }
 
+    // Sessão sem mesa que não é de balcão não abre comanda.
     @Test
     void sessionWithoutTableThatIsNotCounterIsRejected() {
         GuestSession delivery = new GuestSession(new ObjectId(), storeId, null, "DELIVERY", "Leo", null, null, NOW,
@@ -94,6 +100,7 @@ class TabServiceTest {
         assertThrows(InvalidRequestException.class, () -> service.open(guest(delivery)));
     }
 
+    // Abre a comanda no nome da sessão, com código de 4 dígitos que vence em 5 minutos.
     @Test
     void opensTabInTheNameOfTheSessionWithAFourDigitCodeThatExpiresInFiveMinutes() {
         TabResponse tab = service.open(guest(caio));
@@ -107,6 +114,7 @@ class TabServiceTest {
         assertEquals(1, tab.members().size());
     }
 
+    // A mesma sessão não abre uma segunda comanda.
     @Test
     void doesNotOpenASecondTabForTheSameSession() {
         service.open(guest(caio));
@@ -114,6 +122,7 @@ class TabServiceTest {
         assertThrows(ConflictException.class, () -> service.open(guest(caio)));
     }
 
+    // Entra com o código certo; quem entrou não vê o código.
     @Test
     void joinsWithTheRightCodeAndOnlyTheOwnerSeesTheCode() {
         TabResponse opened = service.open(guest(caio));
@@ -126,6 +135,7 @@ class TabServiceTest {
         assertEquals(2, service.listOnMyTable(guest(ana)).get(0).peopleCount());
     }
 
+    // Código errado é recusado.
     @Test
     void rejectsWrongCode() {
         TabResponse opened = service.open(guest(caio));
@@ -134,6 +144,7 @@ class TabServiceTest {
         assertThrows(InvalidRequestException.class, () -> service.join(guest(ana), opened.id(), wrong));
     }
 
+    // Código vencido é recusado.
     @Test
     void rejectsExpiredCode() {
         TabResponse opened = service.open(guest(caio));
@@ -142,6 +153,7 @@ class TabServiceTest {
         assertThrows(InvalidRequestException.class, () -> service.join(guest(ana), opened.id(), opened.joinCode()));
     }
 
+    // Quando o código vence, o dono recebe um novo ao abrir a comanda.
     @Test
     void ownerGetsANewCodeWhenTheOldOneExpires() {
         service.open(guest(caio));
@@ -153,6 +165,7 @@ class TabServiceTest {
         assertEquals(tab.joinCode(), stored.joinCode());
     }
 
+    // Só o dono gera código novo; participante leva 403.
     @Test
     void onlyTheOwnerGeneratesANewCode() {
         TabResponse opened = service.open(guest(caio));
@@ -162,6 +175,7 @@ class TabServiceTest {
         assertNotEquals(null, service.newCode(guest(caio), opened.id()).joinCode());
     }
 
+    // Participante removido perde o acesso e não volta nem com código novo.
     @Test
     void removedParticipantLosesAccessAndCannotComeBack() {
         TabResponse opened = service.open(guest(caio));
@@ -175,6 +189,7 @@ class TabServiceTest {
         assertThrows(ForbiddenException.class, () -> service.join(guest(ana), opened.id(), code));
     }
 
+    // Só o dono remove participantes, e o dono não pode ser removido.
     @Test
     void onlyTheOwnerRemovesAndTheOwnerCannotBeRemoved() {
         TabResponse opened = service.open(guest(caio));
@@ -186,6 +201,7 @@ class TabServiceTest {
                 () -> service.removeParticipant(guest(caio), opened.id(), caio.id().toHexString()));
     }
 
+    // Item cancelado fica fora do total; o removido some da lista mas segue gravado com removedAt.
     @Test
     void itemsOfARemovedParticipantStayInTheirTotals() {
         TabResponse opened = service.open(guest(caio));
@@ -206,6 +222,7 @@ class TabServiceTest {
         assertTrue(stored.participants().get(0).removedAt() != null);
     }
 
+    // Sessão vencida não acessa as comandas da mesa.
     @Test
     void rejectsExpiredSession() {
         GuestSession expired = new GuestSession(new ObjectId(), storeId, tableId, "TABLE", "Zé", null, null,

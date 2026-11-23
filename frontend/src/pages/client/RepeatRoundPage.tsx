@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Alert, Box, ButtonBase, CircularProgress, IconButton, Typography } from '@mui/material';
@@ -22,6 +26,7 @@ import { tokens } from '../../theme/theme';
 
 const { colors, fontSize, fontWeight, radius, touchTarget } = tokens;
 
+// Texto de quanto tempo atrás, como "há 5 min".
 function minutesAgo(iso: string): string {
   const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
   if (minutes < 1) return 'agora há pouco';
@@ -29,6 +34,7 @@ function minutesAgo(iso: string): string {
   return `há ${Math.floor(minutes / 60)} h`;
 }
 
+/** Tela "Mais uma rodada": repete itens do último pedido e aceita sugestões da mesa. */
 export default function RepeatRoundPage() {
   const { slug = '' } = useParams();
   const navigate = useNavigate();
@@ -49,6 +55,7 @@ export default function RepeatRoundPage() {
     try {
       const next = await fetchRound(slug);
       setRound(next);
+      // Começa com todos os itens disponíveis marcados.
       setChecked(new Set(next.items.flatMap((item, index) => (item.available ? [index] : []))));
       setAdded(new Set());
       setLoadFailed(false);
@@ -64,6 +71,7 @@ export default function RepeatRoundPage() {
   }, [gate, load]);
 
   if (gate) return <Navigate to={gate} replace />;
+  // Sem comanda (404), volta para a lista de comandas.
   if (missing) return <Navigate to={`/t/${slug}/comandas`} replace />;
   if (state.status === 'loading' || (round === null && !loadFailed)) return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
@@ -77,6 +85,7 @@ export default function RepeatRoundPage() {
     extras.reduce((sum, suggestion) => sum + suggestion.priceCents, 0);
   const close = () => navigate(`/t/${slug}/comandas/minha`);
 
+  // Marca ou desmarca um item da última rodada.
   function toggleItem(index: number) {
     setError(null);
     setChecked((value) => {
@@ -87,6 +96,7 @@ export default function RepeatRoundPage() {
     });
   }
 
+  // Adiciona ou tira uma sugestão do pedido.
   function toggleSuggestion(productId: string) {
     setError(null);
     setAdded((value) => {
@@ -122,12 +132,14 @@ export default function RepeatRoundPage() {
       }
       setAskingAge(false);
       setError(orderErrorMessage(caught));
+      // No 409 (item esgotado ou casa fechada), recarrega a rodada.
       if (caught instanceof ApiError && caught.status === 409) load();
     } finally {
       setSending(false);
     }
   }
 
+  // Salva a confirmação de idade e reenvia o pedido.
   function confirmAgeAndSend() {
     confirmAge(slug);
     send(true);
@@ -255,6 +267,7 @@ export default function RepeatRoundPage() {
   );
 }
 
+// Item da última rodada com caixa de marcar; esgotado fica desabilitado.
 function RoundRow({ item, checked, onToggle }: { item: RoundItem; checked: boolean; onToggle: () => void }) {
   const muted = !checked || !item.available;
   return (
@@ -307,6 +320,7 @@ function RoundRow({ item, checked, onToggle }: { item: RoundItem; checked: boole
   );
 }
 
+// Sugestão de item que alguém da mesa pediu, com botão de adicionar.
 function SuggestionRow({
   suggestion,
   added,

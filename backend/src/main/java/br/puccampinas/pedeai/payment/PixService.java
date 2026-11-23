@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.payment;
 
 import org.bson.Document;
@@ -11,6 +15,7 @@ import br.puccampinas.pedeai.tab.Tab;
 import br.puccampinas.pedeai.tab.TabService;
 import br.puccampinas.pedeai.tab.TabTotals;
 
+/** Gera o Pix da comanda usando a chave Pix cadastrada na loja. */
 @Service
 public class PixService {
 
@@ -24,6 +29,10 @@ public class PixService {
         this.mongo = mongo;
     }
 
+    /**
+     * Só quem abriu a comanda pode pagar. Recalcula o total e monta o Pix copia e cola.
+     * Se a loja não tem chave Pix dá 409; se o total é zero, volta sem payload.
+     */
     public PixResponse pixOfMyTab(AuthenticatedUser guest) {
         Tab tab = tabService.requireMyTab(guest);
         if (!tab.ownerSessionId().equals(guest.userId())) {
@@ -41,6 +50,7 @@ public class PixService {
         }
         Document address = store.get("address", Document.class);
         String city = address == null ? null : address.getString("city");
+        // O id da comanda vira o txid, para identificar o pagamento.
         String payload = PixPayload.build(pixKey, storeName, city, amount, tab.id().toHexString());
         return new PixResponse(tab.id().toHexString(), storeName, amount, payload);
     }

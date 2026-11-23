@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.tab;
 
 import java.util.ArrayList;
@@ -15,6 +19,7 @@ import br.puccampinas.pedeai.auth.AuthenticatedUser;
 import br.puccampinas.pedeai.common.ResourceNotFoundException;
 import br.puccampinas.pedeai.table.TableRepository;
 
+/** Monta o acompanhamento de um pedido da comanda para o cliente. */
 @Service
 public class OrderTrackingService {
 
@@ -57,6 +62,7 @@ public class OrderTrackingService {
         }
 
         List<OrderTrackingResponse.Step> timeline = new ArrayList<>();
+        // Pedido de balcão (com senha) começa aguardando pagamento; os outros começam como recebidos.
         String firstStep = order.get("pickupTicket") != null ? "AWAITING_PAYMENT" : "RECEIVED";
         timeline.add(new OrderTrackingResponse.Step(firstStep, order.getDate("createdAt").toInstant()));
         for (Document event : order.getList("statusHistory", Document.class, List.of())) {

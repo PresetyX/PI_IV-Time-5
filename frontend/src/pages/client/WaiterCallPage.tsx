@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Alert, Box, ButtonBase, CircularProgress, Typography } from '@mui/material';
@@ -14,9 +18,11 @@ import { callWaiter, fetchWaiterCalls, formatClock } from '../../services/tabs';
 import type { WaiterCall, WaiterCallType } from '../../services/tabs';
 import { tokens } from '../../theme/theme';
 
+// Intervalo para atualizar os chamados e ver quando o garçom atendeu.
 const REFRESH_MS = 5000;
 const { colors, fontSize, fontWeight, radius } = tokens;
 
+// Motivos que o cliente pode escolher na tela.
 const REASONS: { type: WaiterCallType; title: string; detail: string }[] = [
   { type: 'CLOSE_BILL', title: 'Fechar a conta', detail: 'Quero pagar com cartão ou dinheiro' },
   { type: 'QUESTION', title: 'Tirar uma dúvida', detail: 'Sobre um item do cardápio' },
@@ -24,10 +30,12 @@ const REASONS: { type: WaiterCallType; title: string; detail: string }[] = [
   { type: 'ORDER_PROBLEM', title: 'Problema no pedido', detail: 'Veio errado ou faltou item' },
 ];
 
+// Confere se o valor é um dos motivos da tela.
 function isReason(value: string | null): value is WaiterCallType {
   return REASONS.some((reason) => reason.type === value);
 }
 
+/** Tela para chamar o garçom escolhendo um motivo e ver os chamados em aberto. */
 export default function WaiterCallPage() {
   const { slug = '' } = useParams();
   const [params] = useSearchParams();
@@ -36,6 +44,7 @@ export default function WaiterCallPage() {
   useStoreColor(state.status === 'ready' ? state.store.primaryColor : null);
   const handleExpired = useExpiredSession(slug);
   const gate = guestGatePath(slug);
+  // O motivo pode vir já escolhido pela URL (?motivo=...).
   const asked = params.get('motivo');
   const [selected, setSelected] = useState<WaiterCallType | null>(isReason(asked) ? asked : null);
   const [calls, setCalls] = useState<WaiterCall[]>([]);
@@ -60,6 +69,7 @@ export default function WaiterCallPage() {
   }, [gate, load]);
 
   if (gate) return <Navigate to={gate} replace />;
+  // Sem comanda (404), volta para a lista de comandas.
   if (missing) return <Navigate to={`/t/${slug}/comandas`} replace />;
   if (state.status === 'loading') return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
@@ -67,9 +77,11 @@ export default function WaiterCallPage() {
   const open = calls.filter((call) => call.status === 'OPEN');
   const answered = calls
     .filter((call) => call.status === 'RESOLVED' && call.resolvedAt)
+    // Só mostra os chamados atendidos nos últimos 10 minutos.
     .filter((call) => Date.now() - new Date(call.resolvedAt as string).getTime() < 10 * 60000);
   const back = () => navigate(`/t/${slug}/comandas/minha`);
 
+  // Envia o chamado e coloca na lista sem esperar a próxima atualização.
   async function send() {
     if (!selected || sending) return;
     setSending(true);

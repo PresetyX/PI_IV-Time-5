@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.session;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,6 +35,7 @@ import br.puccampinas.pedeai.store.StoreService;
 import br.puccampinas.pedeai.table.Table;
 import br.puccampinas.pedeai.table.TableService;
 
+/** Testes da criação da sessão do cliente ao ler o QR Code da mesa. */
 class SessionServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-10-27T23:00:00Z");
@@ -58,6 +63,7 @@ class SessionServiceTest {
         });
     }
 
+    // Sessão de mesa: nome sem espaços, telefone só com dígitos e token válido por SESSION_DURATION.
     @Test
     void createsTableSessionWithNormalizedPhoneAndConsent() {
         givenStore(true, OPEN);
@@ -79,6 +85,7 @@ class SessionServiceTest {
         assertEquals("TABLE", response.mode());
     }
 
+    // Loja que não exige telefone: telefone vazio é gravado como nulo.
     @Test
     void phoneIsOptionalWhenStoreDoesNotRequireIt() {
         givenStore(false, OPEN);
@@ -91,6 +98,7 @@ class SessionServiceTest {
         assertNull(saved.getValue().phone());
     }
 
+    // Loja que exige telefone: sem telefone dá erro e nada é salvo.
     @Test
     void phoneIsRequiredWhenStoreAsksForIt() {
         givenStore(true, OPEN);
@@ -101,6 +109,7 @@ class SessionServiceTest {
         verify(sessionRepository, never()).save(any());
     }
 
+    // Fixo, celular sem o 9 e DDD inválido são recusados.
     @Test
     void landlineAndPhoneWithoutNineAreRejected() {
         givenStore(true, OPEN);
@@ -113,6 +122,7 @@ class SessionServiceTest {
         verify(sessionRepository, never()).save(any());
     }
 
+    // Telefone curto demais é recusado mesmo quando é opcional.
     @Test
     void invalidPhoneIsRejected() {
         givenStore(false, OPEN);
@@ -122,6 +132,7 @@ class SessionServiceTest {
                 new CreateSessionRequest("demo", "TABLE", "t05-1d3e", "Ana", "1234")));
     }
 
+    // Modo mesa sem token da mesa dá erro de requisição.
     @Test
     void tableModeNeedsAToken() {
         givenStore(false, OPEN);
@@ -130,6 +141,7 @@ class SessionServiceTest {
                 new CreateSessionRequest("demo", "TABLE", null, "Ana", null)));
     }
 
+    // Mesa desconhecida ou inativa dá 404 e nada é salvo.
     @Test
     void unknownOrInactiveTableIsNotFound() {
         givenStore(false, OPEN);
@@ -140,6 +152,7 @@ class SessionServiceTest {
         verify(sessionRepository, never()).save(any());
     }
 
+    // Loja fechada recusa nova sessão com conflito.
     @Test
     void closedStoreRejectsNewSessions() {
         givenStore(false, CLOSED);

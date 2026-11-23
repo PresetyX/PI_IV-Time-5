@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 import { Box, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { tokens } from '../../theme/theme';
@@ -7,6 +11,7 @@ import { WifiOffIcon } from './icons';
 
 const { colors, fontSize, fontWeight, radius } = tokens;
 
+// Dicas mostradas na lista da tela.
 const TIPS = [
   'Confira se o wi-fi da casa ainda está conectado.',
   'Se a comanda ficou muito tempo parada, ela expira e você entra de novo pelo QR.',
@@ -18,6 +23,7 @@ interface ConnectionLostScreenProps {
   onRetry: () => void;
 }
 
+/** Tela de sem conexão com o restaurante. Permite tentar de novo ou chamar o garçom. */
 export default function ConnectionLostScreen({ slug, onRetry }: ConnectionLostScreenProps) {
   const navigate = useNavigate();
   return (
