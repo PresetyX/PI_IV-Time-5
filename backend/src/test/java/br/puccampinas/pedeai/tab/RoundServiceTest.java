@@ -34,6 +34,7 @@ import br.puccampinas.pedeai.session.GuestSessionRepository;
 import br.puccampinas.pedeai.table.Table;
 import br.puccampinas.pedeai.table.TableRepository;
 
+/** Testes do "repetir rodada" e das sugestões da mesa. */
 class RoundServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-10-27T23:00:00Z");
@@ -71,6 +72,7 @@ class RoundServiceTest {
         when(sessionRepository.findAllById(anyIterable())).thenReturn(List.of(caio));
     }
 
+    // Repete o último pedido com o preço atual e a disponibilidade; item cancelado não entra.
     @Test
     void repeatsTheLastOrderWithTodaysPriceAndAvailability() {
         Document last = order(42, item(fritas, 3000, 1, "sem sal", me), item(chopp, 1400, 2, null, me),
@@ -89,6 +91,7 @@ class RoundServiceTest {
         assertFalse(round.items().get(2).available());
     }
 
+    // Sugere o que outros da mesa pediram, se estiver disponível e fora da rodada.
     @Test
     void suggestsWhatOthersOnTheTableOrderedThatIsAvailableAndNotInTheRound() {
         Document last = order(42, item(fritas, 3200, 1, null, me));
@@ -104,6 +107,7 @@ class RoundServiceTest {
         assertEquals("Caio", round.suggestions().get(0).orderedBy());
     }
 
+    // Comanda sem pedidos não tem nada para repetir nem sugerir.
     @Test
     void tabWithoutOrdersHasNothingToRepeat() {
         when(mongo.find(any(Query.class), eq(Document.class), eq("order"))).thenReturn(List.of());
