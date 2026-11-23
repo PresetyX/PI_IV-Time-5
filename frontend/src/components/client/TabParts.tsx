@@ -16,6 +16,7 @@ interface ScreenHeaderProps {
   action?: ReactNode;
 }
 
+/** Cabeçalho das telas da comanda, com botão de voltar, título e ação opcional. */
 export function ScreenHeader({ title, subtitle, onBack, action }: ScreenHeaderProps) {
   return (
     <Box
@@ -49,6 +50,7 @@ export function ScreenHeader({ title, subtitle, onBack, action }: ScreenHeaderPr
   );
 }
 
+/** Círculo com a inicial do nome da pessoa. */
 export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
   return (
     <Box
@@ -71,6 +73,7 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
   );
 }
 
+/** Título pequeno de seção, em maiúsculas. */
 export function SectionLabel({ children }: { children: ReactNode }) {
   return (
     <Typography
@@ -89,6 +92,7 @@ export function SectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
+/** Caixa de aviso com ícone; usa o ícone de informação se nenhum for passado. */
 export function InfoNote({ children, icon }: { children: ReactNode; icon?: ReactNode }) {
   return (
     <Box
