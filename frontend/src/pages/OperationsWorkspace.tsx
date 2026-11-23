@@ -824,6 +824,10 @@ function readDismissedCalls(): string[] {
   }
 }
 
+/*
+ * Autor: Pedro Henrique Bonetto da Costa
+ * RA: 25018203
+ */
 function TablesMap({ ctx }: { ctx: Ctx }) {
   const { data, calls } = ctx;
   const [dismissed, setDismissed] = useState<string[]>(readDismissedCalls);
