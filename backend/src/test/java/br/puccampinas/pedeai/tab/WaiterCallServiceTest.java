@@ -36,6 +36,7 @@ import br.puccampinas.pedeai.common.ForbiddenException;
 import br.puccampinas.pedeai.common.InvalidRequestException;
 import br.puccampinas.pedeai.common.ResourceNotFoundException;
 
+/** Testes dos chamados de garçom: abrir, não duplicar e atender. */
 class WaiterCallServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-10-27T23:00:00Z");
@@ -54,6 +55,7 @@ class WaiterCallServiceTest {
         when(tabService.requireMyTab(guest)).thenReturn(tab);
     }
 
+    // Grava um chamado aberto com o texto do motivo que o salão mostra.
     @Test
     void pushesAnOpenCallWithTheReasonTheSalonShows() {
         givenStoredCalls();
@@ -69,6 +71,7 @@ class WaiterCallServiceTest {
         assertEquals(NOW, call.createdAt());
     }
 
+    // Chamado do mesmo tipo ainda aberto é devolvido e nada novo é gravado.
     @Test
     void doesNotRepeatACallThatIsStillWaiting() {
         givenStoredCalls(new Document("id", "c1").append("type", "QUESTION").append("reason", "Tirar uma dúvida")
@@ -80,11 +83,13 @@ class WaiterCallServiceTest {
         verify(mongo, never()).updateFirst(any(Query.class), any(Update.class), eq("tab"));
     }
 
+    // Motivo desconhecido é recusado.
     @Test
     void rejectsUnknownReason() {
         assertThrows(InvalidRequestException.class, () -> service.call(guest, "DANCE"));
     }
 
+    // Garçom atende um chamado aberto e ele fica RESOLVED.
     @Test
     void waiterResolvesAnOpenCall() {
         when(mongo.updateFirst(any(Query.class), any(Update.class), eq("tab"))).thenReturn(UpdateResult.acknowledged(1, 1L, null));
@@ -95,6 +100,7 @@ class WaiterCallServiceTest {
         assertEquals(NOW, call.resolvedAt());
     }
 
+    // Atender de novo dá conflito; chamado que não existe dá 404.
     @Test
     void answeringTwiceIsAConflictAndUnknownCallIsNotFound() {
         when(mongo.updateFirst(any(Query.class), any(Update.class), eq("tab"))).thenReturn(UpdateResult.acknowledged(0, 0L, null));
@@ -104,6 +110,7 @@ class WaiterCallServiceTest {
         assertThrows(ResourceNotFoundException.class, () -> service.resolve(waiter, tab.id().toHexString(), "c2"));
     }
 
+    // Perfil da cozinha não pode atender chamados.
     @Test
     void kitchenCannotAnswerCalls() {
         AuthenticatedUser kitchen = new AuthenticatedUser(new ObjectId(), storeId, "KITCHEN");
