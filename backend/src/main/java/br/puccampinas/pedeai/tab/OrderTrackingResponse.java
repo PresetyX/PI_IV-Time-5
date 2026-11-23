@@ -26,7 +26,7 @@ public record OrderTrackingResponse(
             List<String> options, String status, Instant deliveredAt) {
     }
 
-    /** Do mais antigo para o mais novo; o primeiro é sempre a chegada na cozinha. */
+    /** Do mais antigo para o mais novo; o primeiro é a chegada na cozinha, ou a espera do pagamento no balcão. */
     public record Step(String status, Instant at) {
     }
 }
