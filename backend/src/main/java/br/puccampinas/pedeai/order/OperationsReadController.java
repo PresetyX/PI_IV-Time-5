@@ -15,17 +15,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+/** Leitura usada pelas telas de produção, salão, contas e fila de espera. Não altera dados. */
 @RestController
 @RequestMapping("/api/operations")
 public class OperationsReadController {
     private final MongoTemplate mongo;
     public OperationsReadController(MongoTemplate mongo) { this.mongo = mongo; }
+    /** Lê uma coleção só da loja informada e traz apenas os campos pedidos. */
     private List<Document> read(ObjectId storeId, String collection, Criteria extra, String... fields) {
         Query query = Query.query(Criteria.where("storeId").is(storeId));
         if (extra != null) query.addCriteria(extra);
         query.fields().include(fields);
         return mongo.find(query, Document.class, collection);
     }
+    /** Converte os tipos do Mongo para JSON: id vira texto, data vira ISO e "_id" vira "id", também dentro de listas e objetos. */
     private Object json(Object value) {
         if (value instanceof ObjectId id) return id.toHexString();
         if (value instanceof Date date) return date.toInstant().toString();
@@ -37,6 +40,7 @@ public class OperationsReadController {
         if (value instanceof List<?> list) return list.stream().map(this::json).toList();
         return value;
     }
+    /** Devolve em uma chamada tudo o que as telas de operação precisam, de acordo com o perfil. */
     @GetMapping("/workspace")
     public ResponseEntity<?> workspace(@AuthenticationPrincipal AuthenticatedUser user) {
         if (user == null) return ResponseEntity.status(401).body(Map.of("error", "unauthorized", "message", "Entre novamente."));
@@ -49,6 +53,7 @@ public class OperationsReadController {
         List<Document> tabs = read(storeId, "tab", Criteria.where("status").ne("CLOSED"),
             "tableId", "mode", "customerName", "status", "subtotalCents", "serviceFeeCents", "totalCents", "openedAt", "waiterCalls", "pickupTicket");
         List<ObjectId> tabIds = tabs.stream().map(tab -> tab.getObjectId("_id")).toList();
+        // A cozinha vê só os pedidos ativos. Os outros perfis veem também os pedidos das comandas não fechadas.
         Criteria ordersCriteria = kitchen ? Criteria.where("status").in("RECEIVED", "PREPARING", "READY")
             : new Criteria().orOperator(Criteria.where("tabId").in(tabIds), Criteria.where("status").in("RECEIVED", "PREPARING", "READY"));
         List<Document> orders = read(storeId, "order", ordersCriteria,
@@ -60,7 +65,9 @@ public class OperationsReadController {
         body.put("tables", read(storeId, "table", Criteria.where("active").is(true), "number", "nickname"));
         body.put("tabs", tabs);
         body.put("orders", orders);
+        // A fila de espera não é enviada para a cozinha.
         body.put("waitlist", kitchen ? List.of() : read(storeId, "waitlist", Criteria.where("status").in("WAITING", "CALLED"), "name", "partySize", "number", "status", "createdAt"));
+        // Hora do servidor, para a tela calcular o tempo de espera mesmo com o relógio do aparelho errado.
         body.put("serverTime", new Date());
         return ResponseEntity.ok(json(body));
     }
