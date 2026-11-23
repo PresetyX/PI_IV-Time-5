@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 import { useEffect, useState } from 'react';
 import { keyframes } from '@emotion/react';
 import { matchPath, useLocation, useNavigate } from 'react-router-dom';
