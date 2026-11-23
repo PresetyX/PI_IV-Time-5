@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 import { Box, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { tokens } from '../../theme/theme';
