@@ -26,6 +26,7 @@ import br.puccampinas.pedeai.tab.Tab;
 import br.puccampinas.pedeai.tab.TabService;
 import br.puccampinas.pedeai.tab.TabTotals;
 
+/** Testes da geração do Pix da comanda. */
 class PixServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-11-06T23:00:00Z");
@@ -37,6 +38,7 @@ class PixServiceTest {
     private final ObjectId storeId = new ObjectId();
     private final AuthenticatedUser guest = new AuthenticatedUser(new ObjectId(), storeId, "GUEST");
 
+    // O dono recebe o Pix com o mesmo total recalculado da comanda.
     @Test
     void ownerGetsTheCodeWithTheSameTotalTheCashierCloses() {
         Tab tab = givenTab(guest.userId());
@@ -50,6 +52,7 @@ class PixServiceTest {
         assertTrue(pix.payload().contains("5406114.40"));
     }
 
+    // Participante que não abriu a comanda não pode pagar.
     @Test
     void participantCannotPay() {
         givenTab(new ObjectId());
@@ -58,6 +61,7 @@ class PixServiceTest {
         assertThrows(ForbiddenException.class, () -> service.pixOfMyTab(guest));
     }
 
+    // Loja sem chave Pix dá conflito.
     @Test
     void storeWithoutPixKeyIsAConflict() {
         givenTab(guest.userId());
@@ -66,6 +70,7 @@ class PixServiceTest {
         assertThrows(ConflictException.class, () -> service.pixOfMyTab(guest));
     }
 
+    // Comanda com total zero volta sem payload.
     @Test
     void emptyTabHasNothingToPay() {
         Tab tab = givenTab(guest.userId());
