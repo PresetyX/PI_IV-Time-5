@@ -1,283 +1,414 @@
-# Modelo de dados
+# Dicionário de dados
 
-> **Aviso:** o conteúdo deste documento é descrito em português, mas todos os identificadores (coleções, campos e valores de status) são em inglês.
+Banco **MongoDB 7**, database `pedeai`. As coleções, a validação de cada uma (`$jsonSchema`) e os índices são criados pelo script [`banco/init-mongo.js`](../banco/init-mongo.js); a casa de demonstração é carregada por [`banco/seed.js`](../banco/seed.js). Só o `backend/` lê e grava no banco.
+
+Levantado em 23/11/2026 a partir do `banco/init-mongo.js`, do código do backend e dos documentos gravados pela aplicação.
+
+## Convenções
+
+- **Multiempresa:** toda coleção, menos `store` e `sequence`, tem `storeId`, e toda consulta filtra por ele. É o que impede uma casa de ver os dados de outra.
+- **Identificadores** de coleções e campos em inglês; valores de enumeração em maiúsculas (`OPEN`, `PREPARING`).
+- **Referências** entre coleções são `ObjectId` com sufixo `Id` (`tabId`, `productId`).
+- **Dinheiro em centavos**, sempre inteiro: `3200` é R$ 32,00. Percentuais em pontos-base: `1000` é 10%.
+- **Datas** gravadas em UTC; a tela converte para o fuso da casa (America/Sao_Paulo).
+- **Cópia no pedido:** o item do pedido guarda nome e preço do momento do envio (`nameSnapshot`, `unitPriceCents`). Mudar o cardápio não altera pedido já feito.
+- **Validação `moderate`:** o MongoDB recusa documentos novos fora do esquema, mas aceita campos extras. Os campos que a aplicação grava e o script não declara estão marcados como **(fora do validador)**.
+- **(reservado):** campo previsto no esquema e ainda não usado pela aplicação nesta versão.
+
+Tipos: `ObjectId`, `String`, `Int` (inteiro de 32 bits), `Double`, `Bool`, `Date`, `Objeto` (subdocumento) e `Array`.
 
 ## Visão geral
 
-O banco é o MongoDB, database `pedeai`. Somente o processo `server/` acessa o banco. Toda coleção, exceto `tenant`, tem o campo `tenantId`, e toda consulta filtra por ele.
-
-Convenções:
-
-- Identificadores de coleção no singular e em minúsculas: `tenant`, `bill`, `order`.
-- Campos em camelCase.
-- Valores de status e de enumeração em maiúsculas: `OPEN`, `PREPARING`, `MANAGER`.
-- Dinheiro em centavos, sempre inteiro (`priceCents`, `totalCents`).
-- Datas em UTC.
-- Referências entre coleções são `ObjectId` com sufixo `Id` (`billId`, `productId`).
-
-O script `server/scripts/init-db.js` cria as coleções com validação, os índices e um estabelecimento de demonstração. Ver [Criando o banco](#criando-o-banco).
-
-## Coleções
-
-| Coleção | Descrição |
+| Coleção | O que guarda |
 | --- | --- |
-| `tenant` | Estabelecimento (o cliente do whitelabel). É a raiz de todos os outros dados. |
-| `user` | Usuário da equipe do estabelecimento, com perfil de acesso. |
-| `table` | Mesa do salão, com o número usado no QR code. |
-| `category` | Categoria do cardápio. |
-| `product` | Produto do cardápio. |
-| `customerSession` | Identificação do cliente que entrou por QR code ou link. |
-| `bill` | Conta (comanda) aberta por mesa ou balcão. |
-| `order` | Pedido enviado para a cozinha, vinculado a uma conta. |
-| `orderItem` | Item do pedido, com cópia de nome e preço no momento do envio. |
-| `payment` | Registro manual de pagamento de uma conta. |
-| `orderEvent` | Histórico de mudanças de status de um pedido. |
-| `counter` | Contador sequencial por estabelecimento, usado na senha de retirada. |
-
-## Enumerações
-
-| Campo | Valores | Significado |
-| --- | --- | --- |
-| `user.role` | `MANAGER`, `STAFF` | Gerente (cardápio, equipe, mesas, relatórios) e funcionário (fila da cozinha, pedidos, entregas) |
-| `bill.type` | `TABLE`, `COUNTER` | Conta de mesa ou de balcão |
-| `bill.status` | `OPEN`, `CLOSED` | Conta aberta recebe pedidos; fechada não recebe mais nada |
-| `order.status` | `RECEIVED`, `PREPARING`, `READY`, `DELIVERED`, `CANCELED` | Etapas do pedido na cozinha, as mesmas da barra de progresso do cliente |
-| `payment.method` | `PIX`, `CASH`, `CARD` | Forma de pagamento registrada manualmente |
-
-Transições válidas de `order.status`:
-
-```text
-RECEIVED ──▶ PREPARING ──▶ READY ──▶ DELIVERED
-    │            │
-    └────────────┴──▶ CANCELED
-```
-
-Um pedido `READY` ou `DELIVERED` não volta atrás nem é cancelado. Cada transição grava um documento em `orderEvent`.
-
-## Campos
-
-Campos comuns a todas as coleções: `_id`, `createdAt`, `updatedAt`. A coleção `tenant` não tem `tenantId`; o seu `_id` é o próprio `tenantId` das demais. As tabelas abaixo não repetem esses campos.
-
-### tenant
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `slug` | string | Identificador público e único na URL do estabelecimento |
-| `name` | string | Nome exibido |
-| `active` | boolean | Estabelecimento inativo não abre cardápio nem login |
-| `branding.logoUrl` | string | Logotipo exibido no cardápio e no painel; opcional |
-| `branding.primaryColor` | string | Cor primária do tema, em hexadecimal (`#111111`) |
-| `settings.tableService` | boolean | Aceita conta de mesa |
-| `settings.counterService` | boolean | Aceita conta de balcão, com senha de retirada |
-| `settings.requireCustomerName` | boolean | Pede o nome do cliente antes de abrir a conta |
-| `settings.requireCustomerPhone` | boolean | Pede o telefone do cliente antes de abrir a conta |
-| `settings.allowRepeatRound` | boolean | Mostra o botão "Mais uma rodada" na comanda da mesa; ausente conta como ligado |
-
-### user
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `tenantId` | ObjectId | Estabelecimento |
-| `name` | string | Nome do usuário |
-| `email` | string | E-mail de login, sempre em minúsculas; único por estabelecimento |
-| `passwordHash` | string | Hash BCrypt da senha, gerado pelo `backend/`. A senha em texto nunca chega ao `server/` |
-| `role` | string | `MANAGER` ou `STAFF` |
-| `active` | boolean | Usuário inativo não consegue entrar |
-| `lastLoginAt` | date | Último login; ausente se nunca entrou |
-
-O perfil escolhido na tela de login só decide a tela de destino. O `backend/` compara com `role` e recusa o acesso quando não batem.
-
-### table
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `tenantId` | ObjectId | Estabelecimento |
-| `tableNumber` | int | Número da mesa, único por estabelecimento; vai no link do QR code |
-| `active` | boolean | Mesa inativa não abre conta |
-
-### category
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `tenantId` | ObjectId | Estabelecimento |
-| `name` | string | Nome da categoria |
-| `active` | boolean | Categorias inativas não aparecem no cardápio |
-| `sortOrder` | int | Ordem de exibição |
-
-### product
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `tenantId` | ObjectId | Estabelecimento |
-| `categoryId` | ObjectId | Categoria do produto |
-| `name` | string | Nome do produto |
-| `description` | string | Descrição exibida no cardápio |
-| `priceCents` | int | Preço em centavos |
-| `imageUrl` | string | Foto do produto; opcional |
-| `available` | boolean | Produtos indisponíveis não aparecem no cardápio |
-| `sortOrder` | int | Ordem de exibição dentro da categoria |
-
-### customerSession
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `tenantId` | ObjectId | Estabelecimento |
-| `customerName` | string | Nome informado pelo cliente |
-| `customerPhone` | string | Telefone informado pelo cliente; opcional conforme `settings.requireCustomerPhone` |
-| `tableNumber` | int | Mesa do QR code lido; ausente quando entrou pelo balcão |
-| `billId` | ObjectId | Conta aberta por esta sessão; ausente até abrir |
-| `lastSeenAt` | date | Última requisição do cliente |
-
-### bill
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `tenantId` | ObjectId | Estabelecimento |
-| `type` | string | `TABLE` ou `COUNTER` |
-| `tableNumber` | int | Mesa da conta; ausente na conta de balcão |
-| `customerSessionId` | ObjectId | Sessão do cliente dono da conta |
-| `customerName` | string | Nome do cliente dono da conta, copiado da sessão |
-| `status` | string | `OPEN` ou `CLOSED` |
-| `totalCents` | int | Soma dos pedidos não cancelados, em centavos |
-| `paidCents` | int | Soma dos pagamentos registrados, em centavos |
-| `openedAt` | date | Abertura |
-| `closedAt` | date | Fechamento; ausente enquanto aberta |
-| `closedByUserId` | ObjectId | Usuário que fechou a conta; ausente enquanto aberta |
-| `pickupTicket` | int | Senha de retirada, vinda de `counter`; só na conta de balcão |
-
-Uma mesa pode ter várias contas `OPEN` ao mesmo tempo, uma por pessoa.
-
-### order
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `tenantId` | ObjectId | Estabelecimento |
-| `billId` | ObjectId | Conta do pedido |
-| `orderNumber` | int | Número exibido ao cliente e na cozinha, vindo de `counter` |
-| `tableNumber` | int | Cópia de `bill.tableNumber`, para a fila da cozinha não precisar buscar a conta |
-| `pickupTicket` | int | Cópia de `bill.pickupTicket` na conta de balcão |
-| `customerName` | string | Cópia de `bill.customerName` |
-| `status` | string | Estado do pedido na cozinha |
-| `totalCents` | int | Total do pedido em centavos |
-| `itemCount` | int | Quantidade total de unidades no pedido |
-| `sentAt` | date | Envio pelo cliente |
-| `readyAt` | date | Momento em que ficou `READY`; usado no aviso de pedido pronto |
-| `deliveredAt` | date | Momento em que ficou `DELIVERED` |
-
-### orderItem
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `tenantId` | ObjectId | Estabelecimento |
-| `orderId` | ObjectId | Pedido |
-| `billId` | ObjectId | Conta, repetida para somar a conta sem passar pelo pedido |
-| `productId` | ObjectId | Produto de origem |
-| `productName` | string | Nome do produto no momento do envio |
-| `unitPriceCents` | int | Preço unitário no momento do envio |
-| `quantity` | int | Quantidade, no mínimo 1 |
-| `notes` | string | Observação do cliente ("sem cebola"); opcional |
-| `subtotalCents` | int | `unitPriceCents × quantity` |
-
-Nome e preço são copiados porque o produto pode mudar ou sair do cardápio depois do pedido.
-
-### payment
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `tenantId` | ObjectId | Estabelecimento |
-| `billId` | ObjectId | Conta paga |
-| `method` | string | `PIX`, `CASH` ou `CARD` |
-| `amountCents` | int | Valor recebido, em centavos |
-| `receivedByUserId` | ObjectId | Usuário da equipe que registrou |
-| `paidAt` | date | Momento do registro |
-
-Uma conta pode ter mais de um pagamento (parte em pix, parte em dinheiro). A conta só fecha quando `paidCents` alcança `totalCents`.
-
-### orderEvent
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `tenantId` | ObjectId | Estabelecimento |
-| `orderId` | ObjectId | Pedido |
-| `fromStatus` | string | Status anterior; ausente no evento de criação |
-| `toStatus` | string | Novo status |
-| `userId` | ObjectId | Usuário da equipe que mudou; ausente quando foi o cliente (criação) |
-| `at` | date | Momento da mudança |
-
-`orderEvent` só recebe inserções; nada é alterado nem apagado.
-
-### counter
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `tenantId` | ObjectId | Estabelecimento |
-| `name` | string | Nome da sequência, com a data do dia em UTC: `pickupTicket:2026-10-23`, `orderNumber:2026-10-23` |
-| `seq` | int | Último valor entregue |
-
-O próximo valor sai de um `findOneAndUpdate` com `$inc: { seq: 1 }`, `upsert: true` e retorno do documento depois da alteração. Como o nome leva a data, senhas e números de pedido recomeçam em 1 a cada dia.
+| `store` | A casa (cliente do whitelabel): marca, horários, taxas e regras |
+| `user` | Pessoas da equipe da casa, com perfil de acesso |
+| `table` | Mesas do salão e o token do QR code de cada uma |
+| `category` | Categorias do cardápio |
+| `product` | Produtos do cardápio, com preço, disponibilidade e opções |
+| `guestSession` | Sessão do cliente que entrou pelo QR ou pelo balcão |
+| `tab` | Comanda: conta de uma pessoa (ou grupo) na mesa ou no balcão |
+| `order` | Pedido enviado de uma comanda, com os itens |
+| `orderEvent` | Histórico de eventos de cada pedido |
+| `payment` | Pagamentos registrados |
+| `commission` | Comissão dos garçons por pedido |
+| `cashDay` | Abertura e fechamento do caixa do dia |
+| `sequence` | Contadores diários (número do pedido, senha de retirada) |
+| `tableChange` | Junção e troca de mesas **(reservado)** |
+| `waitlist` | Fila de espera **(fora do MVP)** |
 
 ## Relacionamentos
 
-```text
-tenant ─┬─< user
-        ├─< table
-        ├─< category ──< product
-        ├─< customerSession ──o bill
-        ├─< bill ─┬─< order ─┬─< orderItem >── product
-        │         │          └─< orderEvent
-        │         └─< payment
-        └─< counter
+```mermaid
+erDiagram
+    store ||--o{ user : "storeId"
+    store ||--o{ table : "storeId"
+    store ||--o{ category : "storeId"
+    category ||--o{ product : "categoryId"
+    table ||--o{ guestSession : "tableId"
+    guestSession ||--o{ tab : "ownerSessionId"
+    table ||--o{ tab : "tableId"
+    tab ||--o{ order : "tabId"
+    product ||--o{ order : "items.productId"
+    order ||--o{ orderEvent : "orderId"
+    tab ||--o{ payment : "tabId"
+    order ||--o{ commission : "orderId"
+    user ||--o{ commission : "userId"
+    user ||--o{ cashDay : "openedByUserId"
 ```
 
-- Todas as coleções apontam para `tenant` por `tenantId`.
-- `product.categoryId` aponta para `category`.
-- `customerSession.billId` e `bill.customerSessionId` ligam a sessão à conta.
-- `order.billId` aponta para `bill`.
-- `orderItem.orderId` aponta para `order`; `orderItem.billId` para `bill`; `orderItem.productId` para `product`.
-- `orderEvent.orderId` aponta para `order`.
-- `payment.billId` aponta para `bill`.
-- `user` aparece em `bill.closedByUserId`, `payment.receivedByUserId` e `orderEvent.userId`.
+Todas as coleções da figura também têm `storeId` apontando para `store`; a figura mostra só as ligações principais.
 
-## Índices e restrições
+## Coleções
 
-| Coleção | Índice | Tipo | Uso |
+### `store`
+
+A casa. Tudo que é whitelabel mora aqui.
+
+| Campo | Tipo | Obrig. | Descrição |
 | --- | --- | --- | --- |
-| `tenant` | `{ slug: 1 }` | único | `TENANT_GET`, `MENU_LIST` |
-| `user` | `{ tenantId: 1, email: 1 }` | único | `USER_BY_EMAIL` |
-| `table` | `{ tenantId: 1, tableNumber: 1 }` | único | `TABLE_LIST`, abertura de conta pela mesa |
-| `category` | `{ tenantId: 1, active: 1, sortOrder: 1 }` | | `MENU_LIST` |
-| `product` | `{ tenantId: 1, available: 1, sortOrder: 1 }` | | `MENU_LIST` |
-| `product` | `{ tenantId: 1, categoryId: 1 }` | | Produtos de uma categoria no painel |
-| `customerSession` | `{ tenantId: 1, lastSeenAt: 1 }` | | Limpeza de sessões antigas |
-| `bill` | `{ tenantId: 1, status: 1, tableNumber: 1 }` | | `BILL_LIST`, contas abertas por mesa |
-| `bill` | `{ tenantId: 1, openedAt: -1 }` | | `REPORT_SUMMARY` |
-| `order` | `{ tenantId: 1, status: 1, sentAt: 1 }` | | `ORDER_QUEUE`, fila da cozinha em ordem de chegada |
-| `order` | `{ tenantId: 1, billId: 1 }` | | Pedidos de uma conta |
-| `orderItem` | `{ tenantId: 1, orderId: 1 }` | | Itens de um pedido |
-| `orderItem` | `{ tenantId: 1, billId: 1 }` | | Itens de uma conta |
-| `payment` | `{ tenantId: 1, billId: 1 }` | | Pagamentos de uma conta |
-| `payment` | `{ tenantId: 1, paidAt: -1 }` | | `REPORT_SUMMARY` |
-| `orderEvent` | `{ tenantId: 1, orderId: 1, at: 1 }` | | Histórico de um pedido |
-| `counter` | `{ tenantId: 1, name: 1 }` | único | `TICKET_NEXT` |
+| `_id` | ObjectId | sim | Identificador da casa |
+| `slug` | String | sim | Nome curto na URL (`triunfo-lanches`); 3 a 40 caracteres `a-z`, `0-9` e `-`; único |
+| `name` | String | sim | Nome da casa |
+| `kind` | String | não | Tipo: `BAR`, `RESTAURANTE`, `LANCHONETE`, `CAFETERIA` |
+| `document` | String | não | CNPJ ou CPF |
+| `phone` | String | não | Telefone da casa |
+| `address` | Objeto | não | Endereço: `street`, `number`, `district`, `city`, `state`, `zip` (todos String) |
+| `logoUrl` | String | não | Endereço do logotipo |
+| `primaryColor` | String | sim | Cor da casa no app do cliente, no formato `#RRGGBB` |
+| `tagline` | String | não | Frase de apresentação na capa |
+| `pixKey` | String | não | Chave Pix usada para gerar o Pix copia e cola; sem ela o app não oferece Pix |
+| `openingHours` | Array de Objeto | não | Um item por dia da semana (ver abaixo) |
+| `openingHours[].weekday` | Int | sim | Dia da semana, 0 (domingo) a 6 |
+| `openingHours[].opensAt` | String | sim | Abertura, `HH:mm` |
+| `openingHours[].closesAt` | String | sim | Fechamento, `HH:mm` |
+| `openingHours[].lastOrderAt` | String | não | Último horário de pedido, `HH:mm` |
+| `serviceModes` | Array de String | não | Modos oferecidos ao cliente: `TABLE` (mesa), `COUNTER` (balcão), `DELIVERY` (reservado) |
+| `serviceFeeBasisPoints` | Int | sim | Taxa de serviço da mesa em pontos-base, 0 a 3000 (`1000` = 10%) |
+| `commissionBasisPoints` | Int | sim | Comissão do garçom em pontos-base, 0 a 3000 (`500` = 5%) |
+| `requireCustomerPhone` | Bool | não | Se a casa exige o celular do cliente na entrada |
+| `allowRepeatRound` | Bool | não | Liga o botão "Mais uma rodada" na comanda |
+| `pausedUntil` | Date | não | Pedidos pausados até esse momento |
+| `pausedScopes` | Array de String | não | O que está pausado: `KITCHEN`, `DRINKS`, `COUNTER` |
+| `isTraining` | Bool | sim | Casa de treino: não entra nos relatórios |
+| `active` | Bool | sim | Casa ativa |
+| `createdAt` | Date | sim | Criação |
+| `updatedAt` | Date | não | Última alteração |
 
-Toda coleção tem um validador `$jsonSchema` com os campos obrigatórios, os tipos e os valores aceitos nas enumerações. O validador está no `init-db.js` e usa `validationLevel: "strict"`.
+### `user`
 
-## Criando o banco
+Pessoa da equipe de uma casa.
 
-O script roda no `mongosh`, tanto no MongoDB local quanto no Atlas:
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `_id` | ObjectId | sim | Identificador |
+| `storeId` | ObjectId | sim | Casa |
+| `name` | String | sim | Nome |
+| `email` | String | sim | E-mail de login; único dentro da casa |
+| `passwordHash` | String | sim | Senha cifrada com BCrypt (nunca a senha em texto) |
+| `role` | String | sim | Perfil: `OWNER` (dono), `MANAGER` (gerente), `WAITER` (garçom), `KITCHEN` (cozinha) |
+| `active` | Bool | sim | Usuário ativo; desativado não entra |
+| `mustChangePassword` | Bool | não | Obriga a trocar a senha no próximo acesso |
+| `failedAttempts` | Int | não | Tentativas de login erradas seguidas |
+| `lockedUntil` | Date | não | Login bloqueado até esse momento |
+| `lastLoginAt` | Date | não | Último login |
+| `createdAt` | Date | sim | Criação |
+| `updatedAt` | Date | não | Última alteração |
+
+### `table`
+
+Mesa do salão.
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `_id` | ObjectId | sim | Identificador |
+| `storeId` | ObjectId | sim | Casa |
+| `number` | Int | sim | Número da mesa (≥ 1); único dentro da casa |
+| `nickname` | String | não | Apelido ou área (ex.: "Varanda") |
+| `seats` | Int | não | Lugares |
+| `token` | String | sim | Código que vai no QR da mesa; único. Gerar outro invalida a plaquinha antiga |
+| `active` | Bool | sim | Mesa em uso |
+| `createdAt` | Date | sim | Criação |
+
+### `category`
+
+Categoria do cardápio.
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `_id` | ObjectId | sim | Identificador |
+| `storeId` | ObjectId | sim | Casa |
+| `name` | String | sim | Nome (ex.: "Lanches") |
+| `position` | Int | sim | Ordem no cardápio (≥ 0) |
+| `visible` | Bool | sim | Aparece para o cliente |
+
+### `product`
+
+Produto do cardápio.
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `_id` | ObjectId | sim | Identificador |
+| `storeId` | ObjectId | sim | Casa |
+| `categoryId` | ObjectId | sim | Categoria (`category._id`) |
+| `name` | String | sim | Nome |
+| `description` | String | não | Descrição, até 140 caracteres |
+| `priceCents` | Int | sim | Preço em centavos (≥ 1) |
+| `imageUrl` | String | não | Foto |
+| `prepMinutes` | Int | não | Tempo médio de preparo, em minutos |
+| `available` | Bool | sim | Disponível; a casa desliga quando o item acaba |
+| `unavailableSince` | Date | não | Desde quando está indisponível |
+| `isAlcoholic` | Bool | não | Bebida alcoólica: exige a confirmação de 18 anos no pedido |
+| `position` | Int | sim | Ordem dentro da categoria |
+| `optionGroups` | Array de Objeto | não | Grupos de opções (ponto da carne, adicionais) |
+| `optionGroups[].name` | String | sim | Nome do grupo |
+| `optionGroups[].required` | Bool | sim | Escolha obrigatória |
+| `optionGroups[].min` / `max` | Int | sim | Mínimo e máximo de opções escolhidas |
+| `optionGroups[].options` | Array de Objeto | sim | Opções do grupo |
+| `optionGroups[].options[].label` | String | sim | Nome da opção |
+| `optionGroups[].options[].deltaCents` | Int | sim | Quanto a opção soma ao preço, em centavos |
+
+### `guestSession`
+
+Sessão do cliente, criada quando ele informa nome (e celular) pelo QR da mesa ou pelo balcão. O cliente não tem conta nem senha: recebe um token (JWT) de convidado ligado a esta sessão.
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `_id` | ObjectId | sim | Identificador; vai dentro do token do cliente |
+| `storeId` | ObjectId | sim | Casa |
+| `tableId` | ObjectId | não | Mesa; ausente no balcão |
+| `mode` | String | sim | `TABLE`, `COUNTER` ou `DELIVERY` (reservado) |
+| `name` | String | não | Nome que o cliente digitou |
+| `phone` | String | não | Celular só com dígitos (DDD + 9 + 8 dígitos) |
+| `a11yPrefs` | Objeto | não | Preferências de acessibilidade: `scale` (Double), `highContrast` (Bool) **(reservado)** |
+| `consent` | Objeto | não | Consentimento (LGPD): `notify` (aceita avisos), `history` (aceita guardar histórico), `at` (Date) |
+| `createdAt` | Date | sim | Criação |
+| `expiresAt` | Date | sim | Validade, 4 horas depois da criação; um índice TTL apaga a sessão vencida sozinho |
+
+### `tab`
+
+Comanda. A comanda é por pessoa, não por mesa: uma mesa pode ter várias comandas, e quem abre é o dono. Outras pessoas da mesa entram com o código de convite. A comanda de balcão é uma comanda sem mesa.
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `_id` | ObjectId | sim | Identificador |
+| `storeId` | ObjectId | sim | Casa |
+| `tableId` | ObjectId | não | Mesa; ausente no balcão |
+| `mode` | String | sim | `TABLE`, `COUNTER` ou `DELIVERY` (reservado) |
+| `customerName` | String | não | Nome do dono da comanda |
+| `ownerSessionId` | ObjectId | sim | Sessão de quem abriu (`guestSession._id`); só o dono convida, remove e paga por Pix |
+| `managedBy` | String | sim | Quem controla a comanda: `CUSTOMER` ou `STAFF` |
+| `managedByUserId` | ObjectId | não | Funcionário responsável, quando `STAFF` **(reservado)** |
+| `joinCode` | String | não | Código de convite de 4 dígitos |
+| `joinCodeExpiresAt` | Date | não | Validade do código (5 minutos; é trocado quando vence) |
+| `participants` | Array de Objeto | não | Pessoas que entraram com o código |
+| `participants[].sessionId` | ObjectId | sim | Sessão do participante |
+| `participants[].name` | String | sim | Nome |
+| `participants[].joinedAt` | Date | sim | Entrada |
+| `participants[].removedAt` | Date | não | Removido pelo dono; os itens dele continuam na conta |
+| `status` | String | sim | `OPEN` (aberta), `AWAITING_PAYMENT` (esperando pagamento), `CLOSED` (fechada) |
+| `pickupTicket` | Int | não | Senha de retirada do dia, só no balcão (vem de `sequence`) |
+| `subtotalCents` | Int | não | Consumo, sem taxa |
+| `serviceFeeCents` | Int | não | Taxa de serviço (mesa; zero no balcão) |
+| `discountCents` | Int | não | Desconto |
+| `discountReason` | String | não | Motivo do desconto: `DELAY`, `WRONG_ORDER`, `REGULAR`, `OWNER` **(reservado)** |
+| `discountByUserId` | ObjectId | não | Quem deu o desconto **(reservado)** |
+| `totalCents` | Int | não | Total a pagar |
+| `paidCents` | Int | não | Quanto já foi pago |
+| `splitMode` | String | não | Divisão: `SINGLE`, `EQUAL`, `BY_CONSUMPTION` |
+| `mergedWithBillId` | ObjectId | não | Comanda com que foi juntada **(reservado)** |
+| `openedAt` | Date | sim | Abertura |
+| `closedAt` | Date | não | Fechamento |
+| `closedByUserId` | ObjectId | não | Quem fechou |
+| `reopenedAt` / `reopenReason` | Date / String | não | Reabertura **(reservado)** |
+| `waiterCalls` | Array de Objeto | não | Chamados de garçom feitos pela comanda **(fora do validador)** |
+| `waiterCalls[].id` | String | — | Identificador do chamado |
+| `waiterCalls[].type` | String | — | Motivo: `CLOSE_BILL`, `QUESTION`, `MISSING_ITEM`, `PIX_SENT`, `ORDER_PROBLEM` |
+| `waiterCalls[].reason` | String | — | Texto do motivo para a tela do salão |
+| `waiterCalls[].status` | String | — | `OPEN` ou `RESOLVED`; não abre dois chamados abertos do mesmo tipo |
+| `waiterCalls[].bySessionId` | ObjectId | — | Sessão de quem chamou |
+| `waiterCalls[].createdAt` | Date | — | Quando chamou |
+| `waiterCalls[].resolvedAt` / `resolvedBy` | Date / ObjectId | — | Quando e quem atendeu |
+
+### `order`
+
+Pedido enviado de uma comanda. Antes de gravar, o backend confere o pedido com o servidor de validação (`server/`, comando `VALIDATE_ORDER`).
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `_id` | ObjectId | sim | Identificador |
+| `storeId` | ObjectId | sim | Casa |
+| `tabId` | ObjectId | sim | Comanda (`tab._id`) |
+| `tableId` | ObjectId | não | Mesa; ausente no balcão |
+| `number` | Int | sim | Número do pedido no dia (vem de `sequence`) |
+| `status` | String | sim | `AWAITING_PAYMENT` (balcão, esperando pagar), `RECEIVED`, `PREPARING`, `READY`, `DELIVERED`, `CANCELLED` |
+| `pickupTicket` | Int | não | Cópia da senha de retirada, no balcão |
+| `ageConfirmed` | Bool | não | Cliente confirmou 18 anos (pedido com bebida alcoólica) |
+| `items` | Array de Objeto | sim | Itens do pedido (pelo menos um) |
+| `items[].productId` | ObjectId | sim | Produto |
+| `items[].nameSnapshot` | String | sim | Nome do produto no momento do envio |
+| `items[].unitPriceCents` | Int | sim | Preço unitário no envio, já com as opções |
+| `items[].basePriceCents` | Int | não | Preço do produto sem as opções |
+| `items[].quantity` | Int | sim | Quantidade (≥ 1; a validação limita a 20) |
+| `items[].note` | String | não | Observação do cliente, até 140 caracteres |
+| `items[].options` | Array de Objeto | não | Opções escolhidas: `group`, `label`, `deltaCents` |
+| `items[].status` | String | sim | Mesmos status do pedido, mais `REMOVED` |
+| `items[].placedByType` | String | sim | Quem lançou: `CUSTOMER`, `PARTICIPANT` ou `STAFF` |
+| `items[].placedBySessionId` | ObjectId | não | Sessão do cliente que pediu; a conta usa para separar o consumo por pessoa |
+| `items[].placedByUserId` | ObjectId | não | Funcionário que lançou |
+| `items[].deliveredAt` | Date | não | Entrega do item (entregas parciais) |
+| `items[].removedAt` / `removedByUserId` | Date / ObjectId | não | Remoção do item |
+| `totalCents` | Int | sim | Total do pedido |
+| `cancelReason` | String | não | Motivo do cancelamento: `GAVE_UP`, `WRONG_ORDER`, `OUT_OF_STOCK`, `DUPLICATE` |
+| `cancelledByUserId` / `cancelledAt` / `cancelNote` | ObjectId / Date / String | não | Quem cancelou, quando e observação |
+| `createdAt` | Date | sim | Envio |
+| `readyAt` | Date | não | Ficou pronto |
+| `deliveredAt` | Date | não | Entregue |
+| `paidAt` | Date | não | Pago no caixa (balcão) **(fora do validador)** |
+| `updatedAt` | Date | não | Última alteração **(fora do validador)** |
+| `statusHistory` | Array de Objeto | não | Mudanças de status: `from`, `to`, `byUserId`, `at`; o cliente vê como linha do tempo **(fora do validador)** |
+
+### `orderEvent`
+
+Registro de tudo que acontece com um pedido.
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `_id` | ObjectId | sim | Identificador |
+| `storeId` | ObjectId | sim | Casa |
+| `orderId` | ObjectId | sim | Pedido |
+| `type` | String | sim | `CREATED`, `STATUS_CHANGED`, `CANCELLED`, `ITEMS_DELIVERED`; `ITEM_REMOVED` e `PRINTED` (reservados) |
+| `from` / `to` | String | não | Status antes e depois |
+| `byUserId` | ObjectId | não | Quem fez |
+| `note` | String | não | Observação |
+| `reason` | String | não | Motivo do cancelamento (mesmos valores de `order.cancelReason`) |
+| `itemIndexes` | Array de Int | não | Itens entregues, na entrega parcial |
+| `at` | Date | sim | Quando |
+
+### `payment`
+
+Pagamento registrado pela equipe. A confirmação automática de Pix ficou fora do escopo: o pagamento é registrado à mão.
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `_id` | ObjectId | sim | Identificador |
+| `storeId` | ObjectId | sim | Casa |
+| `tabId` | ObjectId | sim | Comanda paga |
+| `orderId` | ObjectId | não | Pedido pago no caixa, no balcão **(fora do validador)** |
+| `method` | String | sim | `PIX_MANUAL`, `CASH` (dinheiro), `CARD_DEBIT`, `CARD_CREDIT` |
+| `amountCents` | Int | sim | Valor (≥ 1) |
+| `payerName` | String | não | Quem pagou |
+| `isPartial` | Bool | sim | Pagamento parcial (ex.: um pedido de balcão) |
+| `registeredByUserId` | ObjectId | não | Funcionário que registrou |
+| `createdAt` | Date | sim | Registro |
+
+### `commission`
+
+Comissão do garçom, calculada no fechamento.
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `_id` | ObjectId | sim | Identificador |
+| `storeId` | ObjectId | sim | Casa |
+| `userId` | ObjectId | sim | Garçom |
+| `tabId` | ObjectId | sim | Comanda |
+| `orderId` | ObjectId | sim | Pedido |
+| `baseCents` | Int | sim | Valor sobre o qual a comissão é calculada |
+| `rateBasisPoints` | Int | sim | Percentual em pontos-base (copiado de `store.commissionBasisPoints`) |
+| `amountCents` | Int | sim | Valor da comissão |
+| `status` | String | sim | `PENDING`, `CONFIRMED`, `REVERSED`, `PAID` |
+| `createdAt` | Date | sim | Criação |
+| `confirmedAt` | Date | não | Confirmação |
+| `reversedAt` | Date | não | Estorno **(reservado)** |
+| `paidAt` | Date | não | Pagamento ao garçom **(fora do validador)** |
+
+### `cashDay`
+
+Caixa do dia.
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `_id` | ObjectId | sim | Identificador |
+| `storeId` | ObjectId | sim | Casa |
+| `openedByUserId` | ObjectId | sim | Quem abriu |
+| `openingFloatCents` | Int | sim | Troco inicial |
+| `openedAt` | Date | sim | Abertura |
+| `closedAt` / `closedByUserId` | Date / ObjectId | não | Fechamento e quem fechou |
+| `countedCents` | Objeto | não | Valor contado por forma: `CASH`, `PIX_MANUAL`, `CARD_DEBIT`, `CARD_CREDIT` (Int) |
+| `differenceCents` | Int | não | Diferença entre o contado e o esperado |
+| `differenceNote` | String | não | Justificativa da diferença |
+| `withdrawals` | Array de Objeto | não | Sangrias: `reason`, `amountCents`, `at`, `byUserId` |
+
+### `sequence`
+
+Contadores do dia, incrementados de forma atômica (`findAndModify` com `$inc`), para que dois pedidos ao mesmo tempo nunca peguem o mesmo número.
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `_id` | String | sim | `<storeId>:<AAAA-MM-DD>:<tipo>`, com tipo `ORDER` (número do pedido) ou `PICKUP` (senha de retirada) |
+| `seq` | Int | sim | Último número usado |
+
+### `tableChange` (reservado)
+
+Junção (`MERGE`) e troca (`MOVE`) de mesas. A coleção é criada, mas a aplicação ainda não grava nela.
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `storeId` | ObjectId | sim | Casa |
+| `kind` | String | sim | `MERGE` ou `MOVE` |
+| `fromTableId` / `toTableId` | ObjectId | sim | Mesa de origem e de destino |
+| `byUserId` | ObjectId | sim | Quem fez |
+| `at` | Date | sim | Quando |
+
+### `waitlist` (fora do MVP)
+
+Fila de espera da casa.
+
+| Campo | Tipo | Obrig. | Descrição |
+| --- | --- | --- | --- |
+| `storeId` | ObjectId | sim | Casa |
+| `name` | String | sim | Nome de quem espera |
+| `phone` | String | não | Celular |
+| `partySize` | Int | sim | Quantas pessoas |
+| `number` | Int | sim | Número na fila |
+| `status` | String | sim | `WAITING`, `CALLED`, `SEATED`, `GAVE_UP` |
+| `createdAt` | Date | sim | Entrada na fila |
+| `calledAt` | Date | não | Chamado **(reservado)** |
+
+## Índices
+
+| Coleção | Campos | Tipo | Para quê |
+| --- | --- | --- | --- |
+| `store` | `slug` | único | Achar a casa pela URL |
+| `user` | `storeId`, `email` | único | Login; e-mail não se repete na casa |
+| `user` | `storeId`, `role` | — | Listar a equipe por perfil |
+| `table` | `storeId`, `number` | único | Número de mesa não se repete na casa |
+| `table` | `token` | único | Achar a mesa pelo QR |
+| `category` | `storeId`, `position` | — | Cardápio em ordem |
+| `product` | `storeId`, `categoryId`, `position` | — | Produtos da categoria em ordem |
+| `product` | `storeId`, `available` | — | Só os disponíveis |
+| `guestSession` | `expiresAt` | TTL | Apaga a sessão vencida |
+| `guestSession` | `storeId`, `tableId` | — | Sessões da mesa |
+| `tab` | `storeId`, `status`, `openedAt` | — | Comandas abertas, mais novas primeiro |
+| `tab` | `storeId`, `tableId`, `status` | — | Comandas abertas da mesa |
+| `tab` | `storeId`, `closedAt` | — | Histórico de contas fechadas |
+| `tab` | `joinCode`, `joinCodeExpiresAt` | — | Entrar pelo código de convite |
+| `order` | `storeId`, `status`, `createdAt` | — | Fila da cozinha em ordem de chegada |
+| `order` | `storeId`, `tabId`, `createdAt` | — | Pedidos da comanda (conta, rodada) |
+| `order` | `storeId`, `number`, `createdAt` | — | Achar o pedido pelo número |
+| `payment` | `storeId`, `tabId` | — | Pagamentos da comanda |
+| `commission` | `storeId`, `userId`, `status`, `createdAt` | — | Comissões de cada garçom |
+| `commission` | `orderId` | — | Comissão do pedido |
+| `cashDay` | `storeId`, `openedAt` | — | Caixa do dia |
+| `orderEvent` | `orderId`, `at` | — | Histórico do pedido em ordem |
+| `tableChange` | `storeId`, `at` | — | Histórico de mudanças de mesa |
+| `waitlist` | `storeId`, `status`, `number` | — | Fila em ordem |
+
+## Como criar o banco
 
 ```bash
-mongosh "$MONGODB_URI" server/scripts/init-db.js
+mongosh "<string de conexao>" banco/init-mongo.js   # coleções, validação e índices
+mongosh "<string de conexao>" banco/seed.js         # casa de demonstração triunfo-lanches
 ```
 
-Ele é idempotente: pode rodar de novo sem duplicar nada. Cria as coleções que faltam, atualiza os validadores, cria os índices e, se o slug `demo` não existir, insere o estabelecimento de demonstração:
-
-| Dado | Valor |
-| --- | --- |
-| Estabelecimento | `demo` (Bar do Demo) |
-| Gerente | `gerente@demo.com`, senha `pedeai123` |
-| Funcionário | `funcionario@demo.com`, senha `pedeai123` |
-| Mesas | 1 a 10 |
-| Cardápio | Lanches, Pratos, Bebidas e Sobremesas, com os produtos do protótipo |
-
-As senhas de demonstração servem só para desenvolvimento. Nunca rode o seed num banco de produção.
+Com Docker, o serviço `db-init` do `docker-compose.yml` roda os dois scripts na primeira subida.
