@@ -7,6 +7,12 @@ package br.puccampinas.pedeai.tab;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * Conta da comanda: pedidos, consumo, taxa de serviço e quanto cada pessoa consumiu.
+ *
+ * @param consumptionCents soma dos itens não cancelados, sem a taxa de serviço
+ * @param owner se quem está vendo a conta é o dono da comanda
+ */
 public record BillResponse(
         String tabId,
         String ownerName,
@@ -19,6 +25,7 @@ public record BillResponse(
         boolean owner,
         List<Person> people) {
 
+    /** Um pedido da comanda com seus itens. */
     public record BillOrder(String id, int number, String status, List<BillLine> items) {
     }
 
@@ -27,6 +34,7 @@ public record BillResponse(
             String personId, String orderedBy, Instant orderedAt) {
     }
 
+    /** Quanto uma pessoa consumiu. Os itens lançados pelo garçom aparecem como uma pessoa à parte. */
     public record Person(String id, String name, boolean owner, int totalCents) {
     }
 }
