@@ -21,9 +21,11 @@ import { readVisit } from '../../services/visit';
 import { tokens } from '../../theme/theme';
 
 const CODE_LENGTH = 4;
+// Teclas do teclado numérico na tela. C limpa e ← apaga o último dígito.
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '←'];
 const { colors, fontSize, fontWeight, radius } = tokens;
 
+// Converte o erro da API em mensagem para o cliente.
 function describeError(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 400) return 'Código inválido ou vencido. Peça o código que está na tela de quem abriu.';
@@ -34,6 +36,7 @@ function describeError(error: unknown): string {
   return 'Não foi possível entrar agora. Tente de novo.';
 }
 
+/** Tela para entrar na comanda de outra pessoa digitando o código de quatro dígitos. */
 export default function JoinTabPage() {
   const { slug = '', tabId = '' } = useParams();
   const navigate = useNavigate();
@@ -51,6 +54,7 @@ export default function JoinTabPage() {
     fetchTabs(slug)
       .then((tabs) => {
         const found = tabs.find((item) => item.id === tabId);
+        // No balcão a comanda não aparece na lista; usa um resumo genérico para mostrar a tela.
         if (!found && readVisit(slug).counter) {
           setTab({ id: tabId, ownerName: 'Comanda de balcão', peopleCount: 0, totalCents: 0, openedAt: '', mine: false });
           return;
@@ -62,6 +66,7 @@ export default function JoinTabPage() {
       });
   }, [gate, slug, tabId, handleExpired]);
 
+  // Trata uma tecla do teclado numérico.
   const press = useCallback((key: string) => {
     setError(null);
     if (key === 'C') setDigits('');
@@ -70,6 +75,7 @@ export default function JoinTabPage() {
   }, []);
 
   useEffect(() => {
+    // Permite digitar o código também pelo teclado físico.
     function handleKey(event: KeyboardEvent) {
       if (/^\d$/.test(event.key)) press(event.key);
       else if (event.key === 'Backspace') press('←');
@@ -81,6 +87,7 @@ export default function JoinTabPage() {
   if (gate) return <Navigate to={gate} replace />;
   if (state.status === 'loading' || tab === undefined) return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
+  // Comanda não encontrada volta para a lista; se já é a do cliente, vai para ela.
   if (tab === null) return <Navigate to={`/t/${slug}/comandas`} replace />;
   if (tab.mine) return <Navigate to={`/t/${slug}/comandas/minha`} replace />;
 
@@ -102,6 +109,7 @@ export default function JoinTabPage() {
     }
   }
 
+  // Abre a comanda própria. O 409 indica que ela já existe, então segue para ela.
   async function openMine() {
     try {
       await openTab(slug);
