@@ -5,6 +5,7 @@
 import { api } from './api';
 import { readVisit } from './visit';
 
+/** Item da conta, com quem pediu e o status. */
 export interface BillLine {
   name: string;
   note?: string;
@@ -17,6 +18,7 @@ export interface BillLine {
   orderedAt?: string;
 }
 
+/** Total de cada pessoa da comanda. */
 export interface BillPerson {
   id: string;
   name: string;
@@ -24,6 +26,7 @@ export interface BillPerson {
   totalCents: number;
 }
 
+/** Pedido que aparece na conta. */
 export interface BillOrder {
   id: string;
   number: number;
@@ -31,6 +34,7 @@ export interface BillOrder {
   items: BillLine[];
 }
 
+/** Conta da comanda: pedidos, consumo, taxa de serviço e total. */
 export interface Bill {
   tabId: string;
   ownerName: string;
@@ -44,6 +48,7 @@ export interface Bill {
   people?: BillPerson[];
 }
 
+// Nome em português de cada status de pedido.
 const ORDER_STATUS_LABEL: Record<string, string> = {
   RECEIVED: 'Recebido',
   PREPARING: 'Em preparo',
@@ -54,10 +59,12 @@ const ORDER_STATUS_LABEL: Record<string, string> = {
   CANCELLED: 'Cancelado',
 };
 
+/** Busca a conta da comanda do cliente. */
 export function fetchBill(slug: string): Promise<Bill> {
   return api.get<Bill>('/api/tabs/mine/bill', { token: readVisit(slug).guestToken });
 }
 
+/** Dados do Pix da conta. `payload` é o código copia e cola. */
 export interface Pix {
   tabId: string;
   storeName: string;
@@ -65,10 +72,12 @@ export interface Pix {
   payload?: string;
 }
 
+/** Busca o Pix para pagar a conta da comanda. */
 export function fetchPix(slug: string): Promise<Pix> {
   return api.get<Pix>('/api/tabs/mine/pix', { token: readVisit(slug).guestToken });
 }
 
+/** Traduz o status do pedido; devolve o próprio status se não conhecer. */
 export function orderStatusLabel(status: string): string {
   return ORDER_STATUS_LABEL[status] ?? status;
 }
