@@ -1,3 +1,5 @@
+# Autor: Bruno Terra Silverio
+# RA: 25022630
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
