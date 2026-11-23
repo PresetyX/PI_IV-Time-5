@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 package br.puccampinas.pedeai.session;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
