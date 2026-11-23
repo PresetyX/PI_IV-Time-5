@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 import { api, ApiError } from './api';
 import { readVisit } from './visit';
 
