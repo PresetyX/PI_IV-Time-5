@@ -24,6 +24,7 @@ public record TabResponse(
         String mode,
         Integer pickupTicket) {
 
+    /** Uma pessoa da comanda e quanto ela já pediu. */
     public record Member(String sessionId, String name, boolean owner, int totalCents, Instant joinedAt) {
     }
 }
