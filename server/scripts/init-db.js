@@ -16,6 +16,7 @@ const cents = { bsonType: 'int', minimum: 0 };
 const date = { bsonType: 'date' };
 const oneOf = (...values) => ({ bsonType: 'string', enum: values });
 
+// Status possíveis de um pedido, na ordem do fluxo
 const ORDER_STATUS = ['RECEIVED', 'PREPARING', 'READY', 'DELIVERED', 'CANCELED'];
 
 function schema(required, properties) {
@@ -28,6 +29,7 @@ function schema(required, properties) {
   };
 }
 
+// Esquema de validação de cada coleção
 const collections = {
   tenant: {
     validator: schema(['slug', 'name', 'active', 'branding', 'settings'], {
@@ -214,6 +216,7 @@ const collections = {
   },
 };
 
+// Cria as coleções que faltam, atualiza a validação das que já existem e cria os índices
 const existing = db.getCollectionNames();
 for (const [name, def] of Object.entries(collections)) {
   const options = { validator: def.validator, validationLevel: 'strict', validationAction: 'error' };
