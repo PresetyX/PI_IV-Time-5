@@ -22,14 +22,17 @@ import { formatTableNumber } from '../../services/tables';
 import { readVisit } from '../../services/visit';
 import { tokens } from '../../theme/theme';
 
+// Intervalo para atualizar participantes, total e código.
 const REFRESH_MS = 5000;
 const { colors, fontSize, fontWeight, radius } = tokens;
 
+// Formata o tempo restante do código como "X min YY s".
 function formatRemaining(ms: number): string {
   const total = Math.max(0, Math.ceil(ms / 1000));
   return `${Math.floor(total / 60)} min ${String(total % 60).padStart(2, '0')} s`;
 }
 
+/** Tela da comanda do cliente: código para compartilhar, participantes e atalhos. */
 export default function MyTabPage() {
   const { slug = '' } = useParams();
   const navigate = useNavigate();
@@ -63,6 +66,7 @@ export default function MyTabPage() {
   }, [gate, load]);
 
   useEffect(() => {
+    // Relógio de um segundo para a contagem regressiva do código.
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
@@ -75,6 +79,7 @@ export default function MyTabPage() {
   }, [codeExpired, load]);
 
   if (gate) return <Navigate to={gate} replace />;
+  // Sem comanda (404): no balcão vai para a senha; na mesa, para a lista de comandas.
   if (missing) return <Navigate to={readVisit(slug).counter ? `/t/${slug}/balcao/senha` : `/t/${slug}/comandas`} replace />;
   if (state.status === 'loading' || (tab === null && !loadFailed)) return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
@@ -82,6 +87,7 @@ export default function MyTabPage() {
 
   const current = tab;
 
+  // Executa uma ação na comanda e mostra a mensagem de falha se der erro.
   async function run(action: () => Promise<Tab>, failure: string) {
     if (busy) return;
     setBusy(true);
@@ -235,6 +241,7 @@ export default function MyTabPage() {
   );
 }
 
+// Linha de um participante, com botão de remover para o dono.
 function MemberRow({
   member,
   canRemove,
