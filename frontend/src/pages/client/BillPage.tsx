@@ -22,9 +22,11 @@ import { callWaiter, fetchWaiterCalls, formatClock } from '../../services/tabs';
 import { formatTableNumber } from '../../services/tables';
 import { tokens } from '../../theme/theme';
 
+// Intervalo para atualizar a conta e os chamados ao garçom.
 const REFRESH_MS = 8000;
 const { colors, fontSize, fontWeight, radius } = tokens;
 
+/** Tela da conta. Permite pagar por Pix ou chamar o garçom para fechar. */
 export default function BillPage() {
   const { slug = '' } = useParams();
   const navigate = useNavigate();
@@ -43,6 +45,7 @@ export default function BillPage() {
     try {
       const [nextBill, calls] = await Promise.all([fetchBill(slug), fetchWaiterCalls(slug).catch(() => [])]);
       setBill(nextBill);
+      // Se já existe chamado aberto para fechar a conta, mostra que o garçom está a caminho.
       setWaiterComing(calls.some((call) => call.type === 'CLOSE_BILL' && call.status === 'OPEN'));
       setLoadFailed(false);
     } catch (caught) {
@@ -60,11 +63,13 @@ export default function BillPage() {
   }, [gate, load]);
 
   if (gate) return <Navigate to={gate} replace />;
+  // Sem comanda (404), volta para a lista de comandas.
   if (missing) return <Navigate to={`/t/${slug}/comandas`} replace />;
   if (state.status === 'loading' || (bill === null && !loadFailed)) return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
   if (bill === null) return <ConnectionLostScreen slug={slug} onRetry={load} />;
 
+  // Chama o garçom para fechar a conta.
   async function payWithWaiter() {
     if (calling || waiterComing) return;
     setCalling(true);
@@ -79,6 +84,7 @@ export default function BillPage() {
     }
   }
 
+  // Com mais de uma pessoa, mostra a conta dividida por pessoa.
   if ((bill.people?.length ?? 0) > 1) {
     return (
       <SharedBill
@@ -169,6 +175,7 @@ export default function BillPage() {
   );
 }
 
+// Linha de um item da conta; item cancelado aparece riscado.
 function Line({ item, first }: { item: BillLine; first: boolean }) {
   const muted = item.canceled ? colors.textMuted : colors.text;
   const strike = item.canceled ? 'line-through' : 'none';
@@ -198,6 +205,7 @@ function Line({ item, first }: { item: BillLine; first: boolean }) {
   );
 }
 
+// Linha de subtotal no resumo da conta.
 function Sum({ label, cents }: { label: string; cents: number }) {
   return (
     <Box sx={{ py: 0.5, display: 'flex', justifyContent: 'space-between', color: colors.textSecondary }}>
@@ -207,6 +215,7 @@ function Sum({ label, cents }: { label: string; cents: number }) {
   );
 }
 
+// Cores para identificar cada pessoa na conta compartilhada.
 const PERSON_COLORS = ['#111111', '#7A3FC0', '#157A4A', '#1D5FD1', '#9A5B00', '#C62828'];
 
 interface SharedBillProps {
@@ -220,10 +229,12 @@ interface SharedBillProps {
   onOrderMore: () => void;
 }
 
+// Conta de comanda compartilhada, com filtro por pessoa e total de cada um.
 function SharedBill({ bill, waiterComing, calling, callError, onCloseBill, onBack, onInvite, onOrderMore }: SharedBillProps) {
   const [filter, setFilter] = useState('all');
   const people = bill.people ?? [];
   const colorOf = (id?: string) => PERSON_COLORS[Math.max(0, people.findIndex((person) => person.id === id)) % PERSON_COLORS.length];
+  // 'staff' agrupa os itens lançados pelo garçom; não é uma pessoa da mesa.
   const peopleCount = people.filter((person) => person.id !== 'staff').length;
   const lines = bill.orders
     .flatMap((order) => order.items)
@@ -346,6 +357,7 @@ function SharedBill({ bill, waiterComing, calling, callError, onCloseBill, onBac
   );
 }
 
+// Item da conta compartilhada, com a inicial de quem pediu.
 function SharedLine({ item, color, first }: { item: BillLine; color: string; first: boolean }) {
   const strike = item.canceled ? 'line-through' : 'none';
   const tone = item.canceled ? colors.textMuted : colors.text;
@@ -391,6 +403,7 @@ function SharedLine({ item, color, first }: { item: BillLine; color: string; fir
   );
 }
 
+// Total consumido por uma pessoa.
 function PersonTotal({ person }: { person: BillPerson }) {
   return (
     <Box sx={{ py: 0.5, display: 'flex', justifyContent: 'space-between' }}>
