@@ -70,6 +70,10 @@ export default function App() {
       />
       <Route path="/t/:slug/:tableToken" element={<TableScanPage />} />
       <Route path="/login" element={<LoginPage />} />
+      {/*
+       * Autor: Pedro Henrique Bonetto da Costa
+       * RA: 25018203
+       */}
       <Route path="/producao/*" element={<OperationsWorkspace />} />
       <Route path="/salao/*" element={<OperationsWorkspace />} />
       <Route path="/contas/*" element={<OperationsWorkspace />} />
