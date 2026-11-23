@@ -285,4 +285,4 @@ Projeto acadêmico desenvolvido para a disciplina de Projeto Integrador IV.
 
 ---
 
-**Status:** em desenvolvimento
+**Status:** versão 1.0.0, apresentada à banca em 24/11/2026.
