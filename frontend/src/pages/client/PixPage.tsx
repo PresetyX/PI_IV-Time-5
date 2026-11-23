@@ -21,17 +21,21 @@ import { formatCents } from '../../services/format';
 import { callWaiter, fetchWaiterCalls } from '../../services/tabs';
 import { tokens } from '../../theme/theme';
 
+// Intervalo para atualizar o valor do Pix e o aviso de pagamento enviado.
 const REFRESH_MS = 8000;
 const { colors, fontSize, fontWeight, radius } = tokens;
 
+// Passos para pagar, mostrados abaixo do código.
 const STEPS = [
   'Abra o aplicativo do seu banco e escolha Pix.',
   'Use ler QR code ou cole o código acima.',
   'Confira o valor e confirme o pagamento.',
 ];
 
+// Motivos para não mostrar o Pix: o cliente não é o dono ou a casa não recebe Pix.
 type Blocked = 'not-owner' | 'no-pix';
 
+/** Tela de pagamento por Pix, com QR code, código copia e cola e botão "Já paguei". */
 export default function PixPage() {
   const { slug = '' } = useParams();
   const navigate = useNavigate();
@@ -52,6 +56,7 @@ export default function PixPage() {
     try {
       const [nextPix, calls] = await Promise.all([fetchPix(slug), fetchWaiterCalls(slug).catch(() => [])]);
       setPix(nextPix);
+      // Se já avisou o garçom do Pix e o chamado está aberto, mantém como enviado.
       setSent(calls.some((call) => call.type === 'PIX_SENT' && call.status === 'OPEN'));
       setLoadFailed(false);
     } catch (caught) {
@@ -71,12 +76,14 @@ export default function PixPage() {
   }, [gate, load]);
 
   if (gate) return <Navigate to={gate} replace />;
+  // Sem comanda (404), volta para a lista de comandas.
   if (missing) return <Navigate to={`/t/${slug}/comandas`} replace />;
   if (state.status === 'loading' || (pix === null && !blocked && !loadFailed)) return <ClientLoading />;
   if (state.status === 'error') return <ClientError notFound={state.notFound} onRetry={retry} />;
 
   const toBill = () => navigate(`/t/${slug}/conta`);
 
+  // Sem código Pix (não é o dono, casa sem Pix ou nada a pagar), mostra só a mensagem.
   if (blocked || (pix && !pix.payload)) {
     const message =
       blocked === 'not-owner'
@@ -119,6 +126,7 @@ export default function PixPage() {
   if (pix === null) return <ConnectionLostScreen slug={slug} onRetry={load} />;
   const payload = pix.payload as string;
 
+  // Copia o código Pix para a área de transferência.
   async function copy() {
     try {
       await navigator.clipboard.writeText(payload);
@@ -128,6 +136,7 @@ export default function PixPage() {
     }
   }
 
+  // Avisa o garçom que o Pix foi pago, para ele conferir o comprovante.
   async function paid() {
     if (sending || sent) return;
     setSending(true);
@@ -239,6 +248,7 @@ export default function PixPage() {
   );
 }
 
+// Desenha o QR code do Pix em SVG, um quadrado por módulo escuro.
 function PixQrCode({ payload }: { payload: string }) {
   const { size, path } = useMemo(() => {
     const qr = qrcode(0, 'M');
