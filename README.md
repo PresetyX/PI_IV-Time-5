@@ -35,20 +35,20 @@ Fora do escopo desta versão: confirmação automática de pagamento por gateway
 
 ### Backend (`backend/`)
 
-- **Java 17** com **Spring Boot 3** (Spring Web, Spring Data MongoDB, Spring Security e Validation)
+- **Java 17** com **Spring Boot 3.2** (Spring Web, Spring Data MongoDB, Spring Security com JWT e Validation)
 - Expõe HTTP para o front e acessa o MongoDB com Spring Data
-- Consulta o `server/` por socket para validar pedido e pagamento antes de aceitá-los
+- Consulta o `server/` por socket para validar cada pedido antes de aceitá-lo
 - Build com **Maven**
 
 ### Server (`server/`)
 
-- **Java 17** puro, socket TCP na porta 5000, sem nenhuma dependência
+- **Java 17** puro, socket TCP na porta 5000, sem dependências (o JUnit 5 entra só nos testes)
 - Não acessa o banco: só valida, por socket, o que o `backend/` pede (comandos `PING` e `VALIDATE_ORDER`)
 - Build com **Maven**
 
 ### Banco de dados
 
-- **MongoDB Atlas** (cluster M0 gratuito em desenvolvimento)
+- **MongoDB 7**: local, pelo Docker Compose, ou no **MongoDB Atlas** (cluster M0 gratuito)
 
 ### Frontend (`frontend/`)
 
@@ -75,7 +75,7 @@ PI_IV-Time-5/
 │   ├── src/
 │   └── package.json
 ├── banco/            # Scripts do MongoDB: init-mongo.js (coleções e índices) e seed.js (dados de exemplo)
-├── docs/             # Contratos, modelo de dados, arquitetura e protocolo do socket
+├── docs/             # Ideação, dicionário de dados, arquitetura, contratos e protocolo do socket
 └── README.md
 ```
 
@@ -210,6 +210,25 @@ mongosh "<string de conexao>" banco/seed.js
 
 O menu da casa fica em `GET /api/public/stores/triunfo-lanches/menu`.
 
+### Acesso à demonstração
+
+| Quem | Onde | Login |
+| --- | --- | --- |
+| Cliente na mesa | `http://localhost:3000/t/triunfo-lanches/<token da mesa>` (o token sai no fim do `seed.js`) | nome e celular |
+| Cliente no balcão | `http://localhost:3000/t/triunfo-lanches/balcao` | nome e celular |
+| Painel de senhas | `http://localhost:3000/t/triunfo-lanches/painel` | — |
+| Equipe | `http://localhost:3000/login` | `marcos@` (dono), `paula@` (gerente), `rafa@` (garçom) ou `ze@triunfolanches.com` (cozinha), senha `pedeai123` |
+
+## Testes
+
+| Processo | Comando | Testes |
+| --- | --- | --- |
+| Backend | `mvn -f backend/pom.xml test` | 172 testes de unidade (JUnit 5 e Mockito) |
+| Server | `mvn -f server/pom.xml test` | 57 testes: intraclasse do `OrderValidator`, `SocketServer` e `Request`, e interclasse do `VALIDATE_ORDER` pelo socket |
+| Frontend | `cd frontend && npm run build` | checagem de tipos do TypeScript e build |
+
+Os três rodam no GitHub Actions a cada pull request.
+
 ## Convenções
 
 Estas regras valem para todo o código e evitam retrabalho:
@@ -234,6 +253,7 @@ Estas regras valem para todo o código e evitam retrabalho:
 
 | Arquivo | Conteúdo |
 | --- | --- |
+| `docs/ideacao/apresentacao-da-ideia.pdf` | Documento de ideação: problema, proposta, funcionamento, módulos e diferenciais |
 | `docs/contratos.md` | Rotas da API, entrada, saída e códigos de erro |
 | `docs/dicionario-de-dados.md` | Dicionário de dados do MongoDB: coleções, campos, tipos, relacionamentos e índices |
 | `docs/arquitetura.md` | Os três processos, camadas, pastas e decisões técnicas com justificativa |
@@ -247,14 +267,17 @@ Campos usados em cada card: Status (A fazer, Fazendo, Em revisão, Feito), Etapa
 
 ## Cronograma
 
-| Etapa | Período | Foco |
+As etapas abaixo são as que aconteceram, com as datas tiradas dos documentos de ideação e dos pull requests deste repositório.
+
+| Período | Etapa | O que foi entregue |
 | --- | --- | --- |
-| E0 Fundação | 14/10 a 20/10 | Monorepo, cluster, base do server, do backend e do frontend, contratos e dicionário |
-| E1 Multiempresa e acesso | 21/10 a 03/11 | Estabelecimento como tenant, login, perfis e tema da casa |
-| E2 Cardápio e mesas | 04/11 a 17/11 | Categorias, produtos, disponibilidade, mesas e QR code |
-| E3 Conta e pedido | 18/11 a 30/11 | Identificação do cliente, conta, carrinho, envio e acompanhamento |
-| E4 Operação e fechamento | 01/12 a 09/12 | Cozinha, salão, pagamento manual, retirada e relatórios |
-| E5 Qualidade e entrega | 10/12 a 16/12 | Testes, documentação, demonstração e apresentação |
+| 31/08 a 16/09 | Ideação | Apresentação da ideia, mapa mental, Business Model Canvas, mapa da empatia, matriz SWOT, protótipo e pitch |
+| 29/09 a 26/10 | Fundação | Repositório, backlog, modelo de dados e script do banco, arquitetura, protocolo do socket e base dos três processos |
+| 27/10 a 29/10 | Cliente, operação e gestão | Entrada pelo QR, sessão do cliente, comandas e conta, telas da cozinha e do salão, painel de gestão, Docker e site institucional |
+| 05/11 a 07/11 | Pedido e fechamento | Pedido pronto, chamar o garçom, mais uma rodada, cancelamento e entrega parcial, balcão com senha, comanda compartilhada e Pix |
+| 11/11 a 19/11 | Cardápio e demonstração | Cardápio no painel, cardápio interativo do cliente e casa de demonstração |
+| 21/11 a 23/11 | Qualidade e entrega | Servidor de validação sem Spring, testes do servidor, autoria e comentários no código, validação do celular, dicionário de dados e release `v1.0.0` |
+| 24/11 | Banca | Apresentação do projeto |
 
 ## Licença
 
@@ -262,4 +285,4 @@ Projeto acadêmico desenvolvido para a disciplina de Projeto Integrador IV.
 
 ---
 
-**Status:** em desenvolvimento
+**Status:** versão 1.0.0, apresentada à banca em 24/11/2026.
