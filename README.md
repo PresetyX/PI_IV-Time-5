@@ -255,6 +255,7 @@ Estas regras valem para todo o código e evitam retrabalho:
 | --- | --- |
 | `docs/ideacao/apresentacao-da-ideia.pdf` | Documento de ideação: problema, proposta, funcionamento, módulos e diferenciais |
 | `docs/contratos.md` | Rotas da API, entrada, saída e códigos de erro |
+| `docs/relatorio-de-testes/relatorio-de-testes-do-servidor.pdf` | Relatório de testes do servidor Java: testes intraclasse e interclasse, falhas, anomalias e melhorias |
 | `docs/dicionario-de-dados.md` | Dicionário de dados do MongoDB: coleções, campos, tipos, relacionamentos e índices |
 | `docs/arquitetura.md` | Os três processos, camadas, pastas e decisões técnicas com justificativa |
 | `docs/protocolo.md` | Protocolo de texto do socket entre `backend/` e `server/`, comandos e exemplos |
