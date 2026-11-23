@@ -20,6 +20,10 @@ public class AuthController {
         this.authService = authService;
     }
 
+    /*
+     * Autor: Pedro Henrique Bonetto da Costa
+     * RA: 25018203
+     */
     @PostMapping("/api/auth/login")
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
