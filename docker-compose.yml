@@ -3,6 +3,7 @@
 name: pedeai
 
 services:
+  # Banco MongoDB, com os dados guardados no volume mongo-data
   mongo:
     image: mongo:7
     restart: unless-stopped
@@ -16,6 +17,7 @@ services:
       timeout: 5s
       retries: 20
 
+  # Cria as coleções e carrega a casa de demonstração na primeira subida
   db-init:
     image: mongo:7
     depends_on:
@@ -40,6 +42,7 @@ services:
 
   # O server de socket roda fora do Docker, no terminal, antes do compose: mvn -f server/pom.xml compile exec:java
   # O backend o acessa pela máquina (host.docker.internal).
+  # API Spring Boot; acessa o server de socket da máquina pelo host.docker.internal
   backend:
     build: ./backend
     restart: unless-stopped
@@ -59,6 +62,7 @@ services:
       db-init:
         condition: service_completed_successfully
 
+  # Site React servido pelo nginx
   frontend:
     build:
       context: ./frontend
