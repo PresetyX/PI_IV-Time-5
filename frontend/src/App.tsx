@@ -74,6 +74,7 @@ export default function App() {
        * Autor: Pedro Henrique Bonetto da Costa
        * RA: 25018203
        */}
+      {/* Áreas da operação: todas usam a mesma tela, que decide o que mostrar pela rota. */}
       <Route path="/producao/*" element={<OperationsWorkspace />} />
       <Route path="/salao/*" element={<OperationsWorkspace />} />
       <Route path="/contas/*" element={<OperationsWorkspace />} />
