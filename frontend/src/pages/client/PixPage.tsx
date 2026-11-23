@@ -1,3 +1,7 @@
+/*
+ * Autor: Bruno Terra Silverio
+ * RA: 25022630
+ */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
