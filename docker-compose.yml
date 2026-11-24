@@ -37,6 +37,7 @@ services:
           mongosh --quiet "$$DB_URI" /banco/seed.js
         else
           echo "casa de demonstração já existe, seed ignorado"
+          mongosh --quiet "$$DB_URI" --eval 'db.store.updateOne({ slug: "triunfo-lanches", pixKey: { $$in: [null, ""] } }, { $$set: { pixKey: "contato@triunfolanches.com" } })'
         fi
     restart: "no"
 
