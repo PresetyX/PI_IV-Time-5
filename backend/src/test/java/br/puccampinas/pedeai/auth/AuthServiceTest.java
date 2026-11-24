@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 package br.puccampinas.pedeai.auth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

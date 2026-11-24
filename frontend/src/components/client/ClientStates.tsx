@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { Box, CircularProgress, Typography } from '@mui/material';
 import StatusMessage from '../StatusMessage';
 import { tokens } from '../../theme/theme';

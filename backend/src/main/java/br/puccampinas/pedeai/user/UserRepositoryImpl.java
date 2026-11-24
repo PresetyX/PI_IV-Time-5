@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 package br.puccampinas.pedeai.user;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;

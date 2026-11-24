@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';

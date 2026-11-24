@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { keyframes } from '@emotion/react';

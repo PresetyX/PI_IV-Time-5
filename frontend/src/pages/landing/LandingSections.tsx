@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { useEffect, useState } from 'react';
 import { Box, ButtonBase, Container, Typography } from '@mui/material';
 import BrandMark from '../../components/BrandMark';

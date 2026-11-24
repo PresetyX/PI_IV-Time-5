@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import type { ReactNode } from 'react';
 import { keyframes } from '@emotion/react';
 import { Box, Container, Typography } from '@mui/material';

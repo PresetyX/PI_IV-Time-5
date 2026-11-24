@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { useEffect } from 'react';
 import { useTenantTheme } from '../theme/AppThemeProvider';
 import { DEFAULT_PRIMARY_COLOR } from '../theme/theme';

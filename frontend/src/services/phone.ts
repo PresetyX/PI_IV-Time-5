@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 const MAX_DIGITS = 11;
 
 export function phoneDigits(value: string): string {

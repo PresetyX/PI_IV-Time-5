@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
 import { describeNextOpening, groupOpeningHours } from '../../services/hours';

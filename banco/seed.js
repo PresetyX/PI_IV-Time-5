@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 // Pede Aí · semente de desenvolvimento
 // Uso: mongosh "<string de conexao>" banco/seed.js
 // Apaga e recria os dados da casa de exemplo. Não rode em produção.
