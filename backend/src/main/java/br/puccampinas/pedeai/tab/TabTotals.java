@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 package br.puccampinas.pedeai.tab;
 
 import java.util.List;

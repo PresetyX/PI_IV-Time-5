@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 // Pede Aí · criação das coleções, validação de esquema e índices
 // Uso: mongosh "<string de conexao>" banco/init-mongo.js
 // Pode rodar de novo: coleção que já existe tem só o validador atualizado.

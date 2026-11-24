@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { useCallback, useEffect, useState } from 'react';
 
 export function useLoader<T>(load: () => Promise<T>) {

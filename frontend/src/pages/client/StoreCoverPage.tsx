@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import BrandMark from '../../components/BrandMark';

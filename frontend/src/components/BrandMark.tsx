@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { SvgIcon } from '@mui/material';
 import type { SvgIconProps } from '@mui/material';
 

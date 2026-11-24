@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import type { ReactNode } from 'react';
 import { Link as RouterLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Alert, Box, Button, ButtonBase, CircularProgress, Typography } from '@mui/material';

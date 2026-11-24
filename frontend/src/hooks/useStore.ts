@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../services/api';
 import { fetchStore } from '../services/store';

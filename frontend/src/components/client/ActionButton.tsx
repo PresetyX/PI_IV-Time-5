@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { Button } from '@mui/material';
 import type { ButtonProps } from '@mui/material';
 import { tokens } from '../../theme/theme';

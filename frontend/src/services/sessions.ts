@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { api } from './api';
 import type { ServiceMode } from './store';
 import type { TableInfo } from './tables';

@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { useEffect, useState } from 'react';
 import { Alert, Box, Button, ButtonBase, FormControlLabel, Switch, TextField, Typography } from '@mui/material';
 import ManagementLayout, { Card, LoadState } from '../../components/management/ManagementLayout';

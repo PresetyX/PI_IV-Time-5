@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { Button, Container, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 

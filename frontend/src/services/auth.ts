@@ -1,3 +1,7 @@
+/*
+ * Autor: Pedro Henrique Medeiros dos Reis
+ * RA: 24801656
+ */
 import { api, getToken, saveToken } from './api';
 
 export type Role = 'OWNER' | 'MANAGER' | 'WAITER' | 'KITCHEN';
