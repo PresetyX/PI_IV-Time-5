@@ -1,3 +1,7 @@
+/*
+ * Autor: Vitor Hugo Gilberti
+ * RA: 24012762
+ */
 import { useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {

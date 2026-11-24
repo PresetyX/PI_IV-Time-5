@@ -1,3 +1,7 @@
+/*
+ * Autor: Vitor Hugo Gilberti
+ * RA: 24012762
+ */
 package br.puccampinas.pedeai.menu;
 
 public record ManagementCategory(String id, String name, int position, boolean visible, int products) {
