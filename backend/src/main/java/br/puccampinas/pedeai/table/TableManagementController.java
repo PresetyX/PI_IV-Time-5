@@ -1,3 +1,7 @@
+/*
+ * Autor: Vitor Hugo Gilberti
+ * RA: 24012762
+ */
 package br.puccampinas.pedeai.table;
 
 import java.util.List;

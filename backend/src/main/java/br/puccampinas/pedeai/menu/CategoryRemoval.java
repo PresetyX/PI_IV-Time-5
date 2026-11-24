@@ -1,3 +1,7 @@
+/*
+ * Autor: Vitor Hugo Gilberti
+ * RA: 24012762
+ */
 package br.puccampinas.pedeai.menu;
 
 public record CategoryRemoval(String outcome, ManagementCategory category) {

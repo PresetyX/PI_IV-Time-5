@@ -1,3 +1,7 @@
+/*
+ * Autor: Vitor Hugo Gilberti
+ * RA: 24012762
+ */
 import { useMemo } from 'react';
 import { Link as RouterLink, Navigate, useSearchParams } from 'react-router-dom';
 import { Alert, Box, Button, CircularProgress, GlobalStyles, Typography } from '@mui/material';

@@ -1,3 +1,7 @@
+/*
+ * Autor: Vitor Hugo Gilberti
+ * RA: 24012762
+ */
 import { useMemo } from 'react';
 import qrcode from 'qrcode-generator';
 import { Box } from '@mui/material';

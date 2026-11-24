@@ -1,3 +1,7 @@
+/*
+ * Autor: Vitor Hugo Gilberti
+ * RA: 24012762
+ */
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
